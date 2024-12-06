@@ -13,6 +13,12 @@ interface Story {
   timestamp: string;
 }
 
+interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  setCurrentPage: (page: number | ((prev: number) => number)) => void;
+}
+
 const ITEMS_PER_PAGE = 20;
 
 const FutureNews = () => {
@@ -60,10 +66,12 @@ const FutureNews = () => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInHours < 1) return 'just now';
     if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 24) return `${diffInHours} hour ago`;
+    if (diffInDays === 1) return '1 day ago';
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
@@ -86,6 +94,47 @@ const FutureNews = () => {
     };
   };
 
+    const PaginationControls = ({ currentPage, totalPages, setCurrentPage }: PaginationControlsProps) => (
+    <div className="flex justify-center">
+      <nav className="flex items-center gap-1">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="px-2 py-1 rounded-lg bg-white border border-gray-300 text-gray-700 
+                   hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        
+        {/* Page numbers */}
+        <div className="flex gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-2 py-1 rounded-lg ${
+                currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="px-2 py-1 rounded-lg bg-white border border-gray-300 text-gray-700 
+                   hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </nav>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -101,7 +150,7 @@ const FutureNews = () => {
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 sticky top-0 z-50">
         <div className="container mx-auto">
-          <h1 className="text-3xl font-bold text-white">Science & Tech News</h1>
+          <h1 className="text-3xl font-bold text-white">FutureIsNear</h1>
         </div>
       </header>
 
@@ -114,7 +163,7 @@ const FutureNews = () => {
                 <button
                   key={category}
                   onClick={() => setActiveTab(category)}
-                  className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
+                  className={`px-4 py-2 rounded-sm font-medium transition-colors duration-200 ${
                     activeTab === category
                       ? 'bg-blue-100 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-100'
@@ -140,9 +189,21 @@ const FutureNews = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         {/* Results count */}
-        <div className="text-sm text-gray-600 mb-4">
-          Page {((currentPage - 1) * ITEMS_PER_PAGE) +1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalStories)} of {totalStories} 
+        <div className="mb-6 space-y-4">
+          <div className="text-sm text-gray-600 mb-4">
+            Page {((currentPage - 1) * ITEMS_PER_PAGE) +1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalStories)} of {totalStories} 
+          </div>
+          {totalPages > 1 && (
+            <PaginationControls 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+            />
+          )}
         </div>
+
+
+        {/* NEWS LINKS  */}
         <div className="grid gap-4">
           {paginatedStories.map((story) => (
             <article
@@ -201,49 +262,19 @@ const FutureNews = () => {
               </div>
             </article>
           ))}
+           
         </div>
 
-      {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex justify-center">
-            <nav className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 
-                         hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              
-              {/* Page numbers */}
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-4 py-2 rounded-lg ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 
-                         hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </nav>
-          </div>
-        )}
+       {totalPages > 1 && (
+        <div className="mt-6">
+          <PaginationControls 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+        )} 
+      
 
       </main>
 
