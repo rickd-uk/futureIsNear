@@ -1,21 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import _ from 'lodash';
 
-// Import your existing BulkUpload component
-// You'll need to adjust the import path based on your file structure
-import BulkUpload from './BulkUpload';
+interface Story {
+  id: string;
+  title: string;
+  url: string;
+  description?: string | null;
+  category: string;
+  author: string;
+  timestamp: string;
+}
 
-const NewsWebsite = () => {
-  const [stories, setStories] = useState({});
-  const [categories, setCategories] = useState([]);
-  const [activeTab, setActiveTab] = useState('');
+const FutureNews = () => {
+  const [stories, setStories] = useState<Record<string, Story[]>>({});
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('');
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [showUpload, setShowUpload] = useState(false);
 
-  const fetchStories = async () => {
+  const fetchStories = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/stories');
@@ -24,7 +29,7 @@ const NewsWebsite = () => {
         throw new Error('Failed to fetch stories');
       }
       
-      const data = await response.json();
+      const data: Story[] = await response.json();
       const groupedStories = _.groupBy(data, 'category');
       
       setStories(groupedStories);
@@ -38,13 +43,13 @@ const NewsWebsite = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
   useEffect(() => {
     fetchStories();
-  }, []); // Initial fetch
+  }, [fetchStories]);
 
-  const formatTimestamp = (timestamp) => {
+  const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
@@ -55,17 +60,12 @@ const NewsWebsite = () => {
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
-  const getSortedStories = (stories = []) => {
+  const getSortedStories = (stories: Story[] = []) => {
     return _.orderBy(
       stories,
       [(story) => new Date(story.timestamp)],
       [isNewestFirst ? 'desc' : 'asc']
     );
-  };
-
-  const handleUploadComplete = () => {
-    fetchStories(); // Refresh the stories after successful upload
-    setShowUpload(false); // Hide the upload form
   };
 
   if (loading) {
@@ -80,23 +80,10 @@ const NewsWebsite = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 sticky top-0 z-50">
-        <div className="container mx-auto flex justify-between items-center">
+        <div className="container mx-auto">
           <h1 className="text-3xl font-bold text-white">Science & Tech News</h1>
-          <button
-            onClick={() => setShowUpload(!showUpload)}
-            className="px-4 py-2 bg-white text-blue-600 rounded-full hover:bg-blue-50 transition-colors duration-200"
-          >
-            {showUpload ? 'Hide Upload' : 'Upload Stories'}
-          </button>
         </div>
       </header>
-
-      {/* Upload Form */}
-      {showUpload && (
-        <div className="container mx-auto px-4 mt-4">
-          <BulkUpload onUploadComplete={handleUploadComplete} />
-        </div>
-      )}
 
       {/* Navigation */}
       <nav className="bg-white shadow sticky top-16 z-40">
@@ -136,43 +123,55 @@ const NewsWebsite = () => {
           {stories[activeTab] && getSortedStories(stories[activeTab]).map((story) => (
             <article
               key={story.id}
-              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
             >
               <div className="p-4">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold mb-2">
-                      <a 
-                        href={story.url}
-                        className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {story.title}
-                      </a>
-                    </h2>
-                    <p className="text-gray-600 line-clamp-2 mb-2">
+                {/* Mobile Layout (stacked) */}
+                <div className="md:hidden space-y-2">
+                  <h2 className="text-lg font-semibold">
+                    <a 
+                      href={story.url}
+                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {story.title}
+                    </a>
+                  </h2>
+                  {story.description && (
+                    <p className="text-gray-600">{story.description}</p>
+                  )}
+                  <div className="flex items-center text-sm text-gray-500 space-x-2">
+                    <span>{story.author}</span>
+                    <span>•</span>
+                    <time dateTime={story.timestamp}>
+                      {formatTimestamp(story.timestamp)}
+                    </time>
+                  </div>
+                </div>
+
+                {/* Desktop Layout (single row) */}
+                <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:items-center">
+                  <h2 className="col-span-4 text-lg font-semibold truncate">
+                    <a 
+                      href={story.url}
+                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {story.title}
+                    </a>
+                  </h2>
+                  {story.description && (
+                    <p className="col-span-5 text-gray-600 truncate">
                       {story.description}
                     </p>
-                    <div className="flex items-center text-sm text-gray-500 space-x-4">
-                      <span>{story.author}</span>
-                      <span>•</span>
-                      <time dateTime={story.timestamp}>
-                        {formatTimestamp(story.timestamp)}
-                      </time>
-                      {story.points && (
-                        <>
-                          <span>•</span>
-                          <span>{story.points} points</span>
-                        </>
-                      )}
-                      {story.comments && (
-                        <>
-                          <span>•</span>
-                          <span>{story.comments} comments</span>
-                        </>
-                      )}
-                    </div>
+                  )}
+                  <div className="col-span-3 flex items-center justify-end text-sm text-gray-500 space-x-4">
+                    <span className="truncate">{story.author}</span>
+                    <time dateTime={story.timestamp} className="whitespace-nowrap">
+                      {formatTimestamp(story.timestamp)}
+                    </time>
                   </div>
                 </div>
               </div>
@@ -195,4 +194,4 @@ const NewsWebsite = () => {
   );
 };
 
-export default NewsWebsite;
+export default FutureNews;
