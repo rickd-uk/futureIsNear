@@ -121,24 +121,21 @@ const FutureNews = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         {/* Sort Control */}
-        <div className="flex justify-end mb-4">
+       <div className="flex items-center justify-between mb-4">
+          <div className="text-sm text-gray-600">
+            {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalStories)} / {totalStories} 
+          </div>
           <button
             onClick={() => setIsNewestFirst(!isNewestFirst)}
-            className="px-4 py-2 flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
+            className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
           >
-            <span>{isNewestFirst ? 'Newest First' : 'Oldest First'}</span>
-            <span className="transform transition-transform duration-200">
-              {isNewestFirst ? '↓' : '↑'}
-            </span>
+            Sort: {isNewestFirst ? 'Newest ↓' : 'Oldest ↑'}
           </button>
         </div> 
 
-       {/* Results count and pagination */}
+       {/* pagination */}
         <div className="mb-6 space-y-4">
-          <div className="text-sm text-gray-600">
-            Page {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalStories)} of {totalStories}
-          </div>
-          {totalPages > 1 && (
+                    {totalPages > 1 && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
