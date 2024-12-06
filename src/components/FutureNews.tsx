@@ -13,12 +13,21 @@ interface Story {
   timestamp: string;
 }
 
+interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  setCurrentPage: (page: number | ((prev: number) => number)) => void;
+}
+
+const ITEMS_PER_PAGE = 20;
+
 const FutureNews = () => {
   const [stories, setStories] = useState<Record<string, Story[]>>({});
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>('');
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage ] = useState(1);
 
   const fetchStories = useCallback(async () => {
     try {
@@ -49,24 +58,82 @@ const FutureNews = () => {
     fetchStories();
   }, [fetchStories]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, isNewestFirst]);
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInHours < 1) return 'just now';
     if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 24) return `${diffInHours} hour ago`;
+    if (diffInDays === 1) return '1 day ago';
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
   const getSortedStories = (stories: Story[] = []) => {
-    return _.orderBy(
+    const sorted =  _.orderBy(
       stories,
       [(story) => new Date(story.timestamp)],
       [isNewestFirst ? 'desc' : 'asc']
     );
+
+    // Calculate pagination
+    const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1 ) * ITEMS_PER_PAGE;
+    const paginatedStories = sorted.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    return {
+      stories: paginatedStories,
+      totalPages,
+      totalStories: sorted.length
+    };
   };
+
+    const PaginationControls = ({ currentPage, totalPages, setCurrentPage }: PaginationControlsProps) => (
+    <div className="flex justify-center">
+      <nav className="flex items-center gap-2">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 
+                   hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        
+        {/* Page numbers */}
+        <div className="flex gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-4 py-2 rounded-lg ${
+                currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 
+                   hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </nav>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -75,6 +142,8 @@ const FutureNews = () => {
       </div>
     );
   }
+
+  const { stories: paginatedStories, totalPages, totalStories } = getSortedStories(stories[activeTab]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,8 +188,24 @@ const FutureNews = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
+        {/* Results count */}
+        <div className="mb-6 space-y-4">
+          <div className="text-sm text-gray-600 mb-4">
+            Page {((currentPage - 1) * ITEMS_PER_PAGE) +1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalStories)} of {totalStories} 
+          </div>
+          {totalPages > 1 && (
+            <PaginationControls 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+            />
+          )}
+        </div>
+
+
+        {/* NEWS LINKS  */}
         <div className="grid gap-4">
-          {stories[activeTab] && getSortedStories(stories[activeTab]).map((story) => (
+          {paginatedStories.map((story) => (
             <article
               key={story.id}
               className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
@@ -177,7 +262,20 @@ const FutureNews = () => {
               </div>
             </article>
           ))}
+           
         </div>
+
+       {totalPages > 1 && (
+        <div className="mt-6">
+          <PaginationControls 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+        )} 
+      
+
       </main>
 
       {/* Footer */}
