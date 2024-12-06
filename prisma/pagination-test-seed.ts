@@ -1,32 +1,12 @@
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 // Helper function to generate random timestamps within the last month
 const getRandomTimestamp = () => {
-  const now = new Date()
-  const pastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  return new Date(pastMonth.getTime() + Math.random() * (now.getTime() - pastMonth.getTime()))
-}
-
-// Generate multiple stories for AI category
-const generateAIStories = () => [
-  {
-    title: "GPT-4 Demonstrates Advanced Reasoning Capabilities",
-    url: "https://example.com/ai/gpt4-reasoning",
-    description: "Latest tests show unprecedented problem-solving abilities in language models",
-    author: "ai_researcher",
-    timestamp: getRandomTimestamp(),
-    category: "AI"
-  },
-  {
-    title: "Neural Networks Learn in Record Time with New Algorithm",
-    url: "https://example.com/ai/fast-learning",
-    description: "Breakthrough reduces training time by 90% while maintaining accuracy",
-    author: "deep_learner",
-    timestamp: getRandomTimestamp(),
-    category: "AI"
-  }
-];
+  const now = new Date();
+  const pastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  return new Date(pastMonth.getTime() + Math.random() * (now.getTime() - pastMonth.getTime()));
+};
 
 // Generate multiple stories for each category
 const generateMoreStories = () => {
@@ -83,35 +63,29 @@ const generateMoreStories = () => {
   return stories;
 };
 
-// Combine all stories
-const allStories = [
-  ...generateAIStories(),
-  ...generateMoreStories()
-];
-
 async function main() {
-  console.log('Start seeding...')
+  console.log('Start seeding...');
   
   // Clear existing data
-  await prisma.story.deleteMany()
+  await prisma.story.deleteMany();
   
   // Insert stories
-  for (const story of allStories) {
+  for (const story of generateMoreStories()) {
     const createdStory = await prisma.story.create({
       data: story,
-    })
-    console.log(`Created story with id: ${createdStory.id}`)
+    });
+    console.log(`Created story with id: ${createdStory.id}`);
   }
   
-  console.log('Seeding finished.')
+  console.log('Seeding finished.');
 }
 
 main()
   .then(async () => {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
