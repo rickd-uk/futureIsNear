@@ -23,7 +23,8 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
   const updateVisibleItems = useCallback(() => {
     if (!navRef.current || !containerRef.current || !categories.length) return;
 
-    const containerWidth = containerRef.current.offsetWidth - 100;
+    const OVERFLOW_BUTTON_WIDTH = 120;
+    const containerWidth = containerRef.current.offsetWidth - OVERFLOW_BUTTON_WIDTH;
     const nav = navRef.current;
     let totalWidth = 0;
     const visible: string[] = [];
@@ -34,11 +35,12 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
         child.style.display = 'block';
       }
     });
-
+    
+    const BUTTON_PADDING = 8;
     categories.forEach((category, index) => {
       const button = nav.childNodes[index];
       if (button instanceof HTMLElement) {
-        const buttonWidth = button.offsetWidth;
+        const buttonWidth = button.offsetWidth + BUTTON_PADDING;
         if (totalWidth + buttonWidth < containerWidth) {
           visible.push(category);
           totalWidth += buttonWidth;
@@ -71,9 +73,9 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
 
   return (
     <div className="relative bg-white shadow sticky top-16 z-40" ref={containerRef}>
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-14">
-          <div className="flex-1 flex items-center space-x-1 overflow-hidden" ref={navRef}>
+          <div className="flex-1 flex items-center gap-2 overflow-hidden" ref={navRef}>
             {categories.map((category) => (
               <button
                 key={category}
@@ -94,7 +96,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
           </div>
 
           {overflowItems.length > 0 && (
-            <div className="relative">
+            <div className="relative ml-2">
               <button
                 onClick={() => setIsOverflowOpen(!isOverflowOpen)}
                 className={`flex items-center px-3 py-2 rounded-sm font-medium transition-colors duration-200 
