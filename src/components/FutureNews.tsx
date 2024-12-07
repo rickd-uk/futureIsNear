@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import _ from 'lodash';
+import ResponsiveNav from '../components/ResponsiveNav';
+import PaginationControls from '../components/PaginationControls';
+import NewsCard from '../components/NewsCard';
 
 interface Story {
   id: string;
@@ -13,28 +16,37 @@ interface Story {
   timestamp: string;
 }
 
+const ITEMS_PER_PAGE = 20;
+
 const FutureNews = () => {
   const [stories, setStories] = useState<Record<string, Story[]>>({});
+  const [lastFetch, setLastFetch] = useState<Date | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>('');
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [loading, setLoading] = useState(true);
-
+  const [currentPage, setCurrentPage ] = useState(1);
+ 
   const fetchStories = useCallback(async () => {
+    // If data is less than 5 minutes old, don't refetch
+    if (lastFetch && (new Date().getTime() - lastFetch.getTime()) < 300000) {
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch('/api/stories');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch stories');
-      }
+      if (!response.ok)  throw new Error('Failed to fetch stories');
       
       const data: Story[] = await response.json();
       const groupedStories = _.groupBy(data, 'category');
-      
-      setStories(groupedStories);
       const availableCategories = Object.keys(groupedStories);
+
       setCategories(availableCategories);
+      setStories(groupedStories);
+      setLastFetch(new Date());
+
       if (!activeTab && availableCategories.length > 0) {
         setActiveTab(availableCategories[0]);
       }
@@ -43,30 +55,48 @@ const FutureNews = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [lastFetch,  activeTab]);
 
   useEffect(() => {
     fetchStories();
   }, [fetchStories]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, isNewestFirst]);
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInHours < 1) return 'just now';
     if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 24) return `${diffInHours} hour ago`;
+    if (diffInDays === 1) return '1 day ago';
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
   const getSortedStories = (stories: Story[] = []) => {
-    return _.orderBy(
+    const sorted =  _.orderBy(
       stories,
       [(story) => new Date(story.timestamp)],
       [isNewestFirst ? 'desc' : 'asc']
     );
+
+    // Calculate pagination
+    const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1 ) * ITEMS_PER_PAGE;
+    const paginatedStories = sorted.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    return {
+      stories: paginatedStories,
+      totalPages,
+      totalStories: sorted.length
+    };
   };
+
 
   if (loading) {
     return (
@@ -76,108 +106,77 @@ const FutureNews = () => {
     );
   }
 
+  const { stories: paginatedStories, totalPages, totalStories } = getSortedStories(stories[activeTab]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 sticky top-0 z-50">
         <div className="container mx-auto">
-          <h1 className="text-3xl font-bold text-white">Science & Tech News</h1>
+          <h1 className="text-3xl font-bold text-white">FutureIsNear</h1>
         </div>
       </header>
 
       {/* Navigation */}
-      <nav className="bg-white shadow sticky top-16 z-40">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap items-center justify-between py-2">
-            <div className="flex flex-wrap gap-1">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setActiveTab(category)}
-                  className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
-                    activeTab === category
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setIsNewestFirst(!isNewestFirst)}
-              className="px-4 py-2 flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
-            >
-              <span>{isNewestFirst ? 'Newest First' : 'Oldest First'}</span>
-              <span className="transform transition-transform duration-200">
-                {isNewestFirst ? '↓' : '↑'}
-              </span>
-            </button>
-          </div>
-        </div>
-      </nav>
+      <ResponsiveNav 
+        categories={categories}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        <div className="grid gap-4">
-          {stories[activeTab] && getSortedStories(stories[activeTab]).map((story) => (
-            <article
-              key={story.id}
-              className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="p-4">
-                {/* Mobile Layout (stacked) */}
-                <div className="md:hidden space-y-2">
-                  <h2 className="text-lg font-semibold">
-                    <a 
-                      href={story.url}
-                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {story.title}
-                    </a>
-                  </h2>
-                  {story.description && (
-                    <p className="text-gray-600">{story.description}</p>
-                  )}
-                  <div className="flex items-center text-sm text-gray-500 space-x-2">
-                    <span>{story.author}</span>
-                    <span>•</span>
-                    <time dateTime={story.timestamp}>
-                      {formatTimestamp(story.timestamp)}
-                    </time>
-                  </div>
-                </div>
+        {/* Sort Control */}
+       <div className="flex items-center justify-between mb-4">
+       <div className="text-blue-600">
+        {(() => {
+          const start = ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+          const end = Math.min(currentPage * ITEMS_PER_PAGE, totalStories);
+          const lastPage = currentPage === Math.ceil(totalStories / ITEMS_PER_PAGE);
+          
+          return `${start} - ${end}${!lastPage ? ` / ${totalStories}` : ''}`;
+        })()}
+      </div>
+          <button
+            onClick={() => setIsNewestFirst(!isNewestFirst)}
+            className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
+          >
+            Sort: {isNewestFirst ? 'Newest ↓' : 'Oldest ↑'}
+          </button>
+        </div> 
 
-                {/* Desktop Layout (single row) */}
-                <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:items-center">
-                  <h2 className="col-span-4 text-lg font-semibold truncate">
-                    <a 
-                      href={story.url}
-                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {story.title}
-                    </a>
-                  </h2>
-                  {story.description && (
-                    <p className="col-span-5 text-gray-600 truncate">
-                      {story.description}
-                    </p>
-                  )}
-                  <div className="col-span-3 flex items-center justify-end text-sm text-gray-500 space-x-4">
-                    <span className="truncate">{story.author}</span>
-                    <time dateTime={story.timestamp} className="whitespace-nowrap">
-                      {formatTimestamp(story.timestamp)}
-                    </time>
-                  </div>
-                </div>
-              </div>
-            </article>
+       {/* pagination */}
+        <div className="mb-6 space-y-4">
+                    {totalPages > 1 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+            />
+          )}
+        </div>
+
+        {/* News Cards */}
+        <div className="grid gap-4">
+          {paginatedStories.map((story) => (
+            <NewsCard
+              key={story.id}
+              {...story}
+              formatTimestamp={formatTimestamp}
+            />
           ))}
         </div>
+ 
+
+       {totalPages > 1 && (
+        <div className="mt-6">
+          <PaginationControls 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+        )} 
       </main>
 
       {/* Footer */}
