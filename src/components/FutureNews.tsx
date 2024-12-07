@@ -20,27 +20,33 @@ const ITEMS_PER_PAGE = 20;
 
 const FutureNews = () => {
   const [stories, setStories] = useState<Record<string, Story[]>>({});
+  const [lastFetch, setLastFetch] = useState<Date | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>('');
   const [isNewestFirst, setIsNewestFirst] = useState(true);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage ] = useState(1);
-
+ 
   const fetchStories = useCallback(async () => {
+    // If data is less than 5 minutes old, don't refetch
+    if (lastFetch && (new Date().getTime() - lastFetch.getTime()) < 300000) {
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch('/api/stories');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch stories');
-      }
+      if (!response.ok)  throw new Error('Failed to fetch stories');
       
       const data: Story[] = await response.json();
       const groupedStories = _.groupBy(data, 'category');
-      
-      setStories(groupedStories);
       const availableCategories = Object.keys(groupedStories);
+
       setCategories(availableCategories);
+      setStories(groupedStories);
+      setLastFetch(new Date());
+
       if (!activeTab && availableCategories.length > 0) {
         setActiveTab(availableCategories[0]);
       }
@@ -49,7 +55,7 @@ const FutureNews = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [lastFetch,  activeTab]);
 
   useEffect(() => {
     fetchStories();
@@ -122,9 +128,15 @@ const FutureNews = () => {
       <main className="container mx-auto px-4 py-6">
         {/* Sort Control */}
        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-gray-600">
-            {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalStories)} / {totalStories} 
-          </div>
+       <div className="text-blue-600">
+        {(() => {
+          const start = ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+          const end = Math.min(currentPage * ITEMS_PER_PAGE, totalStories);
+          const lastPage = currentPage === Math.ceil(totalStories / ITEMS_PER_PAGE);
+          
+          return `${start} - ${end}${!lastPage ? ` / ${totalStories}` : ''}`;
+        })()}
+      </div>
           <button
             onClick={() => setIsNewestFirst(!isNewestFirst)}
             className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
