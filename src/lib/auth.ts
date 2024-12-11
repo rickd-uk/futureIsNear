@@ -1,12 +1,18 @@
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 interface JWTPayload {
   role: string;
   exp?: number;
+}
+
+export function isValidSecretPath(path:string): boolean {
+  const adminSecretPath = process.env.ADMIN_SECRET_PATH;
+  return path === adminSecretPath;
 }
 
 export async function validateAuth(): Promise<boolean> {

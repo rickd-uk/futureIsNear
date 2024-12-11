@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter  } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -9,6 +10,9 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const secretPath = pathname.split('/')[1]; 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +35,7 @@ export default function AdminLogin() {
       }
 
       // Redirect to admin dashboard on success
-      router.push('/admin/dashboard');
+      router.push(`/${secretPath}/dashboard`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

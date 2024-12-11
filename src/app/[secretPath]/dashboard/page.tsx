@@ -14,7 +14,7 @@ export default function AdminDashboard() {
       await fetch('/api/auth', {
         method: 'DELETE',
       });
-      router.push('/admin/login');
+      router.push(`/${process.env.NEXT_PUBLIC_ADMIN_SECRET_PATH}/login`);
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

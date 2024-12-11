@@ -31,8 +31,10 @@ export async function POST(request: Request) {
       .setExpirationTime('2h')
       .sign(new TextEncoder().encode(JWT_SECRET));
 
+    const cookieStore = await cookies();
+
     // Set cookie
-    cookies().set('admin-token', token, {
+    await cookieStore.set('admin-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',

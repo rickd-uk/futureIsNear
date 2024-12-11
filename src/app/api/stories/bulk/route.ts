@@ -32,11 +32,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Read the file content
+    // Read and parse CSV
     const csvText = await file.text();
-    console.log('CSV Content preview:', csvText.substring(0, 100));
-
-    // Parse CSV with proper configuration
     const parseResult = Papa.parse<CSVStory>(csvText, {
       header: true,
       skipEmptyLines: true,
@@ -44,57 +41,36 @@ export async function POST(request: Request) {
       transform: (value) => value.trim(),
     });
 
-    // Check for parsing errors
     if (parseResult.errors.length > 0) {
-      console.error('Parse errors:', parseResult.errors);
       return NextResponse.json(
         { 
           error: 'CSV parsing failed', 
-          details: parseResult.errors.map(err => ({
-            row: err.row,
-            message: err.message
-          }))
+          details: parseResult.errors 
         },
         { status: 400 }
       );
     }
 
     const stories = parseResult.data;
-    console.log('Parsed stories:', stories.length);
 
     // Validate required fields and data format
     const validationErrors: { row: number; errors: string[] }[] = [];
-    
     stories.forEach((story, index) => {
       const rowErrors: string[] = [];
-
-      // Check required fields
       if (!story.title) rowErrors.push('Title is required');
       if (!story.url) rowErrors.push('URL is required');
       if (!story.category) rowErrors.push('Category is required');
-
-      // URL format validation
       if (story.url && !isValidUrl(story.url)) {
         rowErrors.push('Invalid URL format');
       }
-
-      // Add length validations
-      if (story.title && story.title.length > 255) {
-        rowErrors.push('Title exceeds 255 characters');
-      }
-      if (story.description && story.description.length > 1000) {
-        rowErrors.push('Description exceeds 1000 characters');
-      }
-
       if (rowErrors.length > 0) {
         validationErrors.push({
-          row: index + 2, // +2 because of 0-based index and header row
+          row: index + 2,
           errors: rowErrors
         });
       }
     });
 
-    // If there are validation errors, return them
     if (validationErrors.length > 0) {
       return NextResponse.json(
         { 
@@ -105,29 +81,43 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insert stories into the database
+    // Track results
     const results = {
-      success: 0,
+      successful: 0,
+      duplicates: 0,
       failed: 0,
-      errors: [] as { row: number; error: string }[]
+      errors: [] as { row: number; error: string }[],
+      skippedUrls: [] as string[]
     };
 
-    // Use transaction to ensure data consistency
+    // Process stories in transaction
     await prisma.$transaction(async (tx) => {
       for (let i = 0; i < stories.length; i++) {
         const story = stories[i];
         try {
+          // Check for duplicate URL
+          const existing = await tx.story.findFirst({
+            where: { url: story.url.trim() }
+          });
+
+          if (existing) {
+            results.duplicates++;
+            results.skippedUrls.push(story.url);
+            continue; // Skip this story
+          }
+
+          // Create new story if no duplicate found
           await tx.story.create({
             data: {
-              title: story.title,
-              url: story.url,
-              category: story.category,
-              description: story.description || 'No description provided',
-              author: story.author || 'Unknown Author',
+              title: story.title.trim(),
+              url: story.url.trim(),
+              category: story.category.trim(),
+              description: story.description?.trim() || 'No description provided',
+              author: story.author?.trim() || 'Unknown Author',
               timestamp: new Date(),
             }
           });
-          results.success++;
+          results.successful++;
         } catch (err) {
           results.failed++;
           results.errors.push({
@@ -141,12 +131,14 @@ export async function POST(request: Request) {
     // Return detailed results
     return NextResponse.json({
       success: true,
-      message: `Successfully processed ${stories.length} stories`,
+      message: `Processed ${stories.length} stories`,
       details: {
         total: stories.length,
-        successful: results.success,
+        successful: results.successful,
+        duplicates: results.duplicates,
         failed: results.failed,
-        errors: results.errors
+        errors: results.errors,
+        skippedUrls: results.skippedUrls
       }
     });
 
