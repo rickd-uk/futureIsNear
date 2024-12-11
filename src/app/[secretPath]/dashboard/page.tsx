@@ -1,12 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BulkUpload from '@/components/BulkUpload';
+
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [stats, setStats] = useState({
+    totalStories: 0,
+    categoriesCount: 0,
+    latestUpload: null
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const response = await fetch('/api/stats');
+      const data = await response.json();
+      setStats(data);
+    };
+    fetchStats();
+  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -48,7 +63,6 @@ export default function AdminDashboard() {
             <div className="grid gap-6">
               {/* Bulk Upload Section */}
               <section>
-                <h2 className="text-xl font-semibold mb-4">Bulk Upload Stories</h2>
                 <BulkUpload />
               </section>
 
@@ -58,15 +72,21 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h3 className="text-blue-800 font-medium">Total Stories</h3>
-                    <p className="text-2xl font-bold text-blue-900">--</p>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {stats.totalStories}
+                    </p> 
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h3 className="text-green-800 font-medium">Categories</h3>
-                    <p className="text-2xl font-bold text-green-900">--</p>
+                     <p className="text-2xl font-bold text-green-900">
+                      {stats.categoriesCount}
+                    </p> 
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <h3 className="text-purple-800 font-medium">Latest Upload</h3>
-                    <p className="text-2xl font-bold text-purple-900">--</p>
+                    <p className="text-2xl font-bold text-purple-900">
+                      {stats.latestUpload ? new Date(stats.latestUpload).toLocaleDateString() : '--'}
+                    </p> 
                   </div>
                 </div>
               </section>
