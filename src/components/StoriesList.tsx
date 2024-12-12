@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
+import EditItemModal from './EditItemModal'
 
 interface Story {
   id: string;
@@ -13,10 +14,18 @@ interface Story {
   description?: string | null;
 }
 
+const truncateText = (text: string | null | undefined, maxLength: number = 100) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
 export default function StoriesList() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingStory, setEditingStory] = useState<Story | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
+
 
   useEffect(() => {
     fetchStories();
@@ -37,8 +46,29 @@ export default function StoriesList() {
   };
   
   const handleEdit = (story: Story) => {
-    // TODO: implement edit func 
+    setEditingStory(story);
+    setIsEditModalOpen(true);
     console.log('Edit story', story);
+  };
+
+  const handleSaveEdit = async (updatedStory: Story) => {
+    try {
+      const response = await fetch(`/api/stories/${updatedStory.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application.json',
+        },
+        body: JSON.stringify(updatedStory),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to write story');
+      }
+      setStories(stories.map(story =>
+          story.id === updatedStory.id ? updatedStory : story
+      ));
+    } catch(err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update story');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -79,6 +109,16 @@ export default function StoriesList() {
 
 
  return (
+   <>
+    <EditItemModal
+      story={editingStory}
+      isOpen={isEditModalOpen}
+      onClose={() => {
+        setIsEditModalOpen(false);
+        setEditingStory(null);
+      }}
+      onSave={handleSaveEdit}
+    />
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-4">Stories List</h2>
@@ -108,13 +148,13 @@ export default function StoriesList() {
                 <tr key={story.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {story.title}
-                    </div>
-                    <div className="text-sm text-gray-500">
                       <a href={story.url} target="_blank" rel="noopener noreferrer" 
                          className="hover:text-blue-600">
-                        {story.description || ''}
+                      {story.title}
                       </a>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        {truncateText(story.description, 100) }
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -149,5 +189,6 @@ export default function StoriesList() {
         </div>
       </div>
     </div>
+    </>
   );
 }
