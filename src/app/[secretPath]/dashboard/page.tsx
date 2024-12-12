@@ -67,8 +67,8 @@ export default function AdminDashboard() {
               </section>
 
               {/* Stats Section */}
-              <section className="mt-8">
-                <h2 className="text-xl font-semibold mb-4">Quick Stats</h2>
+              <section className="mt-2">
+                <h2 className="text-xl font-semibold mb-4 text-gray-600">Quick Stats</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h3 className="text-blue-800 font-medium">Total Stories</h3>
@@ -91,38 +91,7 @@ export default function AdminDashboard() {
                 </div>
               </section>
 
-              {/* Future Features Section */}
-              <section className="mt-8">
-                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <button 
-                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 
-                             transition-colors duration-200 text-left"
-                    disabled
-                  >
-                    <h3 className="font-medium text-gray-900">Manage Categories</h3>
-                    <p className="text-sm text-gray-500">Coming soon</p>
-                  </button>
-                  <button 
-                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 
-                             transition-colors duration-200 text-left"
-                    disabled
-                  >
-                    <h3 className="font-medium text-gray-900">Edit Stories</h3>
-                    <p className="text-sm text-gray-500">Coming soon</p>
-                  </button>
-                  <button 
-                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 
-                             transition-colors duration-200 text-left"
-                    disabled
-                  >
-                    <h3 className="font-medium text-gray-900">User Management</h3>
-                    <p className="text-sm text-gray-500">Coming soon</p>
-                  </button>
-                </div>
-              </section>
-
-              <section className="mt-8">
+              <section className="mt-2 text-gray-600">
                 <StoriesList />
               </section>
             </div>

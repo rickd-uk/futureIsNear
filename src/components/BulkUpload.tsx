@@ -59,7 +59,7 @@ export default function BulkUpload() {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-medium mb-4">Bulk Upload Stories</h2>
+      <h2 className="text-lg font-medium mb-4 text-gray-600">Upload Url Links </h2>  
       
       <div className="space-y-4">
         <div>
@@ -67,7 +67,6 @@ export default function BulkUpload() {
             htmlFor="csv-upload" 
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Choose CSV file
           </label>
           <input
             id="csv-upload"
@@ -83,6 +82,9 @@ export default function BulkUpload() {
               hover:file:bg-orange-100
               disabled:opacity-50"
           />
+          <code className="text-xs bg-gray-100 p-1 rounded block mt-1 text-blue-500">
+            title,url,description,category,author
+          </code>
         </div>
 
         {isUploading && (
@@ -97,12 +99,6 @@ export default function BulkUpload() {
           <div className="text-red-600 whitespace-pre-wrap">{error}</div>
         )}
 
-        <div className="text-sm text-gray-500">
-          <p>CSV should have these columns:</p>
-          <code className="text-xs bg-gray-100 p-1 rounded block mt-1">
-            title,url,points,author,comments,timestamp,category
-          </code>
-        </div>
       </div>
     </div>
   );
