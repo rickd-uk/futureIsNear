@@ -48,6 +48,16 @@ export async function validateAuth(request: NextRequest): Promise<boolean> {
 
 export async function authMiddleware(request: NextRequest) {
   try {
+    if (!request) {
+      console.error('Auth middleware error: request is undefined');
+      return NextResponse.json(
+        {
+          error: 'Internal Server Error',
+          message: 'An error occurred while processing the request',
+        },
+        { status: 500 }
+      );
+    }
     const isAuthenticated = await validateAuth(request);
 
     if (!isAuthenticated) {

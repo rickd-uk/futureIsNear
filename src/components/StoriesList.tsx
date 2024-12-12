@@ -42,7 +42,7 @@ export default function StoriesList() {
       const response = await fetch(`/api/stories/${updatedStory.id}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application.json',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...updatedStory,
