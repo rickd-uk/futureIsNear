@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import EditItemModal from './EditItemModal'
+import EditItemModal from './EditItemModal';
+import ExpandableText from './ExpandableText';
 
 interface Story {
   id: string;
@@ -25,7 +26,6 @@ export default function StoriesList() {
   const [error, setError] = useState('');
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
-
 
   useEffect(() => {
     fetchStories();
@@ -119,10 +119,10 @@ export default function StoriesList() {
       }}
       onSave={handleSaveEdit}
     />
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow ">
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-4">Stories List</h2>
-        <div className="overflow-x-auto">
+        <div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -146,27 +146,29 @@ export default function StoriesList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {stories.map((story) => (
                 <tr key={story.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 ">
                     <div className="text-sm font-medium text-gray-900">
                       <a href={story.url} target="_blank" rel="noopener noreferrer" 
                          className="hover:text-blue-600">
-                      {story.title}
+                        <div className="text-sm font-medium text-gray-900 mb-1">
+                        <ExpandableText text={story.title} maxLength={50} />
+                      </div> 
                       </a>
                     </div>
                     <div className="text-sm text-gray-500">
-                        {truncateText(story.description, 100) }
+                       <ExpandableText text={story.description} maxLength={60} /> 
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {story.category}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {story.author}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(story.timestamp).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4  text-sm font-medium">
                     <div className="flex space-x-3">
                       <button
                         onClick={() => handleEdit(story)}
