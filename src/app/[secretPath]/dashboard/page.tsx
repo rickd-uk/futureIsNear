@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BulkUpload from '@/components/BulkUpload';
-
+import StoriesList from '@/components/StoriesList';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -120,6 +120,10 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-500">Coming soon</p>
                   </button>
                 </div>
+              </section>
+
+              <section className="mt-8">
+                <StoriesList />
               </section>
             </div>
           </div>
