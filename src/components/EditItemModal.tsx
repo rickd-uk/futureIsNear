@@ -2,15 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-
-interface Story {
-  id: string;
-  title: string;
-  url: string;
-  category: string;
-  author: string;
-  description?: string | null;
-}
+import type { Story } from '@/types';
 
 interface EditItemModalProps {
   story: Story | null;
@@ -24,13 +16,18 @@ export default function EditItemModal({
   isOpen, 
   onClose, 
   onSave 
-}: EditStoryModalProps) {
+}: EditItemModalProps) {
   const [formData, setFormData] = useState<Story | null>(story);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setFormData(story);
+    if (story) {
+      setFormData({
+        ...story,
+        timestamp: story.timestamp || new Date().toISOString(),
+      });
+    }
     setError('');
   }, [story]);
 

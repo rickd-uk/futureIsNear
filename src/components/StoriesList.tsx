@@ -4,21 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import EditItemModal from './EditItemModal';
 import ExpandableText from './ExpandableText';
-
-interface Story {
-  id: string;
-  title: string;
-  url: string;
-  category: string;
-  author: string;
-  timestamp: string;
-  description?: string | null;
-}
-
-const truncateText = (text: string | null | undefined, maxLength: number = 100) => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-}
+import type { Story } from '@/types';
 
 export default function StoriesList() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -58,13 +44,19 @@ export default function StoriesList() {
         headers: {
           'Content-Type': 'application.json',
         },
-        body: JSON.stringify(updatedStory),
+        body: JSON.stringify({
+          ...updatedStory,
+          timestamp: updatedStory.timestamp || new Date().toISOString()
+        }),
       });
       if (!response.ok) {
         throw new Error('Failed to write story');
       }
       setStories(stories.map(story =>
-          story.id === updatedStory.id ? updatedStory : story
+          story.id === updatedStory.id ? { 
+            ...updatedStory,
+            timestamp: updatedStory.timestamp || new Date().toISOString()
+          } : story
       ));
     } catch(err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update story');

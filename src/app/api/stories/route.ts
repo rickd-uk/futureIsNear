@@ -30,11 +30,15 @@ export async function GET() {
     
   } catch (error) {
     // Log the full error for debugging
-    console.error('Detailed error:', {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack
-    })
+    if (error instanceof Error){
+      console.error('Detailed error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    } else {
+      console.error('Unknown error:', error);
+    }
 
     return NextResponse.json({
       success: false,

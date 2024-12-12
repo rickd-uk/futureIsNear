@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import Papa from 'papaparse';
 import { authMiddleware } from '@/lib/auth';
@@ -14,7 +14,7 @@ interface CSVStory {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   // Check authentication first
   const authResponse = await authMiddleware(request);
   if (authResponse) {

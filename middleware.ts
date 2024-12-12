@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
   //  return NextResponse.redirect(new URL('/404', request.url));
   //}
   const secretPathMatch = pathname.match(/^\/([^\/]+)\/(login|dashboard)/);
-  if (searchPathMatch) {
+  if (secretPathMatch) {
     const [, potentialSecret, page] = secretPathMatch;
 
     if (potentialSecret !== process.env.ADMIN_SECRET_PATH) {

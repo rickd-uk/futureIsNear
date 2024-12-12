@@ -1,6 +1,4 @@
 // src/app/[secretPath]/layout.tsx
-import { validateAuth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
 
 export default async function Layout({
   children,

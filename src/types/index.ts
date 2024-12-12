@@ -1,9 +1,9 @@
-export type Story = {
-  category: string;
+export interface Story  {
+  id: string;
   title: string;
   url: string;
-  points: number;
+  category: string;
   author: string;
-  comments: number;
   timestamp: string;
+  description?: string | null;
 }

@@ -1,21 +1,15 @@
 import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
-import { z } from 'zod';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'your-secure-password';
 
-const loginSchema = z.object({
-  username: z.string(),
-  password: z.string()
-});
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, password } = loginSchema.parse(body);
+    const { username, password } = body;
 
     if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
       return NextResponse.json(
@@ -53,7 +47,7 @@ export async function POST(request: Request) {
 
 // Endpoint to check if user is logged in
 export async function GET() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('admin-token');
 
   return NextResponse.json({ 
@@ -63,6 +57,7 @@ export async function GET() {
 
 // Logout endpoint
 export async function DELETE() {
-  cookies().delete('admin-token');
+  const cookieStore = await cookies();
+  cookieStore.delete('admin-token');
   return NextResponse.json({ success: true });
 }
