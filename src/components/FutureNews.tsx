@@ -98,16 +98,62 @@ const FutureNews = () => {
     };
   }, [stories, activeTab, isNewestFirst, currentPage]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading stories...</div>
+  const content = loading ? (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="text-xl text-gray-600">Loading stories...</div>
+    </div>
+  ) : (
+    <main className="flex-1 container mx-auto px-4 py-6">
+      {totalStories > 0 && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-blue-600">
+            {`${((currentPage - 1) * ITEMS_PER_PAGE) + 1} - ${
+              Math.min(currentPage * ITEMS_PER_PAGE, totalStories)
+            }${currentPage !== Math.ceil(totalStories / ITEMS_PER_PAGE) ? ` / ${totalStories}` : ''}`}
+          </div>
+          <button
+            onClick={() => setIsNewestFirst(!isNewestFirst)}
+            className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
+          >
+            Sort: {isNewestFirst ? 'Newest ↓' : 'Oldest ↑'}
+          </button>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mb-6">
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+      )}
+
+      <div className="grid gap-3">
+        {paginatedStories.map((story) => (
+          <NewsCard
+            key={story.id}
+            {...story}
+            formatTimestamp={formatTimestamp}
+          />
+        ))}
       </div>
-    );
-  }
+
+      {totalPages > 1 && (
+        <div className="mt-6">
+          <PaginationControls 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+      )}
+    </main>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 sticky top-0 z-50">
         <div className="container mx-auto">
           <h1 className="text-3xl font-bold text-white">FutureIsNear</h1>
@@ -120,53 +166,7 @@ const FutureNews = () => {
         onTabChange={setActiveTab}
       />
 
-      <main className="container mx-auto px-4 py-6">
-        {totalStories > 0 && (
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-blue-600">
-              {`${((currentPage - 1) * ITEMS_PER_PAGE) + 1} - ${
-                Math.min(currentPage * ITEMS_PER_PAGE, totalStories)
-              }${currentPage !== Math.ceil(totalStories / ITEMS_PER_PAGE) ? ` / ${totalStories}` : ''}`}
-            </div>
-            <button
-              onClick={() => setIsNewestFirst(!isNewestFirst)}
-              className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
-            >
-              Sort: {isNewestFirst ? 'Newest ↓' : 'Oldest ↑'}
-            </button>
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="mb-6">
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-            />
-          </div>
-        )}
-
-        <div className="grid gap-3">
-          {paginatedStories.map((story) => (
-            <NewsCard
-              key={story.id}
-              {...story}
-              formatTimestamp={formatTimestamp}
-            />
-          ))}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="mt-6">
-            <PaginationControls 
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-            />
-          </div>
-        )}
-      </main>
+      {content}
 
       <footer className="bg-gray-800 text-white py-2 mt-auto">
         <div className="container mx-auto px-4">
