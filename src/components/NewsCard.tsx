@@ -1,6 +1,5 @@
-'use client';
-
 import React from 'react';
+import ExpandableText from './ExpandableText';
 
 interface NewsCardProps {
   id: string;
@@ -8,6 +7,7 @@ interface NewsCardProps {
   url: string;
   description?: string | null;
   author: string;
+  category: string;
   timestamp: string;
   formatTimestamp: (timestamp: string) => string;
 }
@@ -17,29 +17,34 @@ const NewsCard: React.FC<NewsCardProps> = ({
   url,
   description,
   author,
+  category,
   timestamp,
   formatTimestamp,
 }) => {
   return (
-    <article className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="p-4">
+    <article className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-visible">
+      <div className="p-3">
         {/* Mobile Layout (stacked) */}
-        <div className="md:hidden space-y-2">
-          <h2 className="text-lg font-semibold">
+        <div className="md:hidden space-y-1.5">
+          <h2 className="text-base font-semibold">
             <a 
               href={url}
               className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
               target="_blank"
               rel="noopener noreferrer"
             >
-              {title}
+              <div className="relative">
+                <ExpandableText text={title} maxLength={60} />
+              </div>
             </a>
           </h2>
           {description && (
-            <p className="text-gray-600">{description}</p>
+            <div className="text-gray-600 relative text-sm">
+              <ExpandableText text={description} maxLength={30} />
+            </div>
           )}
-          <div className="flex items-center text-sm text-gray-500 space-x-2">
-            <span>{author}</span>
+          <div className="flex flex-wrap items-center text-xs text-gray-500 gap-2">
+            <span className="truncate max-w-[120px]">{author}</span>
             <span>•</span>
             <time dateTime={timestamp}>
               {formatTimestamp(timestamp)}
@@ -48,25 +53,33 @@ const NewsCard: React.FC<NewsCardProps> = ({
         </div>
 
         {/* Desktop Layout (single row) */}
-        <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:items-center">
-          <h2 className="col-span-4 text-lg font-semibold truncate">
-            <a 
-              href={url}
-              className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {title}
-            </a>
-          </h2>
+        <div className="hidden md:flex md:items-center md:gap-3 h-10">
+          <div className="w-5/12 min-w-0">
+            <h2 className="text-base font-semibold">
+              <a 
+                href={url}
+                className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="relative">
+                  <ExpandableText text={title} maxLength={80} />
+                </div>
+              </a>
+            </h2>
+          </div>
+          
           {description && (
-            <p className="col-span-5 text-gray-600 truncate">
-              {description}
-            </p>
+            <div className="w-4/12 min-w-0">
+              <div className="text-gray-600 relative text-sm">
+                <ExpandableText text={description} maxLength={30} />
+              </div>
+            </div>
           )}
-          <div className="col-span-3 flex items-center justify-end text-sm text-gray-500 space-x-4">
-            <span className="truncate">{author}</span>
-            <time dateTime={timestamp} className="whitespace-nowrap">
+          
+          <div className="w-3/12 min-w-0 flex items-center justify-end gap-3 text-xs text-gray-500">
+            <span className="truncate max-w-[120px]">{author}</span>
+            <time dateTime={timestamp} className="text-gray-400 whitespace-nowrap">
               {formatTimestamp(timestamp)}
             </time>
           </div>
@@ -76,4 +89,4 @@ const NewsCard: React.FC<NewsCardProps> = ({
   );
 };
 
-export default NewsCard;
+export default React.memo(NewsCard);

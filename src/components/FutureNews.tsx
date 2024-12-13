@@ -147,7 +147,7 @@ const FutureNews = () => {
           </div>
         )}
 
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {paginatedStories.map((story) => (
             <NewsCard
               key={story.id}
@@ -168,7 +168,7 @@ const FutureNews = () => {
         )}
       </main>
 
-      <footer className="bg-gray-800 text-white py-8 mt-auto">
+      <footer className="bg-gray-800 text-white py-2 mt-auto">
         <div className="container mx-auto px-4">
           <div className="text-center">
             <p className="text-gray-400">

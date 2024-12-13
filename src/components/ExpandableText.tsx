@@ -25,12 +25,12 @@ export default function ExpandableText({ text, maxLength }: ExpandableTextProps)
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-block"
         >
-          {isExpanded ? 'Show less' : 'Read more'}
+          {isExpanded ? 'less' : 'more'}
         </button>
       </span>
 
       {isExpanded && (
-        <div className="absolute z-50 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4  w-[500px] mt-2">
+        <div className="absolute z-50 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-full md:w-[500px] mt-2 max-w-[calc(100vw-2rem)]">
           <div className="max-h-98 overflow-y-auto">
             <p className="whitespace-normal break-words text-md leading-relaxed">
               {text}
