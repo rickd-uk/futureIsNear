@@ -17,7 +17,6 @@ const NewsCard: React.FC<NewsCardProps> = ({
   url,
   description,
   author,
-  category,
   timestamp,
   formatTimestamp,
 }) => {

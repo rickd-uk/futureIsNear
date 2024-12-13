@@ -30,7 +30,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
     const visible: string[] = [];
     const overflow: string[] = [];
 
-    Array.from(nav.childNodes).forEach((child) => {
+    Array.from(nav.children).forEach((child) => {
       if (child instanceof HTMLElement) {
         child.style.display = 'block';
       }
@@ -52,11 +52,16 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
 
     setVisibleItems(visible);
     setOverflowItems(overflow);
-  },[categories]);
+
+    // Debug log
+    console.log('Active Tab:', activeTab);
+    console.log('Visible Items:', visible);
+    console.log('Overflow Items:', overflow);
+  }, [categories, activeTab]);
 
   useEffect(() => {
     updateVisibleItems();
-  }, [updateVisibleItems]);
+  }, [updateVisibleItems, activeTab]); // Added activeTab dependency
 
   useEffect(() => {
     const handleResize = () => {
@@ -65,7 +70,6 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [updateVisibleItems]);
-
 
   if (!categories.length) {
     return null;
@@ -83,7 +87,9 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
                   onTabChange(category);
                   setIsOverflowOpen(false);
                 }}
-                style={{ display: visibleItems.includes(category) ? 'block' : 'none' }}
+                style={{ 
+                  display: visibleItems.includes(category) ? 'block' : 'none'
+                }}
                 className={`px-4 py-2 rounded-sm font-medium whitespace-nowrap transition-colors duration-200 ${
                   activeTab === category
                     ? 'bg-blue-100 text-blue-600'
@@ -99,32 +105,42 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
             <div className="relative ml-2">
               <button
                 onClick={() => setIsOverflowOpen(!isOverflowOpen)}
-                className={`flex items-center px-3 py-2 rounded-sm font-medium transition-colors duration-200 
-                  ${isOverflowOpen ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`flex items-center px-3 py-2 rounded-sm font-medium transition-colors duration-200 ${
+                  isOverflowOpen || overflowItems.includes(activeTab)
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
                 <MoreHorizontal className="w-5 h-5" />
-                <ChevronDown className={`w-4 h-4 ml-1 transition-transform duration-200 
-                  ${isOverflowOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown 
+                  className={`w-4 h-4 ml-1 transition-transform duration-200 ${
+                    isOverflowOpen ? 'rotate-180' : ''
+                  }`} 
+                />
               </button>
 
               {isOverflowOpen && (
                 <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                  {overflowItems.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => {
-                        onTabChange(category);
-                        setIsOverflowOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200
-                        ${activeTab === category
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-700 hover:bg-gray-50'
+                  {overflowItems.map((category) => {
+                    const isActive = category === activeTab;
+                    console.log('Overflow item:', category, 'Active:', isActive); // Debug log
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => {
+                          onTabChange(category);
+                          setIsOverflowOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors duration-200 ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
                         }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
+                      >
+                        {category}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -136,4 +152,3 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({
 };
 
 export default ResponsiveNav;
-
