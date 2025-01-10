@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start -p 5000",
+    "start": "next start -p 5200",
     "lint": "next lint",
     "prisma:studio": "prisma studio",
     "db:push": "prisma db push",

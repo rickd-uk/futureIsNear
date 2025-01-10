@@ -12,20 +12,21 @@ export default function StoriesList() {
   const [error, setError] = useState('');
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchStories();
-  }, [])
+  }, []);
 
   const fetchStories = async () => {
     try {
       const response = await fetch('/api/stories');
       const result = await response.json();
 
-      if (!response.ok) throw new Error(result.error || 'Failed to fetch stories' );
+      if (!response.ok) throw new Error(result.error || 'Failed to fetch stories');
       setStories(result.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message: 'Failed to load stories' );
+      setError(err instanceof Error ? err.message : 'Failed to load stories');
     } finally {
       setLoading(false);
     }
@@ -35,6 +36,29 @@ export default function StoriesList() {
     setEditingStory(story);
     setIsEditModalOpen(true);
     console.log('Edit story', story);
+  };
+
+  const handleDeleteAll = async (): Promise<void> => {
+    const confirmMessage = `Are you sure you want to delete all ${stories.length} stories? This action cannot be undone.`;
+    if (!confirm(confirmMessage)) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/stories', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete all stories');
+      }
+
+      setStories([]);
+    } catch (err) {
+      alert('Error deleting stories');
+      console.error('Delete all error:', err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSaveEdit = async (updatedStory: Story) => {
@@ -53,10 +77,10 @@ export default function StoriesList() {
         throw new Error('Failed to write story');
       }
       setStories(stories.map(story =>
-          story.id === updatedStory.id ? { 
-            ...updatedStory,
-            timestamp: updatedStory.timestamp || new Date().toISOString()
-          } : story
+        story.id === updatedStory.id ? { 
+          ...updatedStory,
+          timestamp: updatedStory.timestamp || new Date().toISOString()
+        } : story
       ));
     } catch(err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update story');
@@ -99,22 +123,30 @@ export default function StoriesList() {
     );
   }
 
-
- return (
-   <>
-    <EditItemModal
-      story={editingStory}
-      isOpen={isEditModalOpen}
-      onClose={() => {
-        setIsEditModalOpen(false);
-        setEditingStory(null);
-      }}
-      onSave={handleSaveEdit}
-    />
-    <div className="bg-white rounded-lg shadow ">
-      <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Stories List</h2>
-        <div>
+  return (
+    <>
+      <EditItemModal
+        story={editingStory}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingStory(null);
+        }}
+        onSave={handleSaveEdit}
+      />
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Stories List</h2>
+            <button
+              onClick={handleDeleteAll}
+              disabled={isDeleting || stories.length === 0}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 
+                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete All Stories'}
+            </button>
+          </div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -138,17 +170,17 @@ export default function StoriesList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {stories.map((story) => (
                 <tr key={story.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 ">
+                  <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
                       <a href={story.url} target="_blank" rel="noopener noreferrer" 
                          className="hover:text-blue-600">
                         <div className="text-sm font-medium text-gray-900 mb-1">
-                        <ExpandableText text={story.title} maxLength={50} />
-                      </div> 
+                          <ExpandableText text={story.title} maxLength={50} />
+                        </div> 
                       </a>
                     </div>
                     <div className="text-sm text-gray-500">
-                       <ExpandableText text={story.description} maxLength={60} /> 
+                      <ExpandableText text={story.description} maxLength={60} /> 
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
@@ -160,7 +192,7 @@ export default function StoriesList() {
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(story.timestamp).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4  text-sm font-medium">
+                  <td className="px-6 py-4 text-sm font-medium">
                     <div className="flex space-x-3">
                       <button
                         onClick={() => handleEdit(story)}
@@ -182,7 +214,6 @@ export default function StoriesList() {
           </table>
         </div>
       </div>
-    </div>
     </>
   );
 }

@@ -51,3 +51,20 @@ export async function GET() {
     await prisma.$disconnect()
   }
 }
+
+export async function DELETE() {
+  try {
+    await prisma.story.deleteMany({});
+    
+    return NextResponse.json({
+      success: true,
+      message: 'All stories deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting all stories:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete all stories' },
+      { status: 500 }
+    );
+  }
+}
