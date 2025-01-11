@@ -2,8 +2,12 @@
 
 import React, { useState } from 'react';
 
-export default function BulkUpload() {
-    const [status, setStatus] = useState<string>('');
+interface BulkUploadProps {
+  onUploadSuccess?: () => void;
+}
+
+export default function BulkUpload({ onUploadSuccess }: BulkUploadProps) {
+  const [status, setStatus] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
 
@@ -49,6 +53,7 @@ export default function BulkUpload() {
 
       setStatus(result.message || 'Upload successful');
       event.target.value = ''; // Reset file input
+      onUploadSuccess?.();   // Call the callback after successful upload
     } catch (err) {
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');

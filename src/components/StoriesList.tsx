@@ -6,7 +6,11 @@ import EditItemModal from './EditItemModal';
 import ExpandableText from './ExpandableText';
 import type { Story } from '@/types';
 
-export default function StoriesList() {
+interface StoriesListProps {
+  onDeleteSuccess?: () => void;
+}
+
+export default function StoriesList({ onDeleteSuccess }: StoriesListProps) {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,6 +48,7 @@ export default function StoriesList() {
 
     setIsDeleting(true);
     try {
+      console.log('Attempting to delete all stories');
       const response = await fetch('/api/stories', {
         method: 'DELETE',
       });
@@ -53,6 +58,12 @@ export default function StoriesList() {
       }
 
       setStories([]);
+      if (onDeleteSuccess) {
+      console.log('Calling onDeleteSuccess callback'); // Debug log
+      onDeleteSuccess();
+    } else {
+      console.log('onDeleteSuccess callback not provided'); // Debug log
+    }
     } catch (err) {
       alert('Error deleting stories');
       console.error('Delete all error:', err);
@@ -101,6 +112,7 @@ export default function StoriesList() {
 
       // remove story from local state 
       setStories(stories.filter(story => story.id !== id));
+      onDeleteSuccess?.();
     } catch(err) {
       alert('Error deleting item');
       console.error('Delete error: ',err);
@@ -125,7 +137,7 @@ export default function StoriesList() {
 
   return (
     <>
-      <EditItemModal
+       <EditItemModal
         story={editingStory}
         isOpen={isEditModalOpen}
         onClose={() => {

@@ -13,13 +13,23 @@ export default function AdminDashboard() {
     categoriesCount: 0,
     latestUpload: null
   });
+  const [storiesKey, setStoriesKey] = useState(0);
+
+  
+  const handleDataChange = () => {
+    console.log('handleDataChange called');
+    setStoriesKey(prev => prev + 1);
+    fetchStats();
+  }
+
+  const fetchStats = async () => {
+    const response = await fetch('/api/stats');
+    const data = await response.json();
+
+    setStats(data);
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const response = await fetch('/api/stats');
-      const data = await response.json();
-      setStats(data);
-    };
     fetchStats();
   }, []);
 
@@ -64,7 +74,7 @@ export default function AdminDashboard() {
             <div className="grid gap-6">
               {/* Bulk Upload Section */}
               <section>
-                <BulkUpload />
+                <BulkUpload onUploadSuccess={handleDataChange}/>
               </section>
 
               {/* Stats Section */}
@@ -93,7 +103,13 @@ export default function AdminDashboard() {
               </section>
 
               <section className="mt-2 text-gray-600">
-                <StoriesList />
+                <StoriesList 
+                  key={storiesKey} 
+                  onDeleteSuccess={() => {
+                    console.log('Delete success callback triggered');
+                    handleDataChange();
+                  }}
+                />  
               </section>
             </div>
           </div>
