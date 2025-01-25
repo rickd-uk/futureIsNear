@@ -1,3 +1,6 @@
+// src/components/NewCard.tsx
+
+
 import React from 'react';
 import ExpandableText from './ExpandableText';
 
@@ -62,7 +65,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
                 rel="noopener noreferrer"
               >
                 <div className="relative">
-                  <ExpandableText text={title} maxLength={80} />
+                  <ExpandableText text={title} maxLength={100} />
                 </div>
               </a>
             </h2>

@@ -5,9 +5,10 @@ set -e  # Exit on error
 USER="rick"
 SERVER="139.162.81.209"
 PORT="2222"
-KEY_PATH="/home/rick/.ssh/LINODE"
-REMOTE_DIR="/var/www/test.futureisnear.xyz"
-APP_NAME="futureisnear-test"
+HOME_PATH="/home/rick"
+KEY_PATH="${HOME_PATH}/.ssh/LINODE"
+SITE="futureisnear"
+REMOTE_DIR="/var/www/${SITE}"
 
 # Required files
 REQUIRED_FILES=(".next" "package.json" "package-lock.json" "prisma" "next.config.ts")
@@ -57,7 +58,7 @@ echo "Creating ecosystem.config.cjs from .env..."
 cat > "$TEMP_DIR/ecosystem.config.cjs" << EOL
 module.exports = {
   apps: [{
-    name: 'futureisnear-test',
+    name: 'futureisnear',
     script: 'npm',
     args: 'start',
     env: {
@@ -94,8 +95,8 @@ ssh -p "$PORT" -i "$KEY_PATH" "$USER@$SERVER" "cd $REMOTE_DIR && \
     echo 'Running database migrations...' && \
     npx prisma migrate deploy --skip-generate || true && \
     echo 'Configuring PM2...' && \
-    if pm2 describe $APP_NAME > /dev/null 2>&1; then
-        pm2 delete $APP_NAME
+    if pm2 describe $SITE > /dev/null 2>&1; then
+        pm2 delete $SITE
     fi && \
     pm2 start ecosystem.config.cjs && \
     pm2 save"

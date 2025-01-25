@@ -1,3 +1,5 @@
+// src/types/index.ts
+
 export interface Story  {
   id: string;
   title: string;

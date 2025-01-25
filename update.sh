@@ -4,8 +4,10 @@
 USER="rick"
 SERVER="139.162.81.209"
 PORT="2222"
-KEY_PATH="/home/rick/.ssh/LINODE"
-REMOTE_DIR="/var/www/test.futureisnear.xyz"
+HOME_PATH="/home/rick"
+KEY_PATH="${HOME_PATH}/.ssh/LINODE"
+SITE="futureisnear"
+REMOTE_DIR="/var/www/${SITE}"
 
 # Start SSH agent and add your key
 eval $(ssh-agent -s)
@@ -34,7 +36,7 @@ echo "Updating server application..."
 ssh -t -p $PORT -i $KEY_PATH $USER@$SERVER "cd $REMOTE_DIR && \
     npm install --production && \
     npx prisma generate --schema=prisma/schema.prisma && \
-    pm2 restart futureisnear-test --update-env && \
+    pm2 restart futureisnear --update-env && \
     pm2 save"
 
 # Clean up the temporary directory

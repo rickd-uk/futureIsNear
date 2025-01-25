@@ -1,3 +1,5 @@
+// src/components/ResponsiveNav.tsx
+
 'use client';
 
 import React, {useState, useRef, useEffect, useCallback } from 'react';

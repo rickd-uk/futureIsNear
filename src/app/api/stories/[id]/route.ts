@@ -1,4 +1,5 @@
 // src/app/api/stories/[id]/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authMiddleware } from '@/lib/auth';

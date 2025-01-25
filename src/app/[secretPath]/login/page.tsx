@@ -1,3 +1,5 @@
+// src/app/[secretPath]/login/page.tsx
+
 'use client';
 
 import React, { useState } from 'react';

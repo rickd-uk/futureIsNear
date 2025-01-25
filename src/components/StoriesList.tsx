@@ -1,9 +1,12 @@
+// src/components/StoriesList.tsx
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import EditItemModal from './EditItemModal';
 import ExpandableText from './ExpandableText';
+import TruncatedText from './TruncatedText';
 import type { Story } from '@/types';
 
 interface StoriesListProps {
@@ -17,25 +20,44 @@ export default function StoriesList({ onDeleteSuccess }: StoriesListProps) {
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [fetchKey, setFetchKey] = useState(0);
+  const [fetchState, setFetchState] = useState<'idle' | 'fetching' | 'done'>('idle');
 
-  useEffect(() => {
-    fetchStories();
-  }, []);
-
-  const fetchStories = async () => {
+    const fetchStories = useCallback(async () => {
+    if (fetchState !== 'idle') return;
+  
+     setFetchState('fetching');
     try {
+      console.log('Fetching stories...');
       const response = await fetch('/api/stories');
       const result = await response.json();
 
+      console.log('Fetch response:', result);
       if (!response.ok) throw new Error(result.error || 'Failed to fetch stories');
       setStories(result.data || []);
+      setFetchState('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load stories');
+      setFetchState('done');
     } finally {
+      console.log('Before setting loading:', loading);
       setLoading(false);
+      console.log('After setting loading:', loading);
     }
-  };
+  }, [loading, fetchState]);
+
   
+
+
+  useEffect(() => {
+    if (fetchState !== 'idle') return; // Prevent re-triggering
+    console.log('useEffect triggered, fetching stories...');
+    setLoading(true); // Reset loading state
+    fetchStories();
+  }, [fetchKey, fetchStories, fetchState]);
+
+
+
   const handleEdit = (story: Story) => {
     setEditingStory(story);
     setIsEditModalOpen(true);
@@ -64,6 +86,7 @@ export default function StoriesList({ onDeleteSuccess }: StoriesListProps) {
     } else {
       console.log('onDeleteSuccess callback not provided'); // Debug log
     }
+    setFetchKey(prev => prev + 1);
     } catch (err) {
       alert('Error deleting stories');
       console.error('Delete all error:', err);
@@ -187,7 +210,7 @@ export default function StoriesList({ onDeleteSuccess }: StoriesListProps) {
                       <a href={story.url} target="_blank" rel="noopener noreferrer" 
                          className="hover:text-blue-600">
                         <div className="text-sm font-medium text-gray-900 mb-1">
-                          <ExpandableText text={story.title} maxLength={50} />
+                          <TruncatedText text={story.title} maxLength={25} />
                         </div> 
                       </a>
                     </div>
@@ -223,6 +246,9 @@ export default function StoriesList({ onDeleteSuccess }: StoriesListProps) {
                 </tr>
               ))}
             </tbody>
+
+   
+
           </table>
         </div>
       </div>

@@ -1,4 +1,5 @@
 // src/app/[secretPath]/dashboard/layout.tsx
+
 import { validateAuth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';

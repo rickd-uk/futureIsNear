@@ -1,4 +1,5 @@
 // src/app/[secretPath]/login/layout.tsx
+
 export default function LoginLayout({
   children,
 }: {
