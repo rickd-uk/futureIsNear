@@ -6,4 +6,5 @@ export type Story = {
   author: string;
   comments: number;
   timestamp: string;
+  favorited: boolean;
 }

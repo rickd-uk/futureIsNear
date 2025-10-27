@@ -4,8 +4,8 @@
 USER="rick"
 SERVER="139.162.81.209"
 PORT="2222"
-KEY_PATH="/home/rick/.ssh/LINODE"
-REMOTE_DIR="/var/www/test.futureisnear.xyz"
+KEY_PATH="/home/rick/.ssh/LN"
+REMOTE_DIR="/var/www/futureisnear"
 
 # Start SSH agent and add your key
 eval $(ssh-agent -s)
@@ -26,8 +26,8 @@ ssh -t -p $PORT -i $KEY_PATH $USER@$SERVER "sudo bash -c '\
 
 echo "Copying files to server..."
 rsync -avz -e "ssh -p $PORT -i $KEY_PATH" --delete \
-    $TEMP_DIR/ \
-    $USER@$SERVER:$REMOTE_DIR/
+  $TEMP_DIR/ \
+  $USER@$SERVER:$REMOTE_DIR/
 
 echo "Setting permissions and installing dependencies..."
 ssh -t -p $PORT -i $KEY_PATH $USER@$SERVER "cd $REMOTE_DIR && \
@@ -36,8 +36,8 @@ ssh -t -p $PORT -i $KEY_PATH $USER@$SERVER "cd $REMOTE_DIR && \
     npm install --production && \
     npx prisma generate && \
     npx prisma migrate deploy && \
-    pm2 describe futureisnear-test > /dev/null 2>&1 || pm2 start npm --name 'futureisnear-test' -- start && \
-    pm2 restart futureisnear-test --update-env && \
+    pm2 describe futureisnear > /dev/null 2>&1 || pm2 start npm --name 'futureisnear' -- start && \
+    pm2 restart futureisnear --update-env && \
     pm2 save"
 
 # Clean up temporary directory
@@ -47,4 +47,3 @@ rm -rf $TEMP_DIR
 ssh-agent -k
 
 echo "Deployment completed!"
-

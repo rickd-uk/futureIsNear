@@ -15,6 +15,6 @@ model Story {
   category  String
   author    String?  @default("Unknown Author")
   timestamp DateTime @default(now())
-
+  favorited Boolean  @default(false)
   @@index([category])
 }

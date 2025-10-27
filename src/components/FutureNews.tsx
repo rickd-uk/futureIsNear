@@ -14,6 +14,7 @@ interface Story {
   category: string;
   author: string;
   timestamp: string;
+  favorited: boolean;
 }
 
 const ITEMS_PER_PAGE = 20;
