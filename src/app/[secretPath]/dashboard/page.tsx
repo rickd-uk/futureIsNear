@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AddStoryModal from '@/components/AddStoryModal';
 import EditStoryModal from '@/components/EditStoryModal';
 import CSVUpload from '@/components/CSVUpload';
+import CategoryManagement from '@/components/CategoryManagement';
 
 interface Story {
   id: string;
@@ -130,6 +131,12 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* CSV Upload Section */}
         <CSVUpload onUploadComplete={handleStoryAdded} />
+
+        {/* Category Management Section */}
+        <CategoryManagement 
+          categories={categories} 
+          onCategoryUpdated={handleStoryAdded}
+        />
 
         {/* Stories Table */}
         <div className="bg-white rounded-lg shadow">
