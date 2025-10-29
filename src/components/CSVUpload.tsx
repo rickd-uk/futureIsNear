@@ -213,7 +213,7 @@ export default function CSVUpload({ onUploadComplete }: CSVUploadProps) {
             <li><strong>Separator:</strong> Use semicolon (;) to separate columns</li>
             <li><strong>Required fields:</strong> title, url, category</li>
             <li><strong>Optional fields:</strong> description, author</li>
-            <li><strong>Header row:</strong> First row can be headers (will be skipped if it contains "title")</li>
+            <li><strong>Header row:</strong> First row can be headers (will be skipped if it contains &quot;title&quot;)</li>
             <li><strong>Empty fields:</strong> Leave empty between semicolons for optional fields</li>
           </ul>
         </div>

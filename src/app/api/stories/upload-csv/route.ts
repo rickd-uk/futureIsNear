@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-interface CSVRow {
-  title: string;
-  url: string;
-  category: string;
-  description?: string;
-  author?: string;
-}
-
+// interface CSVRow {
+//   title: string;
+//   url: string;
+//   category: string;
+//   description?: string;
+//   author?: string;
+// }
+//
 interface UploadResult {
   success: boolean;
   title: string;

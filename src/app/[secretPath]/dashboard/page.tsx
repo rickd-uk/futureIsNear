@@ -58,12 +58,11 @@ export default function AdminDashboard() {
         setCategories(uniqueCategories as string[]);
         
         // Extract unique authors (filter out nulls)
-        const uniqueAuthors = [...new Set(
-          data
-            .map((s: Story) => s.author)
-            .filter((author): author is string => author !== null)
-        )];
-        setAuthors(uniqueAuthors);
+        const authorsFiltered = data
+          .map((s: Story) => s.author)
+          .filter((author: string | null): author is string => author !== null);
+        const uniqueAuthors = [...new Set<string>(authorsFiltered)]
+                setAuthors(uniqueAuthors);
       }
     } catch (error) {
       console.error('Failed to fetch categories and authors:', error);
@@ -153,7 +152,7 @@ export default function AdminDashboard() {
             </div>
           ) : stories.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              No stories yet. Click "Add Story" to create your first one.
+              No stories yet. Click &quot;Add Story&quot; to create your first one.
             </div>
           ) : (
             <div className="overflow-x-auto">

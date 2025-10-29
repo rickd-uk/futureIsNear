@@ -196,7 +196,7 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
               /* Delete Confirmation Mode */
               <div className="space-y-3">
                 <p className="text-sm text-gray-700 font-medium">
-                  Delete "{category}"?
+                  Delete &quot;{category}&quot;?
                 </p>
                 <label className="flex items-center space-x-2 text-sm text-gray-600">
                   <input
@@ -255,7 +255,7 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
 
       <p className="text-xs text-gray-500 mt-4">
         <strong>Note:</strong> Renaming a category will update all stories with that category. 
-        Deleting a category will either remove the stories or set them to "Uncategorized".
+        Deleting a category will either remove the stories or set them to &quot;Uncategorized&quot;.
       </p>
     </div>
   );

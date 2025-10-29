@@ -50,7 +50,7 @@ export default function StorySearch({ stories, onFilteredResults }: StorySearchP
       }
 
       // Prepare search query
-      let query = searchQuery;
+      const query = searchQuery;
       
       // Create regex pattern for whole words if needed
       let pattern: RegExp;
