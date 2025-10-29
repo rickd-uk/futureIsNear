@@ -80,11 +80,6 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteClick = async (story: Story) => {
-    // Show confirmation dialog
-    if (!confirm(`Are you sure you want to delete "${story.title}"? This action cannot be undone.`)) {
-      return;
-    }
-
     try {
       const response = await fetch(`/api/stories/${story.id}`, {
         method: 'DELETE',
@@ -93,8 +88,6 @@ export default function AdminDashboard() {
       if (response.ok) {
         // Refresh the stories list
         fetchStories();
-        // Show success message (optional)
-        alert('Story deleted successfully');
       } else {
         throw new Error('Failed to delete story');
       }
