@@ -14,8 +14,8 @@
     "clear-db": "ts-node scripts/clearDb.ts"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
+    "seed": "node prisma/seed.mjs"
+      },
   "dependencies": {
     "@prisma/client": "^6.18.0",
     "date-fns": "^4.1.0",

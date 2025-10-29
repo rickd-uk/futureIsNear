@@ -15,6 +15,18 @@ model Story {
   category  String
   author    String?  @default("Unknown Author")
   timestamp DateTime @default(now())
-  favorited Boolean  @default(false)
+  favorites Favorite[] 
   @@index([category])
 }
+
+model Favorite {
+  id  String  @id @default(cuid())
+  storyId   String
+  userId  String   // IP address or session ID for anonymous users
+  createdAt DateTime @default(now())
+
+  story Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@index([userId])
+  }
