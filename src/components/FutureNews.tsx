@@ -73,12 +73,10 @@ export default function FutureNews() {
 
     try {
       if (isFavorited) {
-        // Remove favorite
         await fetch(`/api/favorites?storyId=${storyId}`, {
           method: 'DELETE',
         });
       } else {
-        // Add favorite
         await fetch('/api/favorites', {
           method: 'POST',
           headers: {
@@ -89,7 +87,6 @@ export default function FutureNews() {
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
-      // Revert on error
       setFavorites(favorites);
     }
   };
@@ -280,87 +277,92 @@ export default function FutureNews() {
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="divide-y divide-gray-200">
-              {filteredStories.map((story) => (
-                <article
-                  key={story.id}
-                  className="p-6 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Favorite Star - Prominently positioned at the start */}
-                    <button
-                      onClick={() => toggleFavorite(story.id)}
-                      className="flex-shrink-0 mt-1 transition-all duration-200 hover:scale-110"
-                      title={favorites.has(story.id) ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      {favorites.has(story.id) ? (
-                        <svg className="w-7 h-7 text-yellow-400 drop-shadow" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-7 h-7 text-gray-300 hover:text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                      )}
-                    </button>
+              {filteredStories.map((story) => {
+                const isFavorited = favorites.has(story.id);
+                return (
+                  <article
+                    key={story.id}
+                    className="p-6 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* ⭐ FAVORITE STAR BUTTON - THIS WAS MISSING! */}
+                      <button
+                        onClick={() => toggleFavorite(story.id)}
+                        className="flex-shrink-0 pt-1"
+                        title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {isFavorited ? (
+                          // Filled yellow star
+                          <svg className="w-8 h-8 text-yellow-400 hover:text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ) : (
+                          // Empty gray star
+                          <svg className="w-8 h-8 text-gray-300 hover:text-yellow-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                          </svg>
+                        )}
+                      </button>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Title and Category */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
-                          {story.category}
-                        </span>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          <a
-                            href={story.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-blue-600 transition-colors"
-                          >
-                            {story.title}
-                          </a>
-                        </h2>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Title and Category */}
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+                            {story.category}
+                          </span>
+                          <h2 className="text-lg font-semibold text-gray-900">
+                            <a
+                              href={story.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-blue-600 transition-colors"
+                            >
+                              {story.title}
+                            </a>
+                          </h2>
+                        </div>
+
+                        {/* Description */}
+                        {story.description && (
+                          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                            {story.description}
+                          </p>
+                        )}
+
+                        {/* Metadata */}
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            {story.author || 'Unknown'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {new Date(story.timestamp).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Description */}
-                      {story.description && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                          {story.description}
-                        </p>
-                      )}
-
-                      {/* Metadata */}
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          {story.author || 'Unknown'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          {new Date(story.timestamp).toLocaleDateString()}
-                        </span>
-                      </div>
+                      {/* External Link Icon */}
+                      <a
+                        href={story.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors pt-1"
+                        title="Open in new tab"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
                     </div>
-
-                    {/* External Link Icon */}
-                    <a
-                      href={story.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors mt-1"
-                      title="Open in new tab"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </div>
         )}
