@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AddStoryModal from '@/components/AddStoryModal';
+import EditStoryModal from '@/components/EditStoryModal';
 
 interface Story {
   id: string;
@@ -15,13 +16,18 @@ interface Story {
 }
 
 export default function AdminDashboard() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     fetchStories();
+    fetchCategoriesAndAuthors();
   }, []);
 
   const fetchStories = async () => {
@@ -39,12 +45,67 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchCategoriesAndAuthors = async () => {
+    try {
+      const response = await fetch('/api/stories');
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Extract unique categories
+        const uniqueCategories = [...new Set(data.map((s: Story) => s.category))];
+        setCategories(uniqueCategories as string[]);
+        
+        // Extract unique authors (filter out nulls)
+        const uniqueAuthors = [...new Set(
+          data
+            .map((s: Story) => s.author)
+            .filter((author): author is string => author !== null)
+        )];
+        setAuthors(uniqueAuthors);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories and authors:', error);
+    }
+  };
+
   const handleStoryAdded = () => {
-    fetchStories(); // Refresh the stories list
+    fetchStories();
+    fetchCategoriesAndAuthors();
+  };
+
+  const handleEditClick = (story: Story) => {
+    setSelectedStory(story);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = async (story: Story) => {
+    // Show confirmation dialog
+    if (!confirm(`Are you sure you want to delete "${story.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/stories/${story.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh the stories list
+        fetchStories();
+        // Show success message (optional)
+        alert('Story deleted successfully');
+      } else {
+        throw new Error('Failed to delete story');
+      }
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      alert('Failed to delete story. Please try again.');
+    }
   };
 
   const handleLogout = () => {
-    // Add your logout logic here
+    // Clear auth token
+    localStorage.removeItem('admin_token');
     router.push('/');
   };
 
@@ -56,7 +117,7 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
           <div className="flex gap-3">
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsAddModalOpen(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium transition-colors"
             >
               + Add Story
@@ -143,10 +204,16 @@ export default function AdminDashboard() {
                         {new Date(story.timestamp).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button className="text-blue-600 hover:text-blue-800 mr-3">
+                        <button
+                          onClick={() => handleEditClick(story)}
+                          className="text-blue-600 hover:text-blue-800 mr-3 font-medium"
+                        >
                           Edit
                         </button>
-                        <button className="text-red-600 hover:text-red-800">
+                        <button
+                          onClick={() => handleDeleteClick(story)}
+                          className="text-red-600 hover:text-red-800 font-medium"
+                        >
                           Delete
                         </button>
                       </td>
@@ -161,9 +228,26 @@ export default function AdminDashboard() {
 
       {/* Add Story Modal */}
       <AddStoryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleStoryAdded}
+      />
+
+      {/* Edit Story Modal */}
+      <EditStoryModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedStory(null);
+        }}
+        onSuccess={() => {
+          fetchStories();
+          setIsEditModalOpen(false);
+          setSelectedStory(null);
+        }}
+        story={selectedStory}
+        categories={categories}
+        authors={authors}
       />
     </div>
   );
