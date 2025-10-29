@@ -13,10 +13,7 @@
     "db:seed": "prisma db seed",
     "clear-db": "ts-node scripts/clearDb.ts"
   },
-  "prisma": {
-    "seed": "node prisma/seed.mjs"
-      },
-  "dependencies": {
+    "dependencies": {
     "@prisma/client": "^6.18.0",
     "date-fns": "^4.1.0",
     "lodash": "^4.17.21",

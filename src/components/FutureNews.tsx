@@ -15,9 +15,14 @@ interface Story {
 
 export default function FutureNews() {
   const [allStories, setAllStories] = useState<Story[]>([]);
+  const [categoryFilteredStories, setCategoryFilteredStories] = useState<Story[]>([]);
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  
+  // Category/Tab states
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('All');
   
   // Search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,6 +43,13 @@ export default function FutureNews() {
       if (response.ok) {
         const data = await response.json();
         setAllStories(data);
+        
+        // Extract unique categories and add "All" at the beginning
+        const uniqueCategories = Array.from(new Set(data.map((s: Story) => s.category))) as string[];
+        setCategories(['All', ...uniqueCategories.sort()]);
+        
+        // Initially show all stories
+        setCategoryFilteredStories(data);
         setFilteredStories(data);
       }
     } catch (error) {
@@ -91,14 +103,27 @@ export default function FutureNews() {
     }
   };
 
-  // Filter stories whenever search parameters change
+  // Filter by category when active tab changes
+  useEffect(() => {
+    let filtered: Story[];
+    
+    if (activeTab === 'All') {
+      filtered = allStories;
+    } else {
+      filtered = allStories.filter(story => story.category === activeTab);
+    }
+    
+    setCategoryFilteredStories(filtered);
+  }, [activeTab, allStories]);
+
+  // Apply search filter on category-filtered stories
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setFilteredStories(allStories);
+      setFilteredStories(categoryFilteredStories);
       return;
     }
 
-    const filtered = allStories.filter((story) => {
+    const filtered = categoryFilteredStories.filter((story) => {
       const fieldsToSearch: string[] = [];
       
       if (searchInTitle && story.title) {
@@ -135,7 +160,7 @@ export default function FutureNews() {
     });
 
     setFilteredStories(filtered);
-  }, [searchQuery, searchInTitle, searchInDescription, caseSensitive, wholeWords, allStories]);
+  }, [searchQuery, searchInTitle, searchInDescription, caseSensitive, wholeWords, categoryFilteredStories]);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -144,12 +169,32 @@ export default function FutureNews() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Future News</h1>
-          <p className="text-gray-600 mt-1">Browse and search through our collection</p>
+      <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-white">FutureIsNear</h1>
         </div>
       </header>
+
+      {/* Category Tabs */}
+      <div className="bg-white shadow sticky top-16 z-40 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveTab(category)}
+                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors duration-200 ${
+                  activeTab === category
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -177,7 +222,7 @@ export default function FutureNews() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search stories..."
+                placeholder={`Search in ${activeTab === 'All' ? 'all categories' : activeTab}...`}
                 className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               />
               {searchQuery && (
@@ -251,17 +296,21 @@ export default function FutureNews() {
             </div>
 
             {/* Results Count */}
-            {searchQuery && (
-              <div className="text-sm text-gray-600">
-                {filteredStories.length > 0 ? (
+            <div className="text-sm text-gray-600">
+              {searchQuery ? (
+                filteredStories.length > 0 ? (
                   <span>
-                    Found <strong>{filteredStories.length}</strong> matching {filteredStories.length === 1 ? 'story' : 'stories'}
+                    Found <strong>{filteredStories.length}</strong> matching {filteredStories.length === 1 ? 'story' : 'stories'} in <strong>{activeTab}</strong>
                   </span>
                 ) : (
-                  <span className="text-red-600">No stories match your search</span>
-                )}
-              </div>
-            )}
+                  <span className="text-red-600">No stories match your search in {activeTab}</span>
+                )
+              ) : (
+                <span>
+                  Showing <strong>{categoryFilteredStories.length}</strong> {categoryFilteredStories.length === 1 ? 'story' : 'stories'} in <strong>{activeTab}</strong>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -272,7 +321,7 @@ export default function FutureNews() {
           </div>
         ) : filteredStories.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            No stories found.
+            {searchQuery ? 'No stories match your search.' : 'No stories found in this category.'}
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -285,7 +334,7 @@ export default function FutureNews() {
                     className="p-6 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-start gap-4">
-                      {/* ⭐ FAVORITE STAR BUTTON - THIS WAS MISSING! */}
+                      {/* Favorite Star Button */}
                       <button
                         onClick={() => toggleFavorite(story.id)}
                         className="flex-shrink-0 pt-1"
