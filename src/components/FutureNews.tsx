@@ -28,8 +28,12 @@ export default function FutureNews() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInTitle, setSearchInTitle] = useState(true);
   const [searchInDescription, setSearchInDescription] = useState(true);
+  const [searchInCategory, setSearchInCategory] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWords, setWholeWords] = useState(false);
+  
+  // Favorites filter
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   useEffect(() => {
     fetchStories();
@@ -118,49 +122,58 @@ export default function FutureNews() {
 
   // Apply search filter on category-filtered stories
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredStories(categoryFilteredStories);
-      return;
+    let result = categoryFilteredStories;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      result = result.filter((story) => {
+        const fieldsToSearch: string[] = [];
+        
+        if (searchInTitle && story.title) {
+          fieldsToSearch.push(story.title);
+        }
+        
+        if (searchInDescription && story.description) {
+          fieldsToSearch.push(story.description);
+        }
+        
+        if (searchInCategory && story.category) {
+          fieldsToSearch.push(story.category);
+        }
+
+        if (fieldsToSearch.length === 0) {
+          return false;
+        }
+
+        let pattern: RegExp;
+        
+        if (wholeWords) {
+          const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regexFlags = caseSensitive ? 'g' : 'gi';
+          pattern = new RegExp(`\\b${escapedQuery}\\b`, regexFlags);
+        } else {
+          const regexFlags = caseSensitive ? 'g' : 'gi';
+          const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          pattern = new RegExp(escapedQuery, regexFlags);
+        }
+
+        return fieldsToSearch.some((field) => {
+          if (wholeWords || !caseSensitive) {
+            return pattern.test(field);
+          } else {
+            return field.includes(searchQuery);
+          }
+        });
+      });
     }
 
-    const filtered = categoryFilteredStories.filter((story) => {
-      const fieldsToSearch: string[] = [];
-      
-      if (searchInTitle && story.title) {
-        fieldsToSearch.push(story.title);
-      }
-      
-      if (searchInDescription && story.description) {
-        fieldsToSearch.push(story.description);
-      }
+    // Apply favorites filter
+    if (showOnlyFavorites) {
+      result = result.filter(story => favorites.has(story.id));
+    }
 
-      if (fieldsToSearch.length === 0) {
-        return false;
-      }
-
-      let pattern: RegExp;
-      
-      if (wholeWords) {
-        const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regexFlags = caseSensitive ? 'g' : 'gi';
-        pattern = new RegExp(`\\b${escapedQuery}\\b`, regexFlags);
-      } else {
-        const regexFlags = caseSensitive ? 'g' : 'gi';
-        const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        pattern = new RegExp(escapedQuery, regexFlags);
-      }
-
-      return fieldsToSearch.some((field) => {
-        if (wholeWords || !caseSensitive) {
-          return pattern.test(field);
-        } else {
-          return field.includes(searchQuery);
-        }
-      });
-    });
-
-    setFilteredStories(filtered);
-  }, [searchQuery, searchInTitle, searchInDescription, caseSensitive, wholeWords, categoryFilteredStories]);
+    setFilteredStories(result);
+  }, [searchQuery, searchInTitle, searchInDescription, searchInCategory, caseSensitive, wholeWords, categoryFilteredStories, showOnlyFavorites, favorites]);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -266,6 +279,15 @@ export default function FutureNews() {
                   />
                   <span className="text-sm text-gray-700">Description</span>
                 </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={searchInCategory}
+                    onChange={(e) => setSearchInCategory(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  />
+                  <span className="text-sm text-gray-700">Category</span>
+                </label>
               </div>
 
               {/* Divider */}
@@ -293,6 +315,26 @@ export default function FutureNews() {
                   <span className="text-sm text-gray-700">Whole words</span>
                 </label>
               </div>
+
+              {/* Divider */}
+              <div className="border-l border-gray-300"></div>
+
+              {/* Favorites Filter */}
+              <div className="flex items-center">
+                <button
+                  onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    showOnlyFavorites
+                      ? 'bg-yellow-100 text-yellow-800 border-2 border-yellow-400'
+                      : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill={showOnlyFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                  </svg>
+                  <span>Show Only Favorites</span>
+                </button>
+              </div>
             </div>
 
             {/* Results Count */}
@@ -301,13 +343,22 @@ export default function FutureNews() {
                 filteredStories.length > 0 ? (
                   <span>
                     Found <strong>{filteredStories.length}</strong> matching {filteredStories.length === 1 ? 'story' : 'stories'} in <strong>{activeTab}</strong>
+                    {showOnlyFavorites && <span className="text-yellow-600"> (favorites only)</span>}
                   </span>
                 ) : (
-                  <span className="text-red-600">No stories match your search in {activeTab}</span>
+                  <span className="text-red-600">
+                    No stories match your search in {activeTab}
+                    {showOnlyFavorites && ' (favorites only)'}
+                  </span>
                 )
               ) : (
                 <span>
                   Showing <strong>{categoryFilteredStories.length}</strong> {categoryFilteredStories.length === 1 ? 'story' : 'stories'} in <strong>{activeTab}</strong>
+                  {showOnlyFavorites && (
+                    <>
+                      {' '}→ <strong>{filteredStories.length}</strong> {filteredStories.length === 1 ? 'favorite' : 'favorites'}
+                    </>
+                  )}
                 </span>
               )}
             </div>
