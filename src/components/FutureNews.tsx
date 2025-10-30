@@ -29,11 +29,16 @@ export default function FutureNews() {
   const [searchInTitle, setSearchInTitle] = useState(true);
   const [searchInDescription, setSearchInDescription] = useState(true);
   const [searchInCategory, setSearchInCategory] = useState(false);
+  const [searchInAuthor, setSearchInAuthor] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWords, setWholeWords] = useState(false);
   
   // Favorites filter
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  
+  // Sort states
+  const [sortField, setSortField] = useState<'date' | 'title'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     fetchStories();
@@ -140,6 +145,10 @@ export default function FutureNews() {
         if (searchInCategory && story.category) {
           fieldsToSearch.push(story.category);
         }
+        
+        if (searchInAuthor && story.author) {
+          fieldsToSearch.push(story.author);
+        }
 
         if (fieldsToSearch.length === 0) {
           return false;
@@ -172,8 +181,26 @@ export default function FutureNews() {
       result = result.filter(story => favorites.has(story.id));
     }
 
+    // Apply sorting
+    result = [...result].sort((a, b) => {
+      if (sortField === 'date') {
+        const dateA = new Date(a.timestamp).getTime();
+        const dateB = new Date(b.timestamp).getTime();
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      } else {
+        // Sort by title
+        const titleA = a.title.toLowerCase();
+        const titleB = b.title.toLowerCase();
+        if (sortDirection === 'asc') {
+          return titleA.localeCompare(titleB);
+        } else {
+          return titleB.localeCompare(titleA);
+        }
+      }
+    });
+
     setFilteredStories(result);
-  }, [searchQuery, searchInTitle, searchInDescription, searchInCategory, caseSensitive, wholeWords, categoryFilteredStories, showOnlyFavorites, favorites]);
+  }, [searchQuery, searchInTitle, searchInDescription, searchInCategory, searchInAuthor, caseSensitive, wholeWords, categoryFilteredStories, showOnlyFavorites, favorites, sortField, sortDirection]);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -295,6 +322,18 @@ export default function FutureNews() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
                 </label>
+                
+                <label className="flex items-center cursor-pointer group" title="Search in author">
+                  <input
+                    type="checkbox"
+                    checked={searchInAuthor}
+                    onChange={(e) => setSearchInAuthor(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  />
+                  <svg className="w-4 h-4 ml-1.5 text-gray-600 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </label>
               </div>
 
               {/* Divider */}
@@ -321,6 +360,59 @@ export default function FutureNews() {
                   />
                   <span className="ml-1.5 text-gray-600 group-hover:text-blue-600 font-mono text-xs">|ab|</span>
                 </label>
+              </div>
+
+              {/* Divider */}
+              <div className="border-l border-gray-300 h-6"></div>
+
+              {/* Sort Controls */}
+              <div className="flex items-center gap-1">
+                {/* Sort Field Toggle */}
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <button
+                    onClick={() => setSortField('date')}
+                    title="Sort by date"
+                    className={`px-2 py-1 text-xs transition-colors ${
+                      sortField === 'date'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setSortField('title')}
+                    title="Sort by title"
+                    className={`px-2 py-1 text-xs transition-colors ${
+                      sortField === 'title'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Sort Direction Toggle */}
+                <button
+                  onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+                  title={sortDirection === 'asc' ? 'Ascending (oldest/A-Z first)' : 'Descending (newest/Z-A first)'}
+                  className="px-2 py-1 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  {sortDirection === 'asc' ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                  )}
+                </button>
               </div>
 
               {/* Divider */}
@@ -361,6 +453,9 @@ export default function FutureNews() {
                     )}
                   </span>
                 )}
+                <span className="text-gray-400 ml-2">
+                  {sortField === 'date' ? '📅' : '🔤'} {sortDirection === 'asc' ? '↑' : '↓'}
+                </span>
               </div>
             </div>
           </div>
