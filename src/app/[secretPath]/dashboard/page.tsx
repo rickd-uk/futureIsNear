@@ -25,6 +25,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
+  const [selectedStories, setSelectedStories] = useState<Set<string>>(new Set());
+  const [showCategoryManagement, setShowCategoryManagement] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -72,6 +74,7 @@ export default function AdminDashboard() {
   const handleStoryAdded = () => {
     fetchStories();
     fetchCategoriesAndAuthors();
+    setSelectedStories(new Set()); // Clear selection after stories update
   };
 
   const handleEditClick = (story: Story) => {
@@ -80,45 +83,110 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteClick = async (story: Story) => {
+    console.log('handleDeleteClick called with story:', story);
+    
     try {
+      console.log('Sending DELETE request to:', `/api/stories/${story.id}`);
       const response = await fetch(`/api/stories/${story.id}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        // Refresh the stories list
-        fetchStories();
-      } else {
-        throw new Error('Failed to delete story');
+      console.log('Response received:', response.status, response.ok);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete story');
       }
+
+      // Success - refresh the list
+      console.log('Delete successful, refreshing stories...');
+      await fetchStories();
+      alert('Story deleted successfully!');
     } catch (error) {
       console.error('Error deleting story:', error);
-      alert('Failed to delete story. Please try again.');
+      alert(`Failed to delete story: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleSelectStory = (storyId: string) => {
+    const newSelected = new Set(selectedStories);
+    if (newSelected.has(storyId)) {
+      newSelected.delete(storyId);
+    } else {
+      newSelected.add(storyId);
+    }
+    setSelectedStories(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStories.size === stories.length && stories.length > 0) {
+      setSelectedStories(new Set());
+    } else {
+      setSelectedStories(new Set(stories.map(s => s.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    console.log('handleBulkDelete called with selection:', Array.from(selectedStories));
+    if (selectedStories.size === 0) {
+      alert('Please select at least one story to delete.');
+      return;
+    }
+
+    try {
+      console.log('Starting bulk delete for', selectedStories.size, 'stories');
+      // Delete all selected stories
+      const deletePromises = Array.from(selectedStories).map(async (storyId) => {
+        console.log('Deleting story:', storyId);
+        const response = await fetch(`/api/stories/${storyId}`, { 
+          method: 'DELETE' 
+        });
+        return { storyId, success: response.ok };
+      });
+
+      const results = await Promise.all(deletePromises);
+      console.log('Bulk delete results:', results);
+      const failedDeletes = results.filter(r => !r.success);
+
+      if (failedDeletes.length > 0) {
+        alert(
+          `Successfully deleted ${results.length - failedDeletes.length} stories.\n` +
+          `Failed to delete ${failedDeletes.length} stories.`
+        );
+      } else {
+        alert(`Successfully deleted ${results.length} ${results.length === 1 ? 'story' : 'stories'}!`);
+      }
+
+      // Clear selection and refresh
+      setSelectedStories(new Set());
+      await fetchStories();
+    } catch (error) {
+      console.error('Error during bulk delete:', error);
+      alert(`An error occurred while deleting stories: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleLogout = () => {
-    // Clear auth token
     localStorage.removeItem('admin_token');
     router.push('/');
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - Compact */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <div className="flex gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+          <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+          <div className="flex gap-2">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium transition-colors"
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
             >
               + Add Story
             </button>
             <button
               onClick={handleLogout}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 font-medium transition-colors"
+              className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-300 text-sm font-medium transition-colors"
             >
               Logout
             </button>
@@ -126,32 +194,69 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* CSV Upload Section */}
+      {/* Main Content - Compact */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+        {/* CSV Upload Section - Compact */}
         <CSVUpload onUploadComplete={handleStoryAdded} />
 
-        {/* Category Management Section */}
-        <CategoryManagement 
-          categories={categories} 
-          onCategoryUpdated={handleStoryAdded}
-        />
-
-        {/* Stories Table */}
+        {/* Category Management Section - Collapsible */}
         <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Stories</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Total: {stories.length} stories
-            </p>
+          <button
+            onClick={() => setShowCategoryManagement(!showCategoryManagement)}
+            className="w-full px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          >
+            <h2 className="text-base font-semibold text-gray-900">Manage Categories</h2>
+            <span className="text-gray-500">
+              {showCategoryManagement ? '▼' : '▶'}
+            </span>
+          </button>
+          {showCategoryManagement && (
+            <div className="px-4 pb-4 border-t border-gray-100">
+              <CategoryManagement 
+                categories={categories} 
+                onCategoryUpdated={handleStoryAdded}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedStories.size > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedStories.size} {selectedStories.size === 1 ? 'story' : 'stories'} selected
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Bulk delete clicked, selected:', selectedStories.size);
+                handleBulkDelete();
+              }}
+              type="button"
+              className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 text-sm font-medium transition-colors"
+            >
+              Delete Selected
+            </button>
+          </div>
+        )}
+
+        {/* Stories Table - Compact */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Stories</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Total: {stories.length} stories
+              </p>
+            </div>
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-6 text-center text-gray-500 text-sm">
               Loading stories...
             </div>
           ) : stories.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-6 text-center text-gray-500 text-sm">
               No stories yet. Click &quot;Add Story&quot; to create your first one.
             </div>
           ) : (
@@ -159,19 +264,27 @@ export default function AdminDashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedStories.size === stories.length && stories.length > 0}
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Author
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -179,7 +292,15 @@ export default function AdminDashboard() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {stories.slice(0, 20).map((story) => (
                     <tr key={story.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedStories.has(story.id)}
+                          onChange={() => handleSelectStory(story.id)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
                         <div className="text-sm">
                           <a
                             href={story.url}
@@ -190,36 +311,54 @@ export default function AdminDashboard() {
                             {story.title}
                           </a>
                           {story.description && (
-                            <p className="text-gray-500 text-xs mt-1 line-clamp-2">
+                            <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">
                               {story.description}
                             </p>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
                           {story.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                         {story.author || 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
                         {new Date(story.timestamp).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => handleEditClick(story)}
-                          className="text-blue-600 hover:text-blue-800 mr-3 font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(story)}
-                          className="text-red-600 hover:text-red-800 font-medium"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-4 py-2 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Edit clicked for story:', story.id);
+                              handleEditClick(story);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
+                            title="Edit story"
+                            type="button"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Delete clicked for story:', story.id);
+                              handleDeleteClick(story);
+                            }}
+                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+                            title="Delete story"
+                            type="button"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

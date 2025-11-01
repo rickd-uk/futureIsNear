@@ -25,7 +25,7 @@ export async function DELETE(
   }
 }
 
-export async function PUT(
+export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -33,24 +33,9 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     
-    const { title, url, category, description, author } = body;
-
-    if (!title || !url || !category) {
-      return NextResponse.json(
-        { error: 'Title, URL, and category are required' },
-        { status: 400 }
-      );
-    }
-
     const updatedStory = await prisma.story.update({
       where: { id },
-      data: {
-        title,
-        url,
-        category,
-        description: description || null,
-        author: author || null,
-      },
+      data: body,
     });
 
     return NextResponse.json(updatedStory);
