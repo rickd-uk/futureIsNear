@@ -22,18 +22,29 @@ export default function AdminDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
+  const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
   const [selectedStories, setSelectedStories] = useState<Set<string>>(new Set());
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
+  const [activeTab, setActiveTab] = useState('All');
   const router = useRouter();
 
   useEffect(() => {
     fetchStories();
     fetchCategoriesAndAuthors();
   }, []);
+
+  useEffect(() => {
+    // Filter stories based on active tab
+    if (activeTab === 'All') {
+      setFilteredStories(stories);
+    } else {
+      setFilteredStories(stories.filter(story => story.category === activeTab));
+    }
+  }, [activeTab, stories]);
 
   const fetchStories = async () => {
     try {
@@ -99,9 +110,10 @@ export default function AdminDashboard() {
         throw new Error(errorData.error || 'Failed to delete story');
       }
 
-      // Success - refresh the list
-      console.log('Delete successful, refreshing stories...');
+      // Success - refresh the list AND categories
+      console.log('Delete successful, refreshing stories and categories...');
       await fetchStories();
+      await fetchCategoriesAndAuthors();
       alert('Story deleted successfully!');
     } catch (error) {
       console.error('Error deleting story:', error);
@@ -120,10 +132,10 @@ export default function AdminDashboard() {
   };
 
   const handleSelectAll = () => {
-    if (selectedStories.size === stories.length && stories.length > 0) {
+    if (selectedStories.size === filteredStories.length && filteredStories.length > 0) {
       setSelectedStories(new Set());
     } else {
-      setSelectedStories(new Set(stories.map(s => s.id)));
+      setSelectedStories(new Set(filteredStories.map(s => s.id)));
     }
   };
 
@@ -158,9 +170,10 @@ export default function AdminDashboard() {
         alert(`Successfully deleted ${results.length} ${results.length === 1 ? 'story' : 'stories'}!`);
       }
 
-      // Clear selection and refresh
+      // Clear selection and refresh both stories and categories
       setSelectedStories(new Set());
       await fetchStories();
+      await fetchCategoriesAndAuthors();
     } catch (error) {
       console.error('Error during bulk delete:', error);
       alert(`An error occurred while deleting stories: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -401,6 +414,7 @@ export default function AdminDashboard() {
         }}
         onSuccess={() => {
           fetchStories();
+          fetchCategoriesAndAuthors();
           setIsEditModalOpen(false);
           setSelectedStory(null);
         }}

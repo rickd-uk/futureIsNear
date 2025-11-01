@@ -159,11 +159,25 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
     setError('');
 
     try {
-      // Create a dummy story with the new category to add it to the system
-      // Note: This is a workaround. You might want to add a proper API endpoint for adding categories
-      setSuccess(`Category "${newCategoryName.trim()}" will be available when you add a story with this category.`);
+      // Add category via API
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ categoryName: newCategoryName.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add category');
+      }
+
+      setSuccess(`Category "${newCategoryName.trim()}" added successfully!`);
       setIsAddingCategory(false);
       setNewCategoryName('');
+      onCategoryUpdated(); // This will refresh categories in parent
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
@@ -179,9 +193,12 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
       <div className="py-3">
         <button
           onClick={handleAddCategoryClick}
-          className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+          className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors"
+          title="Add Category"
         >
-          + Add Category
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
         </button>
         <p className="text-xs text-gray-500 mt-2">No categories yet. Add your first category!</p>
       </div>
@@ -195,9 +212,12 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
         <button
           onClick={handleAddCategoryClick}
           disabled={isAddingCategory}
-          className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors disabled:opacity-50"
+          className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+          title="Add Category"
         >
-          + Add Category
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
         </button>
       </div>
 
