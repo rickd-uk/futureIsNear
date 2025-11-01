@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [authors, setAuthors] = useState<string[]>([]);
   const [selectedStories, setSelectedStories] = useState<Set<string>>(new Set());
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
+  const [showCsvUpload, setShowCsvUpload] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -195,23 +196,38 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main Content - Compact */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
-        {/* CSV Upload Section - Compact */}
-        <CSVUpload onUploadComplete={handleStoryAdded} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+        {/* CSV Upload Section - Collapsible */}
+        <div className="bg-white rounded-lg shadow">
+          <button
+            onClick={() => setShowCsvUpload(!showCsvUpload)}
+            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          >
+            <h2 className="text-sm font-semibold text-gray-900">CSV Upload</h2>
+            <span className="text-gray-500 text-sm">
+              {showCsvUpload ? '▼' : '▶'}
+            </span>
+          </button>
+          {showCsvUpload && (
+            <div className="px-4 pb-3 border-t border-gray-100">
+              <CSVUpload onUploadComplete={handleStoryAdded} />
+            </div>
+          )}
+        </div>
 
         {/* Category Management Section - Collapsible */}
         <div className="bg-white rounded-lg shadow">
           <button
             onClick={() => setShowCategoryManagement(!showCategoryManagement)}
-            className="w-full px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
           >
-            <h2 className="text-base font-semibold text-gray-900">Manage Categories</h2>
-            <span className="text-gray-500">
+            <h2 className="text-sm font-semibold text-gray-900">Manage Categories</h2>
+            <span className="text-gray-500 text-sm">
               {showCategoryManagement ? '▼' : '▶'}
             </span>
           </button>
           {showCategoryManagement && (
-            <div className="px-4 pb-4 border-t border-gray-100">
+            <div className="px-4 pb-3 border-t border-gray-100">
               <CategoryManagement 
                 categories={categories} 
                 onCategoryUpdated={handleStoryAdded}
