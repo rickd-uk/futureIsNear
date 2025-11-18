@@ -114,7 +114,6 @@ export default function AdminDashboard() {
       console.log('Delete successful, refreshing stories and categories...');
       await fetchStories();
       await fetchCategoriesAndAuthors();
-      alert('Story deleted successfully!');
     } catch (error) {
       console.error('Error deleting story:', error);
       alert(`Failed to delete story: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -166,8 +165,6 @@ export default function AdminDashboard() {
           `Successfully deleted ${results.length - failedDeletes.length} stories.\n` +
           `Failed to delete ${failedDeletes.length} stories.`
         );
-      } else {
-        alert(`Successfully deleted ${results.length} ${results.length === 1 ? 'story' : 'stories'}!`);
       }
 
       // Clear selection and refresh both stories and categories
