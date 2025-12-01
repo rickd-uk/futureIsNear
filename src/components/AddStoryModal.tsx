@@ -1,6 +1,7 @@
-'use client';
+// src/components/AddStoryModal.tsx
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from "react";
 
 interface AddStoryModalProps {
   isOpen: boolean;
@@ -8,118 +9,112 @@ interface AddStoryModalProps {
   onSuccess: () => void;
 }
 
-interface Author {
-  name: string;
-}
+export default function AddStoryModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: AddStoryModalProps) {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
 
-const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    url: '',
-    category: '',
-    description: '',
-    author: '',
+    title: "",
+    url: "",
+    category: "",
+    description: "",
+    author: "",
+    publicationMonth: currentMonth,
+    publicationYear: currentYear,
   });
-  const [categories, setCategories] = useState<string[]>([]);
-  const [authors, setAuthors] = useState<Author[]>([]);
-  const [filteredAuthors, setFilteredAuthors] = useState<Author[]>([]);
-  const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
-  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [newCategory, setNewCategory] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const authorInputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState("");
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCategories();
-      fetchAuthors();
-    }
-  }, [isOpen]);
+  // Available categories - in a real app, these would come from props or API
+  const categories = [
+    "AI",
+    "Robotics",
+    "Space",
+    "Materials",
+    "Quantum",
+    "Technology",
+  ];
 
-  useEffect(() => {
-    if (formData.author.length >= 2) {
-      const filtered = authors.filter(author =>
-        author.name.toLowerCase().includes(formData.author.toLowerCase())
-      );
-      setFilteredAuthors(filtered);
-      setShowAuthorSuggestions(filtered.length > 0);
-    } else {
-      setShowAuthorSuggestions(false);
-    }
-  }, [formData.author, authors]);
+  // Month options
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories');
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch categories:', err);
-    }
-  };
+  // Generate year options (current year and 10 years back)
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
-  const fetchAuthors = async () => {
-    try {
-      const response = await fetch('/api/authors');
-      if (response.ok) {
-        const data = await response.json();
-        setAuthors(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch authors:', err);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        name === "publicationMonth" || name === "publicationYear"
+          ? parseInt(value)
+          : value,
+    }));
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    if (value === '__new__') {
+    if (value === "__new__") {
       setShowNewCategoryInput(true);
-      setFormData(prev => ({ ...prev, category: '' }));
+      setFormData((prev) => ({ ...prev, category: "" }));
     } else {
+      setFormData((prev) => ({ ...prev, category: value }));
       setShowNewCategoryInput(false);
-      setFormData(prev => ({ ...prev, category: value }));
     }
   };
 
-  const handleNewCategoryAdd = () => {
+  const handleNewCategorySubmit = () => {
     if (newCategory.trim()) {
-      setCategories(prev => [...prev, newCategory.trim()]);
-      setFormData(prev => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory('');
+      setFormData((prev) => ({ ...prev, category: newCategory.trim() }));
+      setNewCategory("");
       setShowNewCategoryInput(false);
     }
-  };
-
-  const selectAuthor = (authorName: string) => {
-    setFormData(prev => ({ ...prev, author: authorName }));
-    setShowAuthorSuggestions(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    if (!formData.title.trim() || !formData.url.trim() || !formData.category.trim()) {
-      setError('Please fill in all required fields');
+    if (
+      !formData.title.trim() ||
+      !formData.url.trim() ||
+      !formData.category.trim()
+    ) {
+      setError("Please fill in all required fields");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/stories/create', {
-        method: 'POST',
+      const response = await fetch("/api/stories/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title: formData.title.trim(),
@@ -127,28 +122,32 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
           category: formData.category.trim(),
           description: formData.description.trim() || undefined,
           author: formData.author.trim() || undefined,
+          publicationMonth: formData.publicationMonth,
+          publicationYear: formData.publicationYear,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create story');
+        throw new Error("Failed to create story");
       }
 
       // Reset form
       setFormData({
-        title: '',
-        url: '',
-        category: '',
-        description: '',
-        author: '',
+        title: "",
+        url: "",
+        category: "",
+        description: "",
+        author: "",
+        publicationMonth: currentMonth,
+        publicationYear: currentYear,
       });
       setShowNewCategoryInput(false);
-      setNewCategory('');
-      
+      setNewCategory("");
+
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create story');
+      setError(err instanceof Error ? err.message : "Failed to create story");
     } finally {
       setIsSubmitting(false);
     }
@@ -179,7 +178,10 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
 
           {/* Title - Required */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -195,7 +197,10 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
 
           {/* URL - Required */}
           <div>
-            <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="url"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               URL <span className="text-red-500">*</span>
             </label>
             <input
@@ -211,7 +216,10 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
 
           {/* Category - Required */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Category <span className="text-red-500">*</span>
             </label>
             {!showNewCategoryInput ? (
@@ -224,10 +232,12 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
-                <option value="__new__">+ Create New Category</option>
+                <option value="__new__">+ Add new category</option>
               </select>
             ) : (
               <div className="flex gap-2">
@@ -237,11 +247,10 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="Enter new category name"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  autoFocus
                 />
                 <button
                   type="button"
-                  onClick={handleNewCategoryAdd}
+                  onClick={handleNewCategorySubmit}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
                   Add
@@ -250,7 +259,7 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
                   type="button"
                   onClick={() => {
                     setShowNewCategoryInput(false);
-                    setNewCategory('');
+                    setNewCategory("");
                   }}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
@@ -260,70 +269,108 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
             )}
           </div>
 
+          {/* Publication Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Publication Date
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="publicationMonth"
+                  className="block text-xs text-gray-600 mb-1"
+                >
+                  Month
+                </label>
+                <select
+                  id="publicationMonth"
+                  name="publicationMonth"
+                  value={formData.publicationMonth}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="publicationYear"
+                  className="block text-xs text-gray-600 mb-1"
+                >
+                  Year
+                </label>
+                <select
+                  id="publicationYear"
+                  name="publicationYear"
+                  value={formData.publicationYear}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Description - Optional */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description <span className="text-gray-400 text-xs">(optional)</span>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Description
             </label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows={3}
+              rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              placeholder="Optional description"
             />
           </div>
 
-          {/* Author - Optional with Autocomplete */}
-          <div className="relative">
-            <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
-              Author <span className="text-gray-400 text-xs">(optional)</span>
+          {/* Author - Optional */}
+          <div>
+            <label
+              htmlFor="author"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Author
             </label>
             <input
-              ref={authorInputRef}
               type="text"
               id="author"
               name="author"
               value={formData.author}
               onChange={handleInputChange}
-              onFocus={() => {
-                if (formData.author.length >= 2 && filteredAuthors.length > 0) {
-                  setShowAuthorSuggestions(true);
-                }
-              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-              placeholder="Start typing to see suggestions..."
+              placeholder="Optional author name"
             />
-            {showAuthorSuggestions && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                {filteredAuthors.map((author, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => selectAuthor(author.name)}
-                    className="w-full text-left px-3 py-2 hover:bg-blue-50 text-gray-900 border-b border-gray-100 last:border-b-0"
-                  >
-                    {author.name}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Submit Buttons */}
+          {/* Submit Button */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Adding Story...' : 'Add Story'}
+              {isSubmitting ? "Adding Story..." : "Add Story"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Cancel
             </button>
@@ -332,6 +379,4 @@ const AddStoryModal: React.FC<AddStoryModalProps> = ({ isOpen, onClose, onSucces
       </div>
     </div>
   );
-};
-
-export default AddStoryModal;
+}

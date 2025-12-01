@@ -1,36 +1,46 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+// src/app/api/stories/create/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { title, url, category, description, author } = body;
+    const {
+      title,
+      url,
+      description,
+      category,
+      author,
+      publicationMonth,
+      publicationYear,
+    } = await request.json();
 
     // Validate required fields
-    if (!title?.trim() || !url?.trim() || !category?.trim()) {
+    if (!title || !url || !category) {
       return NextResponse.json(
-        { error: 'Title, URL, and category are required' },
-        { status: 400 }
+        { error: "Title, URL, and category are required" },
+        { status: 400 },
       );
     }
 
-    // Create the story
     const newStory = await prisma.story.create({
       data: {
-        title: title.trim(),
-        url: url.trim(),
-        category: category.trim(),
-        description: description?.trim() || null,
-        author: author?.trim() || null,
+        title,
+        url,
+        description: description || null,
+        category,
+        author: author || "Unknown Author",
+        timestamp: new Date(),
+        publicationMonth: publicationMonth || null,
+        publicationYear: publicationYear || null,
       },
     });
 
     return NextResponse.json(newStory, { status: 201 });
   } catch (error) {
-    console.error('Failed to create story:', error);
+    console.error("Error creating story:", error);
     return NextResponse.json(
-      { error: 'Failed to create story' },
-      { status: 500 }
+      { error: "Failed to create story" },
+      { status: 500 },
     );
   }
 }
