@@ -141,13 +141,10 @@ export default function AdminDashboard() {
   };
 
   const handleSelectAll = () => {
-    if (
-      selectedStories.size === filteredStories.length &&
-      filteredStories.length > 0
-    ) {
+    if (selectedStories.size === stories.length && stories.length > 0) {
       setSelectedStories(new Set());
     } else {
-      setSelectedStories(new Set(filteredStories.map((s) => s.id)));
+      setSelectedStories(new Set(stories.map((s) => s.id)));
     }
   };
 
