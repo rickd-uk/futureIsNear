@@ -34,7 +34,15 @@ export async function PATCH(
     const body = await request.json();
 
     // only include valid story fields
-    const updateData: any = {};
+    const updateData: {
+      title?: string;
+      url?: string;
+      category?: string;
+      description?: string | null;
+      author?: string | null;
+      publicationMonth?: number | null;
+      publicationYear?: number | null;
+    } = {};
 
     if (body.title !== undefined) updateData.title = body.title;
     if (body.url !== undefined) updateData.url = body.url;
