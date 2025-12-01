@@ -1,41 +1,44 @@
 // src/components/CategoryManagement.tsx
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface CategoryManagementProps {
   categories: string[];
   onCategoryUpdated: () => void;
 }
 
-export default function CategoryManagement({ categories, onCategoryUpdated }: CategoryManagementProps) {
+export default function CategoryManagement({
+  categories,
+  onCategoryUpdated,
+}: CategoryManagementProps) {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [newName, setNewName] = useState('');
+  const [newName, setNewName] = useState("");
   const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
   const [deleteAssociatedStories, setDeleteAssociatedStories] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const handleRenameClick = (category: string) => {
     setEditingCategory(category);
     setNewName(category);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setIsAddingCategory(false);
   };
 
   const handleCancelRename = () => {
     setEditingCategory(null);
-    setNewName('');
-    setError('');
+    setNewName("");
+    setError("");
   };
 
   const handleRenameSubmit = async (oldName: string) => {
     if (!newName.trim()) {
-      setError('Category name cannot be empty');
+      setError("Category name cannot be empty");
       return;
     }
 
@@ -45,32 +48,39 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
     }
 
     setIsProcessing(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`/api/categories/${encodeURIComponent(oldName)}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/categories/${encodeURIComponent(oldName)}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ newName: newName.trim() }),
         },
-        body: JSON.stringify({ newName: newName.trim() }),
-      });
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to rename category');
+        throw new Error(data.error || "Failed to rename category");
       }
 
-      setSuccess(`Category renamed successfully. ${data.updatedCount} stories updated.`);
+      setSuccess(
+        `Category renamed successfully. ${data.updatedCount} stories updated.`,
+      );
       setEditingCategory(null);
-      setNewName('');
+      setNewName("");
       onCategoryUpdated();
 
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to rename category');
+      setError(
+        err instanceof Error ? err.message : "Failed to rename category",
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -79,40 +89,47 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
   const handleDeleteClick = (category: string) => {
     setDeletingCategory(category);
     setDeleteAssociatedStories(false);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setIsAddingCategory(false);
   };
 
   const handleCancelDelete = () => {
     setDeletingCategory(null);
     setDeleteAssociatedStories(false);
-    setError('');
+    setError("");
   };
 
   const handleDeleteConfirm = async (categoryName: string) => {
     setIsProcessing(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`/api/categories/${encodeURIComponent(categoryName)}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/categories/${encodeURIComponent(categoryName)}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ deleteStories: deleteAssociatedStories }),
         },
-        body: JSON.stringify({ deleteStories: deleteAssociatedStories }),
-      });
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete category');
+        throw new Error(data.error || "Failed to delete category");
       }
 
       if (deleteAssociatedStories) {
-        setSuccess(`Category deleted and ${data.deletedStoriesCount} associated stories removed.`);
+        setSuccess(
+          `Category deleted and ${data.deletedStoriesCount} associated stories removed.`,
+        );
       } else {
-        setSuccess(`Category removed from ${data.updatedStoriesCount} stories (set to "Uncategorized").`);
+        setSuccess(
+          `Category removed from ${data.updatedStoriesCount} stories (set to "Uncategorized").`,
+        );
       }
 
       setDeletingCategory(null);
@@ -120,9 +137,11 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
       onCategoryUpdated();
 
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete category');
+      setError(
+        err instanceof Error ? err.message : "Failed to delete category",
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -130,40 +149,40 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
 
   const handleAddCategoryClick = () => {
     setIsAddingCategory(true);
-    setNewCategoryName('');
-    setError('');
-    setSuccess('');
+    setNewCategoryName("");
+    setError("");
+    setSuccess("");
     setEditingCategory(null);
     setDeletingCategory(null);
   };
 
   const handleCancelAdd = () => {
     setIsAddingCategory(false);
-    setNewCategoryName('');
-    setError('');
+    setNewCategoryName("");
+    setError("");
   };
 
   const handleAddCategorySubmit = async () => {
     if (!newCategoryName.trim()) {
-      setError('Category name cannot be empty');
+      setError("Category name cannot be empty");
       return;
     }
 
     // Check if category already exists
     if (categories.includes(newCategoryName.trim())) {
-      setError('Category already exists');
+      setError("Category already exists");
       return;
     }
 
     setIsProcessing(true);
-    setError('');
+    setError("");
 
     try {
       // Add category via API
-      const response = await fetch('/api/categories', {
-        method: 'POST',
+      const response = await fetch("/api/categories", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ categoryName: newCategoryName.trim() }),
       });
@@ -171,18 +190,18 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to add category');
+        throw new Error(data.error || "Failed to add category");
       }
 
       setSuccess(`Category "${newCategoryName.trim()}" added successfully!`);
       setIsAddingCategory(false);
-      setNewCategoryName('');
+      setNewCategoryName("");
       onCategoryUpdated(); // This will refresh categories in parent
-      
+
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add category');
+      setError(err instanceof Error ? err.message : "Failed to add category");
     } finally {
       setIsProcessing(false);
     }
@@ -196,11 +215,23 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
           className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors"
           title="Add Category"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
         </button>
-        <p className="text-xs text-gray-500 mt-2">No categories yet. Add your first category!</p>
+        <p className="text-xs text-gray-500 mt-2">
+          No categories yet. Add your first category!
+        </p>
       </div>
     );
   }
@@ -215,8 +246,18 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
           className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
           title="Add Category"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
         </button>
       </div>
@@ -225,8 +266,16 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
       {success && (
         <div className="mb-3 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-md text-sm">
           <div className="flex items-center">
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
             </svg>
             <span>{success}</span>
           </div>
@@ -237,8 +286,16 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
       {error && (
         <div className="mb-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">
           <div className="flex items-center">
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
             </svg>
             <span>{error}</span>
           </div>
@@ -264,7 +321,7 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
                 disabled={isProcessing}
                 className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
               >
-                {isProcessing ? 'Adding...' : 'Add'}
+                {isProcessing ? "Adding..." : "Add"}
               </button>
               <button
                 onClick={handleCancelAdd}
@@ -303,7 +360,7 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
                     disabled={isProcessing}
                     className="flex-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {isProcessing ? 'Saving...' : 'Save'}
+                    {isProcessing ? "Saving..." : "Save"}
                   </button>
                   <button
                     onClick={handleCancelRename}
@@ -324,7 +381,9 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
                   <input
                     type="checkbox"
                     checked={deleteAssociatedStories}
-                    onChange={(e) => setDeleteAssociatedStories(e.target.checked)}
+                    onChange={(e) =>
+                      setDeleteAssociatedStories(e.target.checked)
+                    }
                     disabled={isProcessing}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
@@ -336,7 +395,7 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
                     disabled={isProcessing}
                     className="flex-1 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 disabled:opacity-50"
                   >
-                    {isProcessing ? 'Deleting...' : 'Delete'}
+                    {isProcessing ? "Deleting..." : "Delete"}
                   </button>
                   <button
                     onClick={handleCancelDelete}
@@ -360,8 +419,18 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
                     title="Rename category"
                     type="button"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                   </button>
                   <button
@@ -370,8 +439,18 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
                     title="Delete category"
                     type="button"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -382,7 +461,8 @@ export default function CategoryManagement({ categories, onCategoryUpdated }: Ca
       </div>
 
       <p className="text-xs text-gray-500 mt-3">
-        <strong>Note:</strong> Renaming updates all stories. Deleting removes or sets stories to &quot;Uncategorized&quot;.
+        <strong>Note:</strong> Renaming updates all stories. Deleting removes or
+        sets stories to &quot;Uncategorized&quot;.
       </p>
     </div>
   );
