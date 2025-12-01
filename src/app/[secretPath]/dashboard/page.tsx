@@ -24,7 +24,6 @@ export default function AdminDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
-  const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
@@ -33,24 +32,12 @@ export default function AdminDashboard() {
   );
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
-  const [activeTab, setActiveTab] = useState("All");
   const router = useRouter();
 
   useEffect(() => {
     fetchStories();
     fetchCategoriesAndAuthors();
   }, []);
-
-  useEffect(() => {
-    // Filter stories based on active tab
-    if (activeTab === "All") {
-      setFilteredStories(stories);
-    } else {
-      setFilteredStories(
-        stories.filter((story) => story.category === activeTab),
-      );
-    }
-  }, [activeTab, stories]);
 
   const fetchStories = async () => {
     try {
