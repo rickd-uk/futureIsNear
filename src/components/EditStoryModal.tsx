@@ -1,7 +1,8 @@
 // src/components/EditStoryModal.tsx
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import PublicationDate from "./PublicationDate";
 
 interface Story {
   id: string;
@@ -10,6 +11,8 @@ interface Story {
   category: string;
   author: string | null;
   description: string | null;
+  publicationMonth?: number | null;
+  publicationYear?: number | null;
 }
 
 interface EditStoryModalProps {
@@ -29,48 +32,80 @@ export default function EditStoryModal({
   categories,
   authors,
 }: EditStoryModalProps) {
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
   const [formData, setFormData] = useState({
-    title: '',
-    url: '',
-    category: '',
-    description: '',
-    author: '',
+    title: "",
+    url: "",
+    category: "",
+    description: "",
+    author: "",
+    publicationMonth: currentMonth,
+    publicationYear: currentYear,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState("");
   const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
   // Update form when story changes
   useEffect(() => {
     if (story) {
       setFormData({
-        title: story.title || '',
-        url: story.url || '',
-        category: story.category || '',
-        description: story.description || '',
-        author: story.author || '',
+        title: story.title || "",
+        url: story.url || "",
+        category: story.category || "",
+        description: story.description || "",
+        author: story.author || "",
+        publicationMonth: story.publicationMonth || currentMonth,
+        publicationYear: story.publicationYear || currentYear,
       });
     }
-  }, [story]);
+  }, [story, currentMonth, currentYear]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        name === "publicationMonth" || name === "publicationYear"
+          ? parseInt(value)
+          : value,
+    }));
 
-    if (name === 'author') {
+    if (name === "author") {
       setShowAuthorSuggestions(value.length > 0);
     }
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    if (value === '__new__') {
+    if (value === "__new__") {
       setShowNewCategoryInput(true);
-      setFormData((prev) => ({ ...prev, category: '' }));
+      setFormData((prev) => ({ ...prev, category: "" }));
     } else {
       setFormData((prev) => ({ ...prev, category: value }));
       setShowNewCategoryInput(false);
@@ -80,7 +115,7 @@ export default function EditStoryModal({
   const handleNewCategorySubmit = () => {
     if (newCategory.trim()) {
       setFormData((prev) => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory('');
+      setNewCategory("");
       setShowNewCategoryInput(false);
     }
   };
@@ -91,20 +126,24 @@ export default function EditStoryModal({
   };
 
   const filteredAuthors = authors.filter((author) =>
-    author.toLowerCase().includes(formData.author.toLowerCase())
+    author.toLowerCase().includes(formData.author.toLowerCase()),
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    if (!formData.title.trim() || !formData.url.trim() || !formData.category.trim()) {
-      setError('Please fill in all required fields');
+    if (
+      !formData.title.trim() ||
+      !formData.url.trim() ||
+      !formData.category.trim()
+    ) {
+      setError("Please fill in all required fields");
       return;
     }
 
     if (!story) {
-      setError('Story not found');
+      setError("Story not found");
       return;
     }
 
@@ -112,9 +151,9 @@ export default function EditStoryModal({
 
     try {
       const response = await fetch(`/api/stories/${story.id}`, {
-        method: 'PUT',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title: formData.title.trim(),
@@ -122,17 +161,19 @@ export default function EditStoryModal({
           category: formData.category.trim(),
           description: formData.description.trim() || undefined,
           author: formData.author.trim() || undefined,
+          PublicationMonth: formData.publicationMonth,
+          PublicationYear: formData.publicationYear,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update story');
+        throw new Error("Failed to update story");
       }
 
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update story');
+      setError(err instanceof Error ? err.message : "Failed to update story");
     } finally {
       setIsSubmitting(false);
     }
@@ -163,7 +204,10 @@ export default function EditStoryModal({
 
           {/* Title - Required */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -179,7 +223,10 @@ export default function EditStoryModal({
 
           {/* URL - Required */}
           <div>
-            <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="url"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               URL <span className="text-red-500">*</span>
             </label>
             <input
@@ -195,7 +242,10 @@ export default function EditStoryModal({
 
           {/* Category - Required */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Category <span className="text-red-500">*</span>
             </label>
             {!showNewCategoryInput ? (
@@ -235,7 +285,7 @@ export default function EditStoryModal({
                   type="button"
                   onClick={() => {
                     setShowNewCategoryInput(false);
-                    setNewCategory('');
+                    setNewCategory("");
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
@@ -245,9 +295,63 @@ export default function EditStoryModal({
             )}
           </div>
 
+          {/* Publication Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Publication Date
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="publicationMonth"
+                  className="block text-xs text-gray-600 mb-1"
+                >
+                  Month
+                </label>
+                <select
+                  id="publicationMonth"
+                  name="publicationMonth"
+                  value={formData.publicationMonth}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="publicationYear"
+                  className="block text-xs text-gray-600 mb-1"
+                >
+                  Year
+                </label>
+                <select
+                  id="publicationYear"
+                  name="publicationYear"
+                  value={formData.publicationYear}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Description - Optional */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Description
             </label>
             <textarea
@@ -262,7 +366,10 @@ export default function EditStoryModal({
 
           {/* Author - Optional with Autocomplete */}
           <div className="relative">
-            <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="author"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Author
             </label>
             <input
@@ -271,8 +378,12 @@ export default function EditStoryModal({
               name="author"
               value={formData.author}
               onChange={handleInputChange}
-              onFocus={() => setShowAuthorSuggestions(formData.author.length > 0)}
-              onBlur={() => setTimeout(() => setShowAuthorSuggestions(false), 200)}
+              onFocus={() =>
+                setShowAuthorSuggestions(formData.author.length > 0)
+              }
+              onBlur={() =>
+                setTimeout(() => setShowAuthorSuggestions(false), 200)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               placeholder="Start typing to see suggestions..."
             />
@@ -299,7 +410,7 @@ export default function EditStoryModal({
               disabled={isSubmitting}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              {isSubmitting ? 'Updating...' : 'Update Story'}
+              {isSubmitting ? "Updating..." : "Update Story"}
             </button>
             <button
               type="button"
