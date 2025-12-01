@@ -446,6 +446,7 @@ export default function AdminDashboard() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleStoryAdded}
+        categories={categories}
       />
 
       {/* Edit Story Modal */}

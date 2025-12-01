@@ -5,11 +5,11 @@ export async function GET() {
   try {
     // Get all unique categories from stories
     const stories = await prisma.story.findMany({
-      where: {
-        NOT: {
-          author: "__SYSTEM__",
-        },
-      },
+      // where: {
+      //   NOT: {
+      //     author: "__SYSTEM__",
+      //   },
+      // },
       select: {
         category: true,
       },

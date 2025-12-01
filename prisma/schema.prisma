@@ -7,6 +7,12 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model Story {
   id        String   @id @default(cuid())
   title     String

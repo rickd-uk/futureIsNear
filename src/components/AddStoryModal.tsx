@@ -5,12 +5,14 @@ import React, { useState } from "react";
 
 interface AddStoryModalProps {
   isOpen: boolean;
+  categories: string[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
 export default function AddStoryModal({
   isOpen,
+  categories,
   onClose,
   onSuccess,
 }: AddStoryModalProps) {
@@ -33,14 +35,14 @@ export default function AddStoryModal({
   const [newCategory, setNewCategory] = useState("");
 
   // Available categories - in a real app, these would come from props or API
-  const categories = [
-    "AI",
-    "Robotics",
-    "Space",
-    "Materials",
-    "Quantum",
-    "Technology",
-  ];
+  // const categories = [
+  //   "AI",
+  //   "Robotics",
+  //   "Space",
+  //   "Materials",
+  //   "Quantum",
+  //   "Technology",
+  // ];
 
   // Month options
   const months = [
@@ -237,7 +239,7 @@ export default function AddStoryModal({
                     {cat}
                   </option>
                 ))}
-                <option value="__new__">+ Add new category</option>
+                {/* <option value="__new__">+ Add new category</option> */}
               </select>
             ) : (
               <div className="flex gap-2">
