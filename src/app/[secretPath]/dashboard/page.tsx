@@ -69,23 +69,19 @@ export default function AdminDashboard() {
 
   const fetchCategoriesAndAuthors = async () => {
     try {
-      const response = await fetch("/api/stories");
-      if (response.ok) {
-        const data = await response.json();
+      // Fetch categories from API (already filters __SYSTEM__)
+      const catResponse = await fetch("/api/categories");
+      const categories = await catResponse.json();
+      setCategories(categories);
 
-        // Extract unique categories
-        const uniqueCategories = [
-          ...new Set(data.map((s: Story) => s.category)),
-        ];
-        setCategories(uniqueCategories as string[]);
-
-        // Extract unique authors (filter out nulls)
-        const authorsFiltered = data
-          .map((s: Story) => s.author)
-          .filter((author: string | null): author is string => author !== null);
-        const uniqueAuthors = [...new Set<string>(authorsFiltered)];
-        setAuthors(uniqueAuthors);
-      }
+      // Fetch authors from stories
+      const storiesResponse = await fetch("/api/stories");
+      const data = await storiesResponse.json();
+      const authorsFiltered = data
+        .map((s: Story) => s.author)
+        .filter((author: string | null): author is string => author !== null);
+      const uniqueAuthors = [...new Set<string>(authorsFiltered)];
+      setAuthors(uniqueAuthors);
     } catch (error) {
       console.error("Failed to fetch categories and authors:", error);
     }
