@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 // interface CSVRow {
 //   title: string;
@@ -16,25 +17,26 @@ interface UploadResult {
 }
 
 export async function POST(request: Request) {
+  // CHECK AUTH FIRST!
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
   try {
     const body = await request.json();
     const { csvContent } = body;
 
-    if (!csvContent || typeof csvContent !== 'string') {
+    if (!csvContent || typeof csvContent !== "string") {
       return NextResponse.json(
-        { error: 'CSV content is required' },
-        { status: 400 }
+        { error: "CSV content is required" },
+        { status: 400 },
       );
     }
 
     // Parse CSV with semicolon separator
-    const lines = csvContent.trim().split('\n');
-    
+    const lines = csvContent.trim().split("\n");
+
     if (lines.length === 0) {
-      return NextResponse.json(
-        { error: 'CSV file is empty' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "CSV file is empty" }, { status: 400 });
     }
 
     const results: UploadResult[] = [];
@@ -44,14 +46,14 @@ export async function POST(request: Request) {
 
     // Check if first line is a header (contains "title")
     const firstLine = lines[0].toLowerCase();
-    if (firstLine.includes('title') && firstLine.includes('url')) {
+    if (firstLine.includes("title") && firstLine.includes("url")) {
       startIndex = 1; // Skip header row
     }
 
     // Process each line
     for (let i = startIndex; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // Skip empty lines
       if (!line) {
         continue;
@@ -59,27 +61,28 @@ export async function POST(request: Request) {
 
       try {
         // Parse CSV line with semicolon separator
-        const columns = line.split(';').map(col => col.trim());
-        
+        const columns = line.split(";").map((col) => col.trim());
+
         // Validate minimum required fields
         if (columns.length < 3) {
           results.push({
             success: false,
             title: columns[0] || `Row ${i + 1}`,
-            message: 'Missing required fields (need at least: title, url, category)',
+            message:
+              "Missing required fields (need at least: title, url, category)",
           });
           failureCount++;
           continue;
         }
 
-        const [title, url, category, description = '', author = ''] = columns;
+        const [title, url, category, description = "", author = ""] = columns;
 
         // Validate required fields
         if (!title) {
           results.push({
             success: false,
             title: `Row ${i + 1}`,
-            message: 'Title is required',
+            message: "Title is required",
           });
           failureCount++;
           continue;
@@ -89,7 +92,7 @@ export async function POST(request: Request) {
           results.push({
             success: false,
             title: title,
-            message: 'URL is required',
+            message: "URL is required",
           });
           failureCount++;
           continue;
@@ -99,7 +102,7 @@ export async function POST(request: Request) {
           results.push({
             success: false,
             title: title,
-            message: 'Category is required',
+            message: "Category is required",
           });
           failureCount++;
           continue;
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
           results.push({
             success: false,
             title: title,
-            message: 'Invalid URL format',
+            message: "Invalid URL format",
           });
           failureCount++;
           continue;
@@ -133,12 +136,12 @@ export async function POST(request: Request) {
         results.push({
           success: true,
           title: title,
-          message: 'Successfully added',
+          message: "Successfully added",
         });
         successCount++;
-
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
         results.push({
           success: false,
           title: `Row ${i + 1}`,
@@ -154,15 +157,14 @@ export async function POST(request: Request) {
       failureCount,
       totalProcessed: successCount + failureCount,
     });
-
   } catch (error) {
-    console.error('Error processing CSV:', error);
+    console.error("Error processing CSV:", error);
     return NextResponse.json(
-      { 
-        error: 'Failed to process CSV file',
-        details: error instanceof Error ? error.message : 'Unknown error'
+      {
+        error: "Failed to process CSV file",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

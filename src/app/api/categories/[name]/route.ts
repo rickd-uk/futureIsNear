@@ -1,21 +1,26 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 // Rename a category
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ name: string }> }
+  { params }: { params: Promise<{ name: string }> },
 ) {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const { name } = await params;
     const decodedName = decodeURIComponent(name);
     const body = await request.json();
     const { newName } = body;
 
-    if (!newName || typeof newName !== 'string' || !newName.trim()) {
+    if (!newName || typeof newName !== "string" || !newName.trim()) {
       return NextResponse.json(
-        { error: 'New category name is required' },
-        { status: 400 }
+        { error: "New category name is required" },
+        { status: 400 },
       );
     }
 
@@ -28,8 +33,8 @@ export async function PUT(
 
     if (existingStories.length === 0) {
       return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
+        { error: "Category not found" },
+        { status: 404 },
       );
     }
 
@@ -45,14 +50,14 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      message: 'Category renamed successfully',
+      message: "Category renamed successfully",
       updatedCount: result.count,
     });
   } catch (error) {
-    console.error('Error renaming category:', error);
+    console.error("Error renaming category:", error);
     return NextResponse.json(
-      { error: 'Failed to rename category' },
-      { status: 500 }
+      { error: "Failed to rename category" },
+      { status: 500 },
     );
   }
 }
@@ -60,8 +65,11 @@ export async function PUT(
 // Delete a category
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ name: string }> }
+  { params }: { params: Promise<{ name: string }> },
 ) {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
   try {
     const { name } = await params;
     const decodedName = decodeURIComponent(name);
@@ -78,7 +86,7 @@ export async function DELETE(
 
       return NextResponse.json({
         success: true,
-        message: 'Category and associated stories deleted',
+        message: "Category and associated stories deleted",
         deletedStoriesCount: result.count,
       });
     } else {
@@ -88,21 +96,21 @@ export async function DELETE(
           category: decodedName,
         },
         data: {
-          category: 'Uncategorized',
+          category: "Uncategorized",
         },
       });
 
       return NextResponse.json({
         success: true,
-        message: 'Category removed, stories set to Uncategorized',
+        message: "Category removed, stories set to Uncategorized",
         updatedStoriesCount: result.count,
       });
     }
   } catch (error) {
-    console.error('Error deleting category:', error);
+    console.error("Error deleting category:", error);
     return NextResponse.json(
-      { error: 'Failed to delete category' },
-      { status: 500 }
+      { error: "Failed to delete category" },
+      { status: 500 },
     );
   }
 }

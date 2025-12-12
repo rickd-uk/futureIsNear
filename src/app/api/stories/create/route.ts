@@ -1,8 +1,14 @@
 // src/app/api/stories/create/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  // CHECK AUTHENTICATION FIRST!
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const {
       title,

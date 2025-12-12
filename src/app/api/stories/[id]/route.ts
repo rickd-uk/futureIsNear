@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // CHECK AUTHENTICATION FIRST!
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const { id } = await params;
 
@@ -29,6 +35,11 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // CHECK AUTHENTICATION FIRST!
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
   try {
     const { id } = await params;
     const body = await request.json();
