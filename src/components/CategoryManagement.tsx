@@ -51,12 +51,14 @@ export default function CategoryManagement({
     setError("");
 
     try {
+      const token = localStorage.getItem("admin_token");
       const response = await fetch(
         `/api/categories/${encodeURIComponent(oldName)}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ newName: newName.trim() }),
         },
@@ -105,12 +107,14 @@ export default function CategoryManagement({
     setError("");
 
     try {
+      const token = localStorage.getItem("admin_token");
       const response = await fetch(
         `/api/categories/${encodeURIComponent(categoryName)}`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ deleteStories: deleteAssociatedStories }),
         },
@@ -179,10 +183,12 @@ export default function CategoryManagement({
 
     try {
       // Add category via API
+      const token = localStorage.getItem("admin_token");
       const response = await fetch("/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ categoryName: newCategoryName.trim() }),
       });

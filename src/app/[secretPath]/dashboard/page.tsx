@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AddStoryModal from "@/components/AddStoryModal";
@@ -35,6 +34,13 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.push("/qwertyuiop123/login");
+    }
+  }, [router]);
+
+  useEffect(() => {
     fetchStories();
     fetchCategoriesAndAuthors();
   }, []);
@@ -56,12 +62,10 @@ export default function AdminDashboard() {
 
   const fetchCategoriesAndAuthors = async () => {
     try {
-      // Fetch categories from API (already filters __SYSTEM__)
       const catResponse = await fetch("/api/categories");
       const categories = await catResponse.json();
       setCategories(categories);
 
-      // Fetch authors from stories
       const storiesResponse = await fetch("/api/stories");
       const data = await storiesResponse.json();
       const authorsFiltered = data
@@ -77,7 +81,7 @@ export default function AdminDashboard() {
   const handleStoryAdded = () => {
     fetchStories();
     fetchCategoriesAndAuthors();
-    setSelectedStories(new Set()); // Clear selection after stories update
+    setSelectedStories(new Set());
   };
 
   const handleEditClick = (story: Story) => {
@@ -87,21 +91,29 @@ export default function AdminDashboard() {
 
   const handleDeleteClick = async (story: Story) => {
     console.log("handleDeleteClick called with story:", story);
-
     try {
+      const token = localStorage.getItem("admin_token");
       console.log("Sending DELETE request to:", `/api/stories/${story.id}`);
       const response = await fetch(`/api/stories/${story.id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       console.log("Response received:", response.status, response.ok);
+
+      if (response.status === 401) {
+        localStorage.removeItem("admin_token");
+        alert("Session expired. Please login again.");
+        router.push("/qwertyuiop123/login");
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to delete story");
       }
 
-      // Success - refresh the list AND categories
       console.log("Delete successful, refreshing stories and categories...");
       await fetchStories();
       await fetchCategoriesAndAuthors();
@@ -142,14 +154,26 @@ export default function AdminDashboard() {
     }
 
     try {
+      const token = localStorage.getItem("admin_token");
       console.log("Starting bulk delete for", selectedStories.size, "stories");
-      // Delete all selected stories
+
       const deletePromises = Array.from(selectedStories).map(
         async (storyId) => {
           console.log("Deleting story:", storyId);
           const response = await fetch(`/api/stories/${storyId}`, {
             method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           });
+
+          if (response.status === 401) {
+            localStorage.removeItem("admin_token");
+            alert("Session expired. Please login again.");
+            router.push("/qwertyuiop123/login");
+            return { storyId, success: false };
+          }
+
           return { storyId, success: response.ok };
         },
       );
@@ -165,7 +189,6 @@ export default function AdminDashboard() {
         );
       }
 
-      // Clear selection and refresh both stories and categories
       setSelectedStories(new Set());
       await fetchStories();
       await fetchCategoriesAndAuthors();
@@ -179,7 +202,7 @@ export default function AdminDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
-    router.push("/");
+    router.push("/qwertyuiop123/login");
   };
 
   return (
@@ -282,7 +305,6 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-
           {loading ? (
             <div className="p-6 text-center text-gray-500 text-sm">
               Loading stories...
