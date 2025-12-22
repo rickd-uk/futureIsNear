@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
-import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 // Get user identifier (IP address for now)
 async function getUserId() {
@@ -39,11 +38,8 @@ export async function GET() {
   }
 }
 
-// POST - Add a favorite
+// POST - Add a favorite (NO AUTH REQUIRED - public feature)
 export async function POST(request: Request) {
-  if (!checkAuth(request)) {
-    return unauthorizedResponse();
-  }
   try {
     const userId = await getUserId();
     const body = await request.json();
@@ -94,11 +90,8 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE - Remove a favorite
+// DELETE - Remove a favorite (NO AUTH REQUIRED - public feature)
 export async function DELETE(request: Request) {
-  if (!checkAuth(request)) {
-    return unauthorizedResponse();
-  }
   try {
     const userId = await getUserId();
     const { searchParams } = new URL(request.url);
