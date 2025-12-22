@@ -18,8 +18,10 @@ export async function GET() {
 
     const authors = stories
       .map((story: { author: string | null }) => ({ name: story.author! }))
-      .filter((author) => author.name !== "Unknown Author")
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .filter((author: { name: string }) => author.name !== "Unknown Author")
+      .sort((a: { name: string }, b: { name: string }) =>
+        a.name.localeCompare(b.name),
+      );
 
     return NextResponse.json(authors);
   } catch (error) {
