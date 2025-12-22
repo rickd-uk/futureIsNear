@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
       select: {
         author: true,
       },
-      distinct: ['author'],
+      distinct: ["author"],
       where: {
         author: {
           not: null,
@@ -17,16 +17,16 @@ export async function GET() {
     });
 
     const authors = stories
-      .map(story => ({ name: story.author! }))
-      .filter(author => author.name !== 'Unknown Author')
+      .map((story: { author: string | null }) => ({ name: story.author! }))
+      .filter((author) => author.name !== "Unknown Author")
       .sort((a, b) => a.name.localeCompare(b.name));
 
     return NextResponse.json(authors);
   } catch (error) {
-    console.error('Failed to fetch authors:', error);
+    console.error("Failed to fetch authors:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch authors' },
-      { status: 500 }
+      { error: "Failed to fetch authors" },
+      { status: 500 },
     );
   }
 }
