@@ -14,10 +14,8 @@ const handle = app.getRequestHandler();
 // Custom Morgan token for Tokyo timezone
 morgan.token("tokyo-date", function () {
   const now = new Date();
-  // Convert to Tokyo time (UTC+9)
   const tokyoTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
 
-  // Format: [20/Dec/2025:16:54:04 +0900]
   const day = String(tokyoTime.getUTCDate()).padStart(2, "0");
   const months = [
     "Jan",
@@ -42,13 +40,23 @@ morgan.token("tokyo-date", function () {
   return `[${day}/${month}/${year}:${hours}:${minutes}:${seconds} +0900]`;
 });
 
-// Custom format using Tokyo time
+// Custom token to get real IP from X-Forwarded-For header
+morgan.token("real-ip", function (req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    // X-Forwarded-For can be comma-separated, get the first (original client) IP
+    return forwarded.split(",")[0].trim();
+  }
+  return req.connection.remoteAddress || req.socket.remoteAddress;
+});
+
+// Custom format using Tokyo time and real IP
 const tokyoFormat =
-  ':remote-addr - - :tokyo-date ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"';
+  ':real-ip - - :tokyo-date ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"';
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
-    // Morgan with Tokyo timezone
+    // Morgan with Tokyo timezone and real IP from X-Forwarded-For
     morgan(tokyoFormat)(req, res, () => {});
 
     const parsedUrl = parse(req.url, true);
