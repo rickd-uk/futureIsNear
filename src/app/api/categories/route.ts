@@ -18,7 +18,7 @@ export async function GET() {
     });
 
     const categories = stories
-      .map((story) => story.category)
+      .map((story: { category: string | null }) => story.category)
       .filter(Boolean)
       .sort();
 

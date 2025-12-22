@@ -27,7 +27,7 @@ export async function GET() {
       },
     });
 
-    const favoriteIds = favorites.map((f) => f.storyId);
+    const favoriteIds = favorites.map((f: { storyId: string }) => f.storyId);
 
     return NextResponse.json({ favoriteIds });
   } catch (error) {
