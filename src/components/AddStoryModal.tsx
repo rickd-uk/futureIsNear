@@ -113,10 +113,12 @@ export default function AddStoryModal({
     setIsSubmitting(true);
 
     try {
+      const token = localStorage.getItem("admin_token");
       const response = await fetch("/api/stories/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: formData.title.trim(),

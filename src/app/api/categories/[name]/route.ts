@@ -10,34 +10,29 @@ export async function PUT(
   if (!checkAuth(request)) {
     return unauthorizedResponse();
   }
-
   try {
     const { name } = await params;
     const decodedName = decodeURIComponent(name);
     const body = await request.json();
     const { newName } = body;
-
     if (!newName || typeof newName !== "string" || !newName.trim()) {
       return NextResponse.json(
         { error: "New category name is required" },
         { status: 400 },
       );
     }
-
     // Check if the new category name already exists
     const existingStories = await prisma.story.findMany({
       where: {
         category: decodedName,
       },
     });
-
     if (existingStories.length === 0) {
       return NextResponse.json(
         { error: "Category not found" },
         { status: 404 },
       );
     }
-
     // Update all stories with the old category name to the new name
     const result = await prisma.story.updateMany({
       where: {
@@ -47,7 +42,6 @@ export async function PUT(
         category: newName.trim(),
       },
     });
-
     return NextResponse.json({
       success: true,
       message: "Category renamed successfully",
@@ -83,17 +77,28 @@ export async function DELETE(
           category: decodedName,
         },
       });
-
       return NextResponse.json({
         success: true,
         message: "Category and associated stories deleted",
         deletedStoriesCount: result.count,
       });
     } else {
-      // Set category to "Uncategorized" for all stories with this category
+      // Delete placeholder stories for this category
+      await prisma.story.deleteMany({
+        where: {
+          category: decodedName,
+          author: "__SYSTEM__",
+          title: { startsWith: "__PLACEHOLDER__" },
+        },
+      });
+
+      // Set category to "Uncategorized" for real stories only
       const result = await prisma.story.updateMany({
         where: {
           category: decodedName,
+          NOT: {
+            author: "__SYSTEM__",
+          },
         },
         data: {
           category: "Uncategorized",

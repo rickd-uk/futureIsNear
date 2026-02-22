@@ -45,8 +45,6 @@ export default function EditStoryModal({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
   const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
 
   const months = [
@@ -101,23 +99,9 @@ export default function EditStoryModal({
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === "__new__") {
-      setShowNewCategoryInput(true);
-      setFormData((prev) => ({ ...prev, category: "" }));
-    } else {
-      setFormData((prev) => ({ ...prev, category: value }));
-      setShowNewCategoryInput(false);
-    }
+      setFormData((prev) => ({ ...prev, category: e.target.value }));
   };
 
-  const handleNewCategorySubmit = () => {
-    if (newCategory.trim()) {
-      setFormData((prev) => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory("");
-      setShowNewCategoryInput(false);
-    }
-  };
 
   const selectAuthor = (authorName: string) => {
     setFormData((prev) => ({ ...prev, author: authorName }));
@@ -149,10 +133,12 @@ export default function EditStoryModal({
     setIsSubmitting(true);
 
     try {
+      const token = localStorage.getItem("admin_token");
       const response = await fetch(`/api/stories/${story.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: formData.title.trim(),
@@ -240,14 +226,13 @@ export default function EditStoryModal({
           </div>
 
           {/* Category - Required */}
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Category <span className="text-red-500">*</span>
-            </label>
-            {!showNewCategoryInput ? (
+            <div>
+              <label
+                htmlFor="category"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Category <span className="text-red-500">*</span>
+              </label>
               <select
                 id="category"
                 name="category"
@@ -262,37 +247,8 @@ export default function EditStoryModal({
                     {cat}
                   </option>
                 ))}
-                <option value="__new__">+ Add new category</option>
               </select>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="Enter new category"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                />
-                <button
-                  type="button"
-                  onClick={handleNewCategorySubmit}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewCategoryInput(false);
-                    setNewCategory("");
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
+            </div>
 
           {/* Publication Date */}
           <div>
