@@ -99,9 +99,8 @@ export default function EditStoryModal({
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setFormData((prev) => ({ ...prev, category: e.target.value }));
+    setFormData((prev) => ({ ...prev, category: e.target.value }));
   };
-
 
   const selectAuthor = (authorName: string) => {
     setFormData((prev) => ({ ...prev, author: authorName }));
@@ -138,7 +137,7 @@ export default function EditStoryModal({
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: formData.title.trim(),
@@ -146,8 +145,8 @@ export default function EditStoryModal({
           category: formData.category.trim(),
           description: formData.description.trim() || undefined,
           author: formData.author.trim() || undefined,
-          PublicationMonth: formData.publicationMonth,
-          PublicationYear: formData.publicationYear,
+          publicationMonth: formData.publicationMonth,
+          publicationYear: formData.publicationYear,
         }),
       });
 
@@ -226,29 +225,29 @@ export default function EditStoryModal({
           </div>
 
           {/* Category - Required */}
-            <div>
-              <label
-                htmlFor="category"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleCategoryChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                required
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Category <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleCategoryChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              required
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Publication Date */}
           <div>
