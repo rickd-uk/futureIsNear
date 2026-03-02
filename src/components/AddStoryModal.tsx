@@ -1,11 +1,12 @@
 // src/components/AddStoryModal.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 interface AddStoryModalProps {
   isOpen: boolean;
   categories: string[];
+  authors: string[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -13,11 +14,12 @@ interface AddStoryModalProps {
 export default function AddStoryModal({
   isOpen,
   categories,
+  authors,
   onClose,
   onSuccess,
 }: AddStoryModalProps) {
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
+  const currentMonth = new Date().getMonth() + 1;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -28,23 +30,11 @@ export default function AddStoryModal({
     publicationMonth: currentMonth,
     publicationYear: currentYear,
   });
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
+  const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
+  const authorInputRef = useRef<HTMLInputElement>(null);
 
-  // Available categories - in a real app, these would come from props or API
-  // const categories = [
-  //   "AI",
-  //   "Robotics",
-  //   "Space",
-  //   "Materials",
-  //   "Quantum",
-  //   "Technology",
-  // ];
-
-  // Month options
   const months = [
     { value: 1, label: "January" },
     { value: 2, label: "February" },
@@ -60,7 +50,6 @@ export default function AddStoryModal({
     { value: 12, label: "December" },
   ];
 
-  // Generate year options (current year and 10 years back)
   const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
   const handleInputChange = (
@@ -76,26 +65,22 @@ export default function AddStoryModal({
           ? parseInt(value)
           : value,
     }));
-  };
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === "__new__") {
-      setShowNewCategoryInput(true);
-      setFormData((prev) => ({ ...prev, category: "" }));
-    } else {
-      setFormData((prev) => ({ ...prev, category: value }));
-      setShowNewCategoryInput(false);
+    if (name === "author") {
+      setShowAuthorSuggestions(true);
     }
   };
 
-  const handleNewCategorySubmit = () => {
-    if (newCategory.trim()) {
-      setFormData((prev) => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory("");
-      setShowNewCategoryInput(false);
-    }
+  const selectAuthor = (authorName: string) => {
+    setFormData((prev) => ({ ...prev, author: authorName }));
+    setShowAuthorSuggestions(false);
   };
+
+  const filteredAuthors =
+    formData.author.length === 0
+      ? authors
+      : authors.filter((author) =>
+          author.toLowerCase().includes(formData.author.toLowerCase()),
+        );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +120,6 @@ export default function AddStoryModal({
         throw new Error("Failed to create story");
       }
 
-      // Reset form
       setFormData({
         title: "",
         url: "",
@@ -145,8 +129,6 @@ export default function AddStoryModal({
         publicationMonth: currentMonth,
         publicationYear: currentYear,
       });
-      setShowNewCategoryInput(false);
-      setNewCategory("");
 
       onSuccess();
       onClose();
@@ -180,7 +162,7 @@ export default function AddStoryModal({
             </div>
           )}
 
-          {/* Title - Required */}
+          {/* Title */}
           <div>
             <label
               htmlFor="title"
@@ -194,12 +176,12 @@ export default function AddStoryModal({
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
-          {/* URL - Required */}
+          {/* URL */}
           <div>
             <label
               htmlFor="url"
@@ -213,12 +195,12 @@ export default function AddStoryModal({
               name="url"
               value={formData.url}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
-          {/* Category - Required */}
+          {/* Category */}
           <div>
             <label
               htmlFor="category"
@@ -226,51 +208,21 @@ export default function AddStoryModal({
             >
               Category <span className="text-red-500">*</span>
             </label>
-            {!showNewCategoryInput ? (
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleCategoryChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                required
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-                {/* <option value="__new__">+ Add new category</option> */}
-              </select>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="Enter new category name"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                />
-                <button
-                  type="button"
-                  onClick={handleNewCategorySubmit}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewCategoryInput(false);
-                    setNewCategory("");
-                  }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Publication Date */}
@@ -324,7 +276,7 @@ export default function AddStoryModal({
             </div>
           </div>
 
-          {/* Description - Optional */}
+          {/* Description */}
           <div>
             <label
               htmlFor="description"
@@ -338,13 +290,13 @@ export default function AddStoryModal({
               value={formData.description}
               onChange={handleInputChange}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               placeholder="Optional description"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
-          {/* Author - Optional */}
-          <div>
+          {/* Author with partial search */}
+          <div className="relative">
             <label
               htmlFor="author"
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -352,17 +304,52 @@ export default function AddStoryModal({
               Author
             </label>
             <input
+              ref={authorInputRef}
               type="text"
               id="author"
               name="author"
               value={formData.author}
               onChange={handleInputChange}
+              onFocus={() => setShowAuthorSuggestions(true)}
+              onBlur={() =>
+                setTimeout(() => setShowAuthorSuggestions(false), 150)
+              }
+              autoComplete="off"
+              placeholder="Type to search authors..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-              placeholder="Optional author name"
             />
+            {showAuthorSuggestions && filteredAuthors.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                {filteredAuthors.slice(0, 10).map((author, index) => {
+                  const query = formData.author.toLowerCase();
+                  const idx =
+                    query.length > 0 ? author.toLowerCase().indexOf(query) : -1;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onMouseDown={() => selectAuthor(author)}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 text-gray-900 text-sm border-b border-gray-100 last:border-0"
+                    >
+                      {idx >= 0 ? (
+                        <>
+                          {author.slice(0, idx)}
+                          <span className="font-semibold text-blue-600">
+                            {author.slice(idx, idx + formData.author.length)}
+                          </span>
+                          {author.slice(idx + formData.author.length)}
+                        </>
+                      ) : (
+                        author
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
@@ -374,7 +361,7 @@ export default function AddStoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             >
               Cancel
             </button>

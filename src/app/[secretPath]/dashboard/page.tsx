@@ -5,6 +5,7 @@ import AddStoryModal from "@/components/AddStoryModal";
 import EditStoryModal from "@/components/EditStoryModal";
 import CSVUpload from "@/components/CSVUpload";
 import CategoryManagement from "@/components/CategoryManagement";
+import AuthorManagement from "@/components/AuthorManagement";
 
 interface Story {
   id: string;
@@ -30,6 +31,7 @@ export default function AdminDashboard() {
     new Set(),
   );
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
+  const [showAuthorManagement, setShowAuthorManagement] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const router = useRouter();
 
@@ -66,13 +68,9 @@ export default function AdminDashboard() {
       const categories = await catResponse.json();
       setCategories(categories);
 
-      const storiesResponse = await fetch("/api/stories");
-      const data = await storiesResponse.json();
-      const authorsFiltered = data
-        .map((s: Story) => s.author)
-        .filter((author: string | null): author is string => author !== null);
-      const uniqueAuthors = [...new Set<string>(authorsFiltered)];
-      setAuthors(uniqueAuthors);
+      const authorsResponse = await fetch("/api/authors");
+      const authorsData = await authorsResponse.json();
+      setAuthors(authorsData); // now returns string[] directly
     } catch (error) {
       console.error("Failed to fetch categories and authors:", error);
     }
@@ -271,6 +269,28 @@ export default function AdminDashboard() {
           )}
         </div>
 
+        <div className="bg-white rounded-lg shadow">
+          <button
+            onClick={() => setShowAuthorManagement(!showAuthorManagement)}
+            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          >
+            <h2 className="text-sm font-semibold text-gray-900">
+              Manage Authors
+            </h2>
+            <span className="text-gray-500 text-sm">
+              {showAuthorManagement ? "▼" : "▶"}
+            </span>
+          </button>
+          {showAuthorManagement && (
+            <div className="px-4 pb-3 border-t border-gray-100">
+              <AuthorManagement
+                authors={authors}
+                onAuthorUpdated={handleStoryAdded}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Bulk Actions Bar */}
         {selectedStories.size > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
@@ -456,6 +476,7 @@ export default function AdminDashboard() {
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleStoryAdded}
         categories={categories}
+        authors={authors}
       />
 
       {/* Edit Story Modal */}

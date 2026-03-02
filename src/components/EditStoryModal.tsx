@@ -1,7 +1,7 @@
 // src/components/EditStoryModal.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface Story {
   id: string;
@@ -46,6 +46,7 @@ export default function EditStoryModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
+  const authorInputRef = useRef<HTMLInputElement>(null);
 
   const months = [
     { value: 1, label: "January" },
@@ -64,7 +65,6 @@ export default function EditStoryModal({
 
   const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
-  // Update form when story changes
   useEffect(() => {
     if (story) {
       setFormData({
@@ -92,9 +92,8 @@ export default function EditStoryModal({
           ? parseInt(value)
           : value,
     }));
-
     if (name === "author") {
-      setShowAuthorSuggestions(value.length > 0);
+      setShowAuthorSuggestions(true);
     }
   };
 
@@ -107,9 +106,12 @@ export default function EditStoryModal({
     setShowAuthorSuggestions(false);
   };
 
-  const filteredAuthors = authors.filter((author) =>
-    author.toLowerCase().includes(formData.author.toLowerCase()),
-  );
+  const filteredAuthors =
+    formData.author.length === 0
+      ? authors
+      : authors.filter((author) =>
+          author.toLowerCase().includes(formData.author.toLowerCase()),
+        );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,7 +188,7 @@ export default function EditStoryModal({
             </div>
           )}
 
-          {/* Title - Required */}
+          {/* Title */}
           <div>
             <label
               htmlFor="title"
@@ -200,12 +202,12 @@ export default function EditStoryModal({
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
-          {/* URL - Required */}
+          {/* URL */}
           <div>
             <label
               htmlFor="url"
@@ -219,12 +221,12 @@ export default function EditStoryModal({
               name="url"
               value={formData.url}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
-          {/* Category - Required */}
+          {/* Category */}
           <div>
             <label
               htmlFor="category"
@@ -237,8 +239,8 @@ export default function EditStoryModal({
               name="category"
               value={formData.category}
               onChange={handleCategoryChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
@@ -300,7 +302,7 @@ export default function EditStoryModal({
             </div>
           </div>
 
-          {/* Description - Optional */}
+          {/* Description */}
           <div>
             <label
               htmlFor="description"
@@ -318,7 +320,7 @@ export default function EditStoryModal({
             />
           </div>
 
-          {/* Author - Optional with Autocomplete */}
+          {/* Author with partial search */}
           <div className="relative">
             <label
               htmlFor="author"
@@ -327,37 +329,52 @@ export default function EditStoryModal({
               Author
             </label>
             <input
+              ref={authorInputRef}
               type="text"
               id="author"
               name="author"
               value={formData.author}
               onChange={handleInputChange}
-              onFocus={() =>
-                setShowAuthorSuggestions(formData.author.length > 0)
-              }
+              onFocus={() => setShowAuthorSuggestions(true)}
               onBlur={() =>
-                setTimeout(() => setShowAuthorSuggestions(false), 200)
+                setTimeout(() => setShowAuthorSuggestions(false), 150)
               }
+              autoComplete="off"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-              placeholder="Start typing to see suggestions..."
+              placeholder="Type to search authors..."
             />
             {showAuthorSuggestions && filteredAuthors.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                {filteredAuthors.slice(0, 10).map((author, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => selectAuthor(author)}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm"
-                  >
-                    {author}
-                  </button>
-                ))}
+                {filteredAuthors.slice(0, 10).map((author, index) => {
+                  const query = formData.author.toLowerCase();
+                  const idx =
+                    query.length > 0 ? author.toLowerCase().indexOf(query) : -1;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onMouseDown={() => selectAuthor(author)}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 text-gray-900 text-sm border-b border-gray-100 last:border-0"
+                    >
+                      {idx >= 0 ? (
+                        <>
+                          {author.slice(0, idx)}
+                          <span className="font-semibold text-blue-600">
+                            {author.slice(idx, idx + formData.author.length)}
+                          </span>
+                          {author.slice(idx + formData.author.length)}
+                        </>
+                      ) : (
+                        author
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Submit Buttons */}
+          {/* Submit */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"

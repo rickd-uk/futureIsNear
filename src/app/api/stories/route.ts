@@ -5,15 +5,16 @@ export async function GET() {
   try {
     const stories = await prisma.story.findMany({
       where: {
-        NOT: {
-          author: "__SYSTEM__",
-        },
+        NOT: [
+          { author: "__SYSTEM__" },
+          { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
+          { title: { startsWith: "__PLACEHOLDER__" } },
+        ],
       },
       orderBy: {
         timestamp: "desc",
       },
     });
-
     return NextResponse.json(stories);
   } catch (error) {
     console.error("Failed to fetch stories:", error);
