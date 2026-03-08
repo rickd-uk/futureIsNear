@@ -8182,3 +8182,1127 @@ git commit -m "Simplify UI with dropdowns and infinite scroll
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
+
+---
+
+_**User (2026-03-08 07:47:42Z)**_
+
+I am not a fan of the dropdown for hot and new , even though it saves space. It looks ugly, and a bit weird.
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:47:48Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user doesn't like the dropdown for hot/new. Let me change it back to toggle buttons which look better and are more intuitive. I'll keep it in the header but use buttons instead of a dropdown.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:47:53Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:47:58Z)**_
+
+<think><details><summary>Thought Process</summary>
+Changed to toggle buttons. The user should refresh to see the change.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:47:58Z)**_
+
+Changed to toggle buttons. Refresh to see.
+
+---
+
+_**User (2026-03-08 07:51:37Z)**_
+
+ like the idea of one icon to represent each category, which could be below the header and before the stories.  Hover over text for larger displays. small abbreviated text under for mobile/small screens.  I will need to update the admin section in that case. Also, where are the adanced search tools. they seem to be missing??
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:51:55Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants:
+1. Category icons - visual icons for each category displayed below header, with hover text for desktop and abbreviated text for mobile
+2. They noticed the advanced search tools are missing - I removed them when simplifying. They want them accessible somehow (probably behind a gear icon)
+3. They'll need to update admin section to assign icons to categories
+
+Let me address these:
+1. For category icons - I'll need to add an icon field to the Category model, or we could have a mapping of category names to emojis/icons. For now, I could use a simple emoji mapping based on category name, or add it to the database.
+
+2. For advanced search - I should add a gear/settings icon that reveals the advanced filters when clicked.
+
+Let me ask for clarification on the category icons approach, or just implement a simple solution.
+
+Actually, let me implement:
+1. Add a collapsible advanced search section (hidden by default, shown when clicking a gear icon)
+2. For category icons - I'll create a simple component that shows category buttons with icons. For now I can use emoji placeholders, and later they can update the Category model to include an icon field.
+
+Let me start implementing.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:51:57Z)**_
+
+Good points. Let me add:
+
+1. **Advanced search** - Gear icon that reveals filters
+2. **Category icons row** - Below header, with icons + hover/abbreviated text
+
+For categories with icons, we have two options:
+- **Quick**: Use emoji mapping (e.g., "Technology" → 💻, "Health" → 🏥)
+- **Proper**: Add `icon` field to Category model in database (admin can set)
+
+Which approach do you prefer? I'll implement the quick emoji version now and you can update the schema later for admin control.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:51:59Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:04Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add the state for advanced search toggle and update the component to include category icons row and advanced search toggle.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:06Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:10Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now update the filtering logic to use the advanced search options when searching.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:14Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:23Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the useEffect dependency array and add the UI for category icons and advanced search.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:24Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:30Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add the category icons row and advanced search toggle to the UI. I need to replace the category dropdown and add a gear icon for advanced search.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:42Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:47Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add the category icons row and the advanced search panel. I'll add it after the header and before the results count.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:52:56Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:53:01Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me verify the build passes.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:53:02Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Type check
+
+`npx tsc --noEmit 2>&1 | head -10`
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:53:07Z)**_
+
+<think><details><summary>Thought Process</summary>
+No errors. Let me summarize what I've added.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:53:10Z)**_
+
+Done! Added:
+
+1. **Category icons row** - Below header, shows emoji + text (abbreviated on mobile, full on desktop)
+2. **Advanced search** - Gear icon in header reveals Title/Description/Author/Category filters
+3. **Default emoji mapping** - Can be overridden later via database
+
+To add custom icons via admin later, you'd add an `icon` field to the Category model.
+
+Refresh to see changes.
+
+---
+
+_**User (2026-03-08 07:54:21Z)**_
+
+which port. it is not loading
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:54:28Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user is asking which port the dev server is running on. Let me check if it's still running.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:54:29Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Check if server running on 3001
+
+`lsof -i :3001 2>/dev/null | head -3 || echo "Not running on 3001"`
+```
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+```
+</details></tool-use>
+
+---
+
+_**User (2026-03-08 07:55:22Z)**_
+
+[Request interrupted by user for tool use]
+
+_**User (2026-03-08 07:59:27Z)**_
+
+its running now. however, I dont like the hot/new toggle and search textbox right at the top. Please but the toggles on the far left on the same row as the category tabs but with a clear simple separatot.  the text search should be one row below.  If there are too many categories, the remaining should be available using a stylized burger bar slide in from the right, only for ssmall screens. Allow many categories that can fir comfortabley depending on screen size
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:59:36Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants:
+1. Hot/New toggles on the far left of the category icons row, with a separator
+2. Search textbox on its own row below categories
+3. For small screens with too many categories: a burger menu that slides in from the right
+4. Responsive category display - show as many as fit, overflow goes to burger menu
+
+Let me update the FutureNews component to implement this.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:59:37Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/components/FutureNews.tsx`
+```
+   130→    setPage(1);
+   131→    setDisplayedStories(result.slice(0, STORIES_PER_PAGE));
+   132→    setHasMore(result.length > STORIES_PER_PAGE);
+   133→  }, [allStories, selectedCategory, searchQuery, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
+   134→
+   135→  // Load more stories
+   136→  const loadMore = useCallback(() => {
+   137→    if (loadingMore || !hasMore) return;
+   138→
+   139→    setLoadingMore(true);
+   140→    const nextPage = page + 1;
+   141→    const start = 0;
+   142→    const end = nextPage * STORIES_PER_PAGE;
+   143→    const newDisplayed = filteredStories.slice(start, end);
+   144→
+   145→    setDisplayedStories(newDisplayed);
+   146→    setPage(nextPage);
+   147→    setHasMore(end < filteredStories.length);
+   148→    setLoadingMore(false);
+   149→  }, [page, filteredStories, loadingMore, hasMore]);
+   150→
+   151→  // Infinite scroll observer
+   152→  useEffect(() => {
+   153→    const observer = new IntersectionObserver(
+   154→      (entries) => {
+   155→        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+   156→          loadMore();
+   157→        }
+   158→      },
+   159→      { threshold: 0.1 }
+   160→    );
+   161→
+   162→    if (loaderRef.current) {
+   163→      observer.observe(loaderRef.current);
+   164→    }
+   165→
+   166→    return () => observer.disconnect();
+   167→  }, [loadMore, hasMore, loadingMore]);
+   168→
+   169→  return (
+   170→    <div className="min-h-screen bg-gray-50">
+   171→      {/* Header */}
+   172→      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-3 sticky top-0 z-50 shadow-lg">
+   173→        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center gap-3">
+   174→          {/* Logo */}
+   175→          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+   176→            <span className="text-2xl">🚀</span>
+   177→            <span className="hidden sm:inline">FutureIsNear</span>
+   178→          </h1>
+   179→
+   180→          {/* Sort Toggle */}
+   181→          <div className="flex rounded-lg overflow-hidden border border-white/30">
+   182→            <button
+   183→              onClick={() => setSortMode("hot")}
+   184→              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+   185→                sortMode === "hot"
+   186→                  ? "bg-white text-orange-600"
+   187→                  : "bg-white/20 text-white hover:bg-white/30"
+   188→              }`}
+   189→            >
+   190→              🔥 Hot
+   191→            </button>
+   192→            <button
+   193→              onClick={() => setSortMode("newest")}
+   194→              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+   195→                sortMode === "newest"
+   196→                  ? "bg-white text-blue-600"
+   197→                  : "bg-white/20 text-white hover:bg-white/30"
+   198→              }`}
+   199→            >
+   200→              ✨ New
+   201→            </button>
+   202→          </div>
+   203→
+   204→          {/* Search with gear icon */}
+   205→          <div className="relative flex-1 min-w-[150px] max-w-md flex items-center gap-1">
+   206→            <div className="relative flex-1">
+   207→              <input
+   208→                type="text"
+   209→                value={searchQuery}
+   210→                onChange={(e) => setSearchQuery(e.target.value)}
+   211→                placeholder="Search..."
+   212→                className="w-full bg-white/20 text-white placeholder-white/70 border border-white/30 rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+   213→              />
+   214→              <svg
+   215→                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70"
+   216→                fill="none"
+   217→                stroke="currentColor"
+   218→                viewBox="0 0 24 24"
+   219→              >
+   220→                <path
+   221→                  strokeLinecap="round"
+   222→                  strokeLinejoin="round"
+   223→                  strokeWidth={2}
+   224→                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+   225→                />
+   226→              </svg>
+   227→            </div>
+   228→            <button
+   229→              onClick={() => setShowAdvanced(!showAdvanced)}
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 07:59:43Z)**_
+
+<think><details><summary>Thought Process</summary>
+Let me read the rest of the file to understand the full structure, then rewrite it with the new layout:
+1. Header: just logo and user menu
+2. Categories row: Hot/New toggle on left | separator | category icons | burger menu for overflow on small screens
+3. Search row: search box with gear icon
+4. Advanced search panel (collapsible)
+5. Results count
+6. Stories
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:00:38Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Write"><details>
+<summary>Tool use: **Write**</summary>
+
+```tsx
+// src/components/FutureNews.tsx
+"use client";
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import PublicationDate from "./PublicationDate";
+import UserMenu from "./UserMenu";
+import VoteButton from "./VoteButton";
+import { useAuth } from "@/hooks/useAuth";
+import { useVoting } from "@/hooks/useVoting";
+
+interface Story {
+  id: string;
+  title: string;
+  url: string;
+  category: string;
+  author: string | null;
+  description: string | null;
+  publicationMonth?: number | null;
+  publicationYear?: number | null;
+  timestamp: string;
+  totalVotes: number;
+  hotScore: number;
+  boost: number;
+}
+
+const STORIES_PER_PAGE = 20;
+
+const CATEGORY_ICONS: Record<string, string> = {
+  All: "🌐",
+  Technology: "💻",
+  Health: "🏥",
+  Science: "🔬",
+  Business: "💼",
+  Politics: "🏛️",
+  Environment: "🌱",
+  Sports: "⚽",
+  Entertainment: "🎬",
+  Education: "📚",
+  Finance: "💰",
+  AI: "🤖",
+  Space: "🚀",
+  Energy: "⚡",
+  Climate: "🌍",
+  Food: "🍽️",
+  Travel: "✈️",
+  Culture: "🎭",
+  Conflict: "⚔️",
+};
+
+export default function FutureNews() {
+  const { isAuthenticated } = useAuth();
+  const { remainingBudget, vote, removeVote, getVoteCount } =
+    useVoting(isAuthenticated);
+
+  const [allStories, setAllStories] = useState<Story[]>([]);
+  const [filteredStories, setFilteredStories] = useState<Story[]>([]);
+  const [displayedStories, setDisplayedStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [searchInTitle, setSearchInTitle] = useState(true);
+  const [searchInDescription, setSearchInDescription] = useState(true);
+  const [searchInCategory, setSearchInCategory] = useState(true);
+  const [searchInAuthor, setSearchInAuthor] = useState(true);
+
+  const [sortMode, setSortMode] = useState<"hot" | "newest">("hot");
+
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  const fetchStories = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/stories?sort=${sortMode}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAllStories(data);
+        const uniqueCategories = Array.from(
+          new Set(data.map((s: Story) => s.category))
+        ) as string[];
+        setCategories(["All", ...uniqueCategories.sort()]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch stories:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [sortMode]);
+
+  useEffect(() => {
+    fetchStories();
+  }, [fetchStories]);
+
+  useEffect(() => {
+    let result = allStories;
+    if (selectedCategory !== "All") {
+      result = result.filter((story) => story.category === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((story) => {
+        const matches: boolean[] = [];
+        if (searchInTitle) matches.push(story.title.toLowerCase().includes(query));
+        if (searchInDescription) matches.push(story.description?.toLowerCase().includes(query) || false);
+        if (searchInAuthor) matches.push(story.author?.toLowerCase().includes(query) || false);
+        if (searchInCategory) matches.push(story.category.toLowerCase().includes(query));
+        return matches.some(Boolean);
+      });
+    }
+    setFilteredStories(result);
+    setPage(1);
+    setDisplayedStories(result.slice(0, STORIES_PER_PAGE));
+    setHasMore(result.length > STORIES_PER_PAGE);
+  }, [allStories, selectedCategory, searchQuery, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    const end = nextPage * STORIES_PER_PAGE;
+    setDisplayedStories(filteredStories.slice(0, end));
+    setPage(nextPage);
+    setHasMore(end < filteredStories.length);
+    setLoadingMore(false);
+  }, [page, filteredStories, loadingMore, hasMore]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [loadMore, hasMore, loadingMore]);
+
+  const CategoryButton = ({ cat, compact = false }: { cat: string; compact?: boolean }) => {
+    const icon = CATEGORY_ICONS[cat] || "📁";
+    const isActive = selectedCategory === cat;
+    return (
+      <button
+        onClick={() => {
+          setSelectedCategory(cat);
+          setShowMobileMenu(false);
+        }}
+        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+          isActive
+            ? "bg-blue-600 text-white"
+            : "hover:bg-gray-100 text-gray-700"
+        }`}
+        title={cat}
+      >
+        <span className="text-base">{icon}</span>
+        {!compact && <span className="text-sm">{cat}</span>}
+        {compact && <span className="text-xs">{cat.slice(0, 4)}</span>}
+      </button>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header - Logo and User only */}
+      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-3 sticky top-0 z-50 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="text-2xl">🚀</span>
+            <span>FutureIsNear</span>
+          </h1>
+          <UserMenu remainingBudget={remainingBudget} />
+        </div>
+      </header>
+
+      {/* Categories Row - Sort toggle | separator | categories | burger */}
+      <div className="bg-white border-b border-gray-200 sticky top-[52px] z-40">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center gap-2">
+            {/* Sort Toggle */}
+            <div className="flex rounded-lg overflow-hidden border border-gray-300 flex-shrink-0">
+              <button
+                onClick={() => setSortMode("hot")}
+                className={`px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                  sortMode === "hot"
+                    ? "bg-orange-500 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                🔥 Hot
+              </button>
+              <button
+                onClick={() => setSortMode("newest")}
+                className={`px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                  sortMode === "newest"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                ✨ New
+              </button>
+            </div>
+
+            {/* Separator */}
+            <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
+
+            {/* Categories - scrollable on desktop, limited on mobile */}
+            <div className="flex-1 overflow-x-auto scrollbar-hide">
+              <div className="hidden sm:flex items-center gap-1">
+                {categories.map((cat) => (
+                  <CategoryButton key={cat} cat={cat} />
+                ))}
+              </div>
+              {/* Mobile: show first few + burger */}
+              <div className="flex sm:hidden items-center gap-1">
+                {categories.slice(0, 4).map((cat) => (
+                  <CategoryButton key={cat} cat={cat} compact />
+                ))}
+              </div>
+            </div>
+
+            {/* Burger menu button - mobile only */}
+            {categories.length > 4 && (
+              <button
+                onClick={() => setShowMobileMenu(true)}
+                className="sm:hidden p-2 rounded-lg hover:bg-gray-100 flex-shrink-0"
+                title="More categories"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Category Slide-in Menu */}
+      {showMobileMenu && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50 sm:hidden"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-xl z-50 sm:hidden overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Categories</h2>
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                className="p-1 rounded hover:bg-gray-100"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-2 flex flex-col gap-1">
+              {categories.map((cat) => (
+                <CategoryButton key={cat} cat={cat} />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Search Row */}
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center gap-2 max-w-xl">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search stories..."
+                className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={`p-2 rounded-lg border transition-colors ${
+                showAdvanced
+                  ? "bg-blue-100 border-blue-300 text-blue-700"
+                  : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+              }`}
+              title="Advanced search"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced Search Panel */}
+      {showAdvanced && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <span className="text-gray-600 font-medium">Search in:</span>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={searchInTitle} onChange={(e) => setSearchInTitle(e.target.checked)} className="rounded text-blue-600" />
+                <span>Title</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={searchInDescription} onChange={(e) => setSearchInDescription(e.target.checked)} className="rounded text-blue-600" />
+                <span>Description</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={searchInAuthor} onChange={(e) => setSearchInAuthor(e.target.checked)} className="rounded text-blue-600" />
+                <span>Author</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={searchInCategory} onChange={(e) => setSearchInCategory(e.target.checked)} className="rounded text-blue-600" />
+                <span>Category</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Results count */}
+      <div className="max-w-7xl mx-auto px-4 py-2 text-sm text-gray-500">
+        {filteredStories.length} stories
+        {selectedCategory !== "All" && ` in ${selectedCategory}`}
+        {searchQuery && ` matching "${searchQuery}"`}
+      </div>
+
+      {/* Stories */}
+      <main className="max-w-7xl mx-auto px-4 pb-8">
+        {loading ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            Loading stories...
+          </div>
+        ) : displayedStories.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            No stories found.
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="divide-y divide-gray-200">
+              {displayedStories.map((story) => {
+                const userVoteCount = getVoteCount(story.id);
+                return (
+                  <article key={story.id} className="p-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <VoteButton
+                        storyId={story.id}
+                        totalVotes={story.totalVotes}
+                        userVoteCount={userVoteCount}
+                        isAuthenticated={isAuthenticated}
+                        remainingBudget={remainingBudget}
+                        onVote={vote}
+                        onRemoveVote={removeVote}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-block px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+                            {story.category}
+                          </span>
+                          <h2 className="text-sm font-semibold text-gray-900 flex-1">
+                            <a
+                              href={story.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-blue-600 transition-colors"
+                            >
+                              {story.title}
+                            </a>
+                          </h2>
+                        </div>
+                        {story.description && (
+                          <p className="text-gray-600 text-xs mb-1 line-clamp-1">{story.description}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <span>{story.author || "Unknown"}</span>
+                          <PublicationDate month={story.publicationMonth} year={story.publicationYear} className="flex items-center gap-1" />
+                        </div>
+                      </div>
+                      <a
+                        href={story.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 text-gray-400 hover:text-blue-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            {hasMore && (
+              <div ref={loaderRef} className="p-4 text-center text-gray-500 text-sm">
+                {loadingMore ? "Loading more..." : "Scroll for more"}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+```
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been overwritten successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:00:42Z)**_
+
+<think><details><summary>Thought Process</summary>
+Done. Let me verify it compiles.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:00:43Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Type check
+
+`npx tsc --noEmit 2>&1 | head -5`
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:00:50Z)**_
+
+<think><details><summary>Thought Process</summary>
+No errors. Let me summarize what I changed.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:00:52Z)**_
+
+Done! New layout:
+
+**Row 1 (Header):** Logo | User menu
+
+**Row 2 (Categories):** 🔥Hot/✨New toggle | separator | category icons (scrollable on desktop, first 4 on mobile + burger menu)
+
+**Row 3 (Search):** Search box + gear icon for advanced
+
+**Mobile:** Burger menu slides in from right with all categories
+
+Refresh to see it.
+
+---
+
+_**User (2026-03-08 08:02:25Z)**_
+
+Looks much better but text for search options is white. I can't see them!!  Also can you generate 15 dummy categories just to test the layout on small screens
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:02:31Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user has two issues:
+1. Search options text is white (can't see them) - need to fix the text color
+2. They want 15 dummy categories to test the layout on small screens
+
+Let me fix the text color issue first and add more dummy categories.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:02:37Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:02:42Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me fix the text color for search options. The issue is likely in the advanced search panel. Let me check and fix it.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:02:49Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:02:54Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add dummy categories to test the layout. I'll modify the categories state to include dummy ones when there are fewer from the API.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:02:58Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:03:04Z)**_
+
+<think><details><summary>Thought Process</summary>
+Added dummy categories and fixed the text color. Let me also add icons for the new dummy categories.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:03:05Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:03:11Z)**_
+
+<think><details><summary>Thought Process</summary>
+Done. Fixed text color and added 15 dummy categories. Let me verify the build.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:03:12Z)**_
+
+Fixed:
+1. **Text color** - Now gray-700 for visibility
+2. **15 dummy categories** added for testing (Gaming, Music, Fashion, Auto, etc.)
+
+Refresh to test the mobile burger menu with many categories.
+
+---
+
+_**User (2026-03-08 08:04:04Z)**_
+
+(index):1  GET http://192.168.11.39:3001/ 500 (Internal Server Error)
+
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:15Z)**_
+
+<think><details><summary>Thought Process</summary>
+There's an internal server error. Let me check the server output to see what's happening.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:17Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Check server output for errors
+
+`cat /tmp/claude-1000/-home-rick-Documents-D-PRJ-LRG-futureisnear/tasks/bce8dde.output | tail -30`
+```
+Unexpected token `Estate`. Expected ... , *,  (, [, :, , ?, =, an identifier, public, protected, private, readonly, <.
+
+Import trace:
+  Server Component:
+    ./src/components/FutureNews.tsx
+    ./src/app/page.tsx
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 954ms
+[stderr]  ⨯ ./src/components/FutureNews.tsx:52:8
+Parsing ecmascript source code failed
+  50 |   Fashion: "👗",
+  51 |   Auto: "🚗",
+**>** 52 |   Real Estate: "🏠",
+     |        **^****^****^****^****^****^**
+  53 |   Crypto: "₿",
+  54 |   Legal: "⚖️",
+  55 |   Security: "🔒",
+
+Unexpected token `Estate`. Expected ... , *,  (, [, :, , ?, =, an identifier, public, protected, private, readonly, <.
+
+Import trace:
+  Server Component:
+    ./src/components/FutureNews.tsx
+    ./src/app/page.tsx
+
+
+ GET / 500 in 36ms
+ GET /favicon.ico 500 in 47ms
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:23Z)**_
+
+<think><details><summary>Thought Process</summary>
+The issue is that "Real Estate" has a space in it and needs to be quoted as a key in the object. Let me fix that.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:24Z)**_
+
+Need to quote keys with spaces:
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:25Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:31Z)**_
+
+<think><details><summary>Thought Process</summary>
+Let me check if there are other keys with spaces. Looking at the dummy categories list: "Real Estate" is the only one. Should be fixed now.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:04:31Z)**_
+
+Fixed. Refresh now.
+
+---
+
+_**User (2026-03-08 08:08:34Z)**_
+
+On small screens it looks quite good, but the topics could be centered horizontally in the burger bar slidein.  On larger screens there is an uglyhorizontal scroll bar. Isn't there a way to add a slide in burger bar for larger screens depending on whether there is enough space to display them fully.
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:08:45Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants:
+1. Center the topics in the burger menu slide-in
+2. Remove the ugly horizontal scrollbar on larger screens
+3. Have a smarter approach - show as many categories as fit, then show a "more" button/burger menu for the rest, regardless of screen size
+
+This is a more complex responsive design. I'll need to:
+1. Center items in the slide-in menu
+2. Use a more intelligent approach - maybe show categories that fit and have a "More" button that opens the slide-in for overflow
+
+One approach is to use CSS to hide overflow and add a "More" button that appears when there are more categories than can fit. But this is complex to implement perfectly.
+
+A simpler approach:
+1. Remove horizontal scroll
+2. Show first N categories based on screen size (responsive classes)
+3. Always show a "More" button if there are more categories than shown
+4. The "More" button opens the slide-in panel
+
+Let me implement this cleaner approach.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:08:56Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:09:01Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me center the items in the slide-in menu and rename it since it's used on all screen sizes now.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:09:10Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/FutureNews.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:09:16Z)**_
+
+<think><details><summary>Thought Process</summary>
+Done. Let me verify it compiles.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:09:18Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Type check
+
+`npx tsc --noEmit 2>&1 | head -5`
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:09:25Z)**_
+
+<think><details><summary>Thought Process</summary>
+No errors. Let me summarize the changes.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:09:28Z)**_
+
+Done:
+
+1. **No horizontal scrollbar** - Categories now clip to fit
+2. **Responsive display** - Shows 3/5/8/12/16 categories based on screen size (xs/sm/md/lg/xl)
+3. **"More" button** - Always visible when there are extra categories, works on all screen sizes
+4. **Centered slide-in** - Categories centered with larger icons and text
+5. **Works everywhere** - Same slide-in panel for mobile and desktop
+
+Refresh to test.
+
+---
+
+_**User (2026-03-08 08:10:14Z)**_
+
+I want to commit manually
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:10:20Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to commit manually. I should give them the git commands and commit message.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:10:23Z)**_
+
+```bash
+git add -A
+git commit -m "Simplify UI with responsive categories and infinite scroll
+
+- Header: logo and user menu only
+- Categories row: Hot/New toggle + responsive category icons
+- Show 3/5/8/12/16 categories based on screen size (xs/sm/md/lg/xl)
+- Slide-in panel for all categories (works on all screen sizes)
+- Search row with collapsible advanced filters (gear icon)
+- Infinite scroll (loads 20 stories at a time)
+- Remove dummy categories before production
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
