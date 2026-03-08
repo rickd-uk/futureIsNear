@@ -7,6 +7,19 @@ const SALT_ROUNDS = 12;
 
 export async function POST(request: Request) {
   try {
+    // Check if signups are enabled
+    const signupsSetting = await prisma.setting.findUnique({
+      where: { key: "signups_enabled" },
+    });
+
+    // Default to enabled if setting doesn't exist
+    if (signupsSetting && signupsSetting.value === "false") {
+      return NextResponse.json(
+        { error: "Signups are currently disabled" },
+        { status: 403 }
+      );
+    }
+
     const { username, password, email } = await request.json();
 
     // Validation

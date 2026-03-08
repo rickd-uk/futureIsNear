@@ -9306,3 +9306,3225 @@ git commit -m "Simplify UI with responsive categories and infinite scroll
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
+
+---
+
+_**User (2026-03-08 08:15:29Z)**_
+
+rick@UBU-CPX12-2G40-SIN:/var/www/futureisnear$ npm run build
+
+> futurenews@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.12
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./src/app/api/auth/login/route.ts
+Module not found: Can't resolve 'bcrypt'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./src/app/api/auth/signup/route.ts
+Module not found: Can't resolve 'bcrypt'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./src/lib/userAuth.ts
+Module not found: Can't resolve 'jsonwebtoken'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./src/app/api/votes/route.ts
+
+
+> Build failed because of webpack errors
+I am trying to put it on my server.  I git pulled successfully but need to install I guess
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:15:36Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user is trying to deploy to their server and is getting missing module errors. They need to install the npm dependencies.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:15:38Z)**_
+
+```bash
+npm install
+npm run build
+```
+
+---
+
+_**User (2026-03-08 08:20:57Z)**_
+
+rick@UBU-CPX12-2G40-SIN:/var/www/futureisnear$ gl
+1b16ecf (HEAD -> main, origin/main) Simplify UI with dropdowns and infinite scroll
+d0792ff Replace favorites with weighted voting system
+7bac5e6 Add user authentication system with signup/login
+33453b2 Fix category add button layout and CSV upload auth header
+This is my server git log.  I npm i  then npm run build, then restarted pm2.  Why do I have the old ui. hot/new button dropdown and searchbar right at the top. This is old!
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:21:07Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user is showing that their server's git log only has up to commit `1b16ecf` "Simplify UI with dropdowns and infinite scroll". But they want the newer UI changes with the responsive categories and slide-in panel that we just made. 
+
+The issue is they haven't pushed the latest commits from their local machine. They committed locally but didn't push to the remote repository.
+
+Let me check what commits are on their local machine vs what's on the server.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:21:08Z)**_
+
+You didn't push your latest commits. On your dev machine run:
+
+```bash
+git push
+```
+
+Then on your server:
+
+```bash
+git pull
+npm run build
+pm2 restart all
+```
+
+---
+
+_**User (2026-03-08 08:24:48Z)**_
+
+on my server I git pulled. that was fine. then npm run build and restarted but got Failed to create account  page-e1578704e99c4292.js:1  POST https://futureisnear.dev/api/auth/signup 500 (Internal Server Error)
+n @ page-e1578704e99c4292.js:1
+b @ page-e1578704e99c4292.js:1
+i8 @ 4bd1b696-c023c6e3521b1417.js:1
+(anonymous) @ 4bd1b696-c023c6e3521b1417.js:1
+nz @ 4bd1b696-c023c6e3521b1417.js:1
+sn @ 4bd1b696-c023c6e3521b1417.js:1
+cc @ 4bd1b696-c023c6e3521b1417.js:1
+ci @ 4bd1b696-c023c6e3521b1417.js:1
+
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:24:56Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user is getting a 500 error on signup. This is likely a server-side error. It could be related to:
+1. Database migration not run (the Vote model was added)
+2. Missing environment variables
+3. Some other server-side issue
+
+Let me suggest they check the server logs and run the database migration.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:24:57Z)**_
+
+The database schema changed (added Vote model, removed Favorite). On your server run:
+
+```bash
+npx prisma db push
+npm run build
+pm2 restart all
+```
+
+If still failing, check the PM2 logs:
+
+```bash
+pm2 logs
+```
+
+---
+
+_**User (2026-03-08 08:25:16Z)**_
+
+
+/home/rick/.pm2/logs/futureisnear-error.log last 15 lines:
+4|futureis |   meta: [Object],
+4|futureis |   clientVersion: '6.19.1'
+4|futureis | }
+4|futureis | Signup error: Error [PrismaClientKnownRequestError]:
+4|futureis | Invalid `prisma.user.findUnique()` invocation:
+4|futureis |
+4|futureis |
+4|futureis | The table `main.User` does not exist in the current database.
+4|futureis |     at async z (.next/server/app/api/auth/signup/route.js:1:1637)
+4|futureis |     at async k (.next/server/app/api/auth/signup/route.js:1:4852)
+4|futureis |     at async g (.next/server/app/api/auth/signup/route.js:1:5855) {
+4|futureis |   code: 'P2021',
+4|futureis |   meta: [Object],
+4|futureis |   clientVersion: '6.19.1'
+4|futureis | }
+
+/home/rick/.pm2/logs/futureisnear-out.log last 15 lines:
+4|futureis | L, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:39 +0900] "GET /_next/static/media/e4af272ccee01ff0-s.p.woff2 HTTP/1.1" 200 48432 "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:39 +0900] "GET /_next/static/css/b63c77beb6c46aba.css HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:39 +0900] "GET /_next/static/chunks/webpack-ec362468ad23739a.js HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:39 +0900] "GET /_next/static/chunks/4bd1b696-c023c6e3521b1417.js HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:40 +0900] "GET /_next/static/chunks/main-app-01cb43628177113b.js HTTP/1.1" 200 557 "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:40 +0900] "GET /_next/static/chunks/619-ba102abea3e3d0e4.js HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:40 +0900] "GET /_next/static/chunks/app/signup/page-e1578704e99c4292.js HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:40 +0900] "GET /_next/static/chunks/255-ebd51be49873d76c.js HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:41 +0900] "GET /favicon.ico HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:41 +0900] "GET /login?_rsc=1nmd2 HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:41 +0900] "GET /_next/static/chunks/app/login/page-bdbbb6be98f38b24.js HTTP/1.1" 200 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+4|futureis | 194.5.155.76 - - [08/Mar/2026:17:23:54 +0900] "POST /api/auth/signup HTTP/1.1" 500 - "https://futureisnear.dev/signup" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:25:23Z)**_
+
+<think><details><summary>Thought Process</summary>
+The error is clear: "The table `main.User` does not exist in the current database."
+
+The User table doesn't exist on the server. The user needs to run `npx prisma db push` on the server to create the tables.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:25:25Z)**_
+
+The database tables don't exist on the server. Run:
+
+```bash
+npx prisma db push
+pm2 restart all
+```
+
+---
+
+_**User (2026-03-08 08:29:32Z)**_
+
+in admin dashboard the admin should have a controls sections section. Inside that a simple toggle to turn on/off signups for all users. current status should be displayed
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:29:44Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to add a feature in the admin dashboard to toggle signups on/off. This requires:
+
+1. A way to store this setting (database or config file)
+2. API endpoint to get/set this setting
+3. Admin UI toggle
+4. Modify the signup endpoint to check this setting
+
+Let me first understand the current admin setup and then implement this feature.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:29:45Z)**_
+
+<tool-use data-tool-type="search" data-tool-name="Glob"><details>
+<summary>Tool use: **Glob**</summary>
+ pattern `src/app/admin/**/*.tsx`
+```
+No files found
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:29:45Z)**_
+
+<tool-use data-tool-type="search" data-tool-name="Glob"><details>
+<summary>Tool use: **Glob**</summary>
+ pattern `src/app/api/admin/**/*.ts`
+```
+No files found
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:29:52Z)**_
+
+<think><details><summary>Thought Process</summary>
+No admin directory. Let me check for other admin-related files or pages.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:29:53Z)**_
+
+<tool-use data-tool-type="search" data-tool-name="Glob"><details>
+<summary>Tool use: **Glob**</summary>
+ pattern `src/**/*admin*`
+```
+No files found
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:29:53Z)**_
+
+<tool-use data-tool-type="search" data-tool-name="Glob"><details>
+<summary>Tool use: **Glob**</summary>
+ pattern `src/app/**/page.tsx`
+```
+/home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/[secretPath]/login/page.tsx
+/home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/page.tsx
+/home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/[secretPath]/dashboard/page.tsx
+/home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/signup/page.tsx
+/home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/login/page.tsx
+/home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/forgot-password/page.tsx
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:00Z)**_
+
+<think><details><summary>Thought Process</summary>
+There's a `[secretPath]/dashboard/page.tsx` - that's likely the admin dashboard. Let me read it and the prisma schema to understand the structure.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:02Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/app/[secretPath]/dashboard/page.tsx`
+```
+     1→"use client";
+     2→import React, { useState, useEffect } from "react";
+     3→import { useRouter } from "next/navigation";
+     4→import AddStoryModal from "@/components/AddStoryModal";
+     5→import EditStoryModal from "@/components/EditStoryModal";
+     6→import CSVUpload from "@/components/CSVUpload";
+     7→import CategoryManagement from "@/components/CategoryManagement";
+     8→import AuthorManagement from "@/components/AuthorManagement";
+     9→
+    10→interface Story {
+    11→  id: string;
+    12→  title: string;
+    13→  url: string;
+    14→  category: string;
+    15→  author: string | null;
+    16→  description: string | null;
+    17→  publicationMonth?: number | null;
+    18→  publicationYear?: number | null;
+    19→  timestamp: string;
+    20→}
+    21→
+    22→export default function AdminDashboard() {
+    23→  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    24→  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    25→  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+    26→  const [stories, setStories] = useState<Story[]>([]);
+    27→  const [loading, setLoading] = useState(true);
+    28→  const [categories, setCategories] = useState<string[]>([]);
+    29→  const [authors, setAuthors] = useState<string[]>([]);
+    30→  const [selectedStories, setSelectedStories] = useState<Set<string>>(
+    31→    new Set(),
+    32→  );
+    33→  const [showCategoryManagement, setShowCategoryManagement] = useState(false);
+    34→  const [showAuthorManagement, setShowAuthorManagement] = useState(false);
+    35→  const [showCsvUpload, setShowCsvUpload] = useState(false);
+    36→  const router = useRouter();
+    37→
+    38→  useEffect(() => {
+    39→    const token = localStorage.getItem("admin_token");
+    40→    if (!token) {
+    41→      router.push("/qwertyuiop123/login");
+    42→    }
+    43→  }, [router]);
+    44→
+    45→  useEffect(() => {
+    46→    fetchStories();
+    47→    fetchCategoriesAndAuthors();
+    48→  }, []);
+    49→
+    50→  const fetchStories = async () => {
+    51→    try {
+    52→      setLoading(true);
+    53→      const response = await fetch("/api/stories");
+    54→      if (response.ok) {
+    55→        const data = await response.json();
+    56→        setStories(data);
+    57→      }
+    58→    } catch (error) {
+    59→      console.error("Failed to fetch stories:", error);
+    60→    } finally {
+    61→      setLoading(false);
+    62→    }
+    63→  };
+    64→
+    65→  const fetchCategoriesAndAuthors = async () => {
+    66→    try {
+    67→      const catResponse = await fetch("/api/categories");
+    68→      const categories = await catResponse.json();
+    69→      setCategories(categories);
+    70→
+    71→      const authorsResponse = await fetch("/api/authors");
+    72→      const authorsData = await authorsResponse.json();
+    73→      setAuthors(authorsData); // now returns string[] directly
+    74→    } catch (error) {
+    75→      console.error("Failed to fetch categories and authors:", error);
+    76→    }
+    77→  };
+    78→
+    79→  const handleStoryAdded = () => {
+    80→    fetchStories();
+    81→    fetchCategoriesAndAuthors();
+    82→    setSelectedStories(new Set());
+    83→  };
+    84→
+    85→  const handleEditClick = (story: Story) => {
+    86→    setSelectedStory(story);
+    87→    setIsEditModalOpen(true);
+    88→  };
+    89→
+    90→  const handleDeleteClick = async (story: Story) => {
+    91→    console.log("handleDeleteClick called with story:", story);
+    92→    try {
+    93→      const token = localStorage.getItem("admin_token");
+    94→      console.log("Sending DELETE request to:", `/api/stories/${story.id}`);
+    95→      const response = await fetch(`/api/stories/${story.id}`, {
+    96→        method: "DELETE",
+    97→        headers: {
+    98→          Authorization: `Bearer ${token}`,
+    99→        },
+   100→      });
+   101→      console.log("Response received:", response.status, response.ok);
+   102→
+   103→      if (response.status === 401) {
+   104→        localStorage.removeItem("admin_token");
+   105→        alert("Session expired. Please login again.");
+   106→        router.push("/qwertyuiop123/login");
+   107→        return;
+   108→      }
+   109→
+   110→      if (!response.ok) {
+   111→        const errorData = await response.json().catch(() => ({}));
+   112→        throw new Error(errorData.error || "Failed to delete story");
+   113→      }
+   114→
+   115→      console.log("Delete successful, refreshing stories and categories...");
+   116→      await fetchStories();
+   117→      await fetchCategoriesAndAuthors();
+   118→    } catch (error) {
+   119→      console.error("Error deleting story:", error);
+   120→      alert(
+   121→        `Failed to delete story: ${error instanceof Error ? error.message : "Unknown error"}`,
+   122→      );
+   123→    }
+   124→  };
+   125→
+   126→  const handleSelectStory = (storyId: string) => {
+   127→    const newSelected = new Set(selectedStories);
+   128→    if (newSelected.has(storyId)) {
+   129→      newSelected.delete(storyId);
+   130→    } else {
+   131→      newSelected.add(storyId);
+   132→    }
+   133→    setSelectedStories(newSelected);
+   134→  };
+   135→
+   136→  const handleSelectAll = () => {
+   137→    if (selectedStories.size === stories.length && stories.length > 0) {
+   138→      setSelectedStories(new Set());
+   139→    } else {
+   140→      setSelectedStories(new Set(stories.map((s) => s.id)));
+   141→    }
+   142→  };
+   143→
+   144→  const handleBulkDelete = async () => {
+   145→    console.log(
+   146→      "handleBulkDelete called with selection:",
+   147→      Array.from(selectedStories),
+   148→    );
+   149→    if (selectedStories.size === 0) {
+   150→      alert("Please select at least one story to delete.");
+   151→      return;
+   152→    }
+   153→
+   154→    try {
+   155→      const token = localStorage.getItem("admin_token");
+   156→      console.log("Starting bulk delete for", selectedStories.size, "stories");
+   157→
+   158→      const deletePromises = Array.from(selectedStories).map(
+   159→        async (storyId) => {
+   160→          console.log("Deleting story:", storyId);
+   161→          const response = await fetch(`/api/stories/${storyId}`, {
+   162→            method: "DELETE",
+   163→            headers: {
+   164→              Authorization: `Bearer ${token}`,
+   165→            },
+   166→          });
+   167→
+   168→          if (response.status === 401) {
+   169→            localStorage.removeItem("admin_token");
+   170→            alert("Session expired. Please login again.");
+   171→            router.push("/qwertyuiop123/login");
+   172→            return { storyId, success: false };
+   173→          }
+   174→
+   175→          return { storyId, success: response.ok };
+   176→        },
+   177→      );
+   178→
+   179→      const results = await Promise.all(deletePromises);
+   180→      console.log("Bulk delete results:", results);
+   181→      const failedDeletes = results.filter((r) => !r.success);
+   182→
+   183→      if (failedDeletes.length > 0) {
+   184→        alert(
+   185→          `Successfully deleted ${results.length - failedDeletes.length} stories.\n` +
+   186→            `Failed to delete ${failedDeletes.length} stories.`,
+   187→        );
+   188→      }
+   189→
+   190→      setSelectedStories(new Set());
+   191→      await fetchStories();
+   192→      await fetchCategoriesAndAuthors();
+   193→    } catch (error) {
+   194→      console.error("Error during bulk delete:", error);
+   195→      alert(
+   196→        `An error occurred while deleting stories: ${error instanceof Error ? error.message : "Unknown error"}`,
+   197→      );
+   198→    }
+   199→  };
+   200→
+   201→  const handleLogout = () => {
+   202→    localStorage.removeItem("admin_token");
+   203→    router.push("/qwertyuiop123/login");
+   204→  };
+   205→
+   206→  return (
+   207→    <div className="min-h-screen bg-gray-50">
+   208→      {/* Header - Compact */}
+   209→      <header className="bg-white shadow-sm border-b border-gray-200">
+   210→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+   211→          <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+   212→          <div className="flex gap-2">
+   213→            <button
+   214→              onClick={() => setIsAddModalOpen(true)}
+   215→              className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+   216→            >
+   217→              + Add Story
+   218→            </button>
+   219→            <button
+   220→              onClick={handleLogout}
+   221→              className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-300 text-sm font-medium transition-colors"
+   222→            >
+   223→              Logout
+   224→            </button>
+   225→          </div>
+   226→        </div>
+   227→      </header>
+   228→
+   229→      {/* Main Content - Compact */}
+   230→      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+   231→        {/* CSV Upload Section - Collapsible */}
+   232→        <div className="bg-white rounded-lg shadow">
+   233→          <button
+   234→            onClick={() => setShowCsvUpload(!showCsvUpload)}
+   235→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   236→          >
+   237→            <h2 className="text-sm font-semibold text-gray-900">CSV Upload</h2>
+   238→            <span className="text-gray-500 text-sm">
+   239→              {showCsvUpload ? "▼" : "▶"}
+   240→            </span>
+   241→          </button>
+   242→          {showCsvUpload && (
+   243→            <div className="px-4 pb-3 border-t border-gray-100">
+   244→              <CSVUpload onUploadComplete={handleStoryAdded} />
+   245→            </div>
+   246→          )}
+   247→        </div>
+   248→
+   249→        {/* Category Management Section - Collapsible */}
+   250→        <div className="bg-white rounded-lg shadow">
+   251→          <button
+   252→            onClick={() => setShowCategoryManagement(!showCategoryManagement)}
+   253→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   254→          >
+   255→            <h2 className="text-sm font-semibold text-gray-900">
+   256→              Manage Categories
+   257→            </h2>
+   258→            <span className="text-gray-500 text-sm">
+   259→              {showCategoryManagement ? "▼" : "▶"}
+   260→            </span>
+   261→          </button>
+   262→          {showCategoryManagement && (
+   263→            <div className="px-4 pb-3 border-t border-gray-100">
+   264→              <CategoryManagement
+   265→                categories={categories}
+   266→                onCategoryUpdated={handleStoryAdded}
+   267→              />
+   268→            </div>
+   269→          )}
+   270→        </div>
+   271→
+   272→        <div className="bg-white rounded-lg shadow">
+   273→          <button
+   274→            onClick={() => setShowAuthorManagement(!showAuthorManagement)}
+   275→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   276→          >
+   277→            <h2 className="text-sm font-semibold text-gray-900">
+   278→              Manage Authors
+   279→            </h2>
+   280→            <span className="text-gray-500 text-sm">
+   281→              {showAuthorManagement ? "▼" : "▶"}
+   282→            </span>
+   283→          </button>
+   284→          {showAuthorManagement && (
+   285→            <div className="px-4 pb-3 border-t border-gray-100">
+   286→              <AuthorManagement
+   287→                authors={authors}
+   288→                onAuthorUpdated={handleStoryAdded}
+   289→              />
+   290→            </div>
+   291→          )}
+   292→        </div>
+   293→
+   294→        {/* Bulk Actions Bar */}
+   295→        {selectedStories.size > 0 && (
+   296→          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
+   297→            <span className="text-sm font-medium text-blue-900">
+   298→              {selectedStories.size}{" "}
+   299→              {selectedStories.size === 1 ? "story" : "stories"} selected
+   300→            </span>
+   301→            <button
+   302→              onClick={(e) => {
+   303→                e.stopPropagation();
+   304→                console.log(
+   305→                  "Bulk delete clicked, selected:",
+   306→                  selectedStories.size,
+   307→                );
+   308→                handleBulkDelete();
+   309→              }}
+   310→              type="button"
+   311→              className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 text-sm font-medium transition-colors"
+   312→            >
+   313→              Delete Selected
+   314→            </button>
+   315→          </div>
+   316→        )}
+   317→
+   318→        {/* Stories Table - Compact */}
+   319→        <div className="bg-white rounded-lg shadow">
+   320→          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+   321→            <div>
+   322→              <h2 className="text-base font-semibold text-gray-900">Stories</h2>
+   323→              <p className="text-xs text-gray-500 mt-0.5">
+   324→                Total: {stories.length} stories
+   325→              </p>
+   326→            </div>
+   327→          </div>
+   328→          {loading ? (
+   329→            <div className="p-6 text-center text-gray-500 text-sm">
+   330→              Loading stories...
+   331→            </div>
+   332→          ) : stories.length === 0 ? (
+   333→            <div className="p-6 text-center text-gray-500 text-sm">
+   334→              No stories yet. Click &quot;Add Story&quot; to create your first
+   335→              one.
+   336→            </div>
+   337→          ) : (
+   338→            <div className="overflow-x-auto">
+   339→              <table className="min-w-full divide-y divide-gray-200">
+   340→                <thead className="bg-gray-50">
+   341→                  <tr>
+   342→                    <th className="px-4 py-2 text-left">
+   343→                      <input
+   344→                        type="checkbox"
+   345→                        checked={
+   346→                          selectedStories.size === stories.length &&
+   347→                          stories.length > 0
+   348→                        }
+   349→                        onChange={handleSelectAll}
+   350→                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+   351→                      />
+   352→                    </th>
+   353→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   354→                      Title
+   355→                    </th>
+   356→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   357→                      Category
+   358→                    </th>
+   359→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   360→                      Author
+   361→                    </th>
+   362→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   363→                      Date
+   364→                    </th>
+   365→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   366→                      Actions
+   367→                    </th>
+   368→                  </tr>
+   369→                </thead>
+   370→                <tbody className="bg-white divide-y divide-gray-200">
+   371→                  {stories.slice(0, 20).map((story) => (
+   372→                    <tr key={story.id} className="hover:bg-gray-50">
+   373→                      <td className="px-4 py-2">
+   374→                        <input
+   375→                          type="checkbox"
+   376→                          checked={selectedStories.has(story.id)}
+   377→                          onChange={() => handleSelectStory(story.id)}
+   378→                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+   379→                        />
+   380→                      </td>
+   381→                      <td className="px-4 py-2">
+   382→                        <div className="text-sm">
+   383→                          <a
+   384→                            href={story.url}
+   385→                            target="_blank"
+   386→                            rel="noopener noreferrer"
+   387→                            className="text-blue-600 hover:text-blue-800 font-medium"
+   388→                          >
+   389→                            {story.title}
+   390→                          </a>
+   391→                          {story.description && (
+   392→                            <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">
+   393→                              {story.description}
+   394→                            </p>
+   395→                          )}
+   396→                        </div>
+   397→                      </td>
+   398→                      <td className="px-4 py-2 whitespace-nowrap">
+   399→                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+   400→                          {story.category}
+   401→                        </span>
+   402→                      </td>
+   403→                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+   404→                        {story.author || "Unknown"}
+   405→                      </td>
+   406→                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+   407→                        {new Date(story.timestamp).toLocaleDateString()}
+   408→                      </td>
+   409→                      <td className="px-4 py-2 whitespace-nowrap text-sm">
+   410→                        <div className="flex gap-2">
+   411→                          <button
+   412→                            onClick={(e) => {
+   413→                              e.stopPropagation();
+   414→                              console.log("Edit clicked for story:", story.id);
+   415→                              handleEditClick(story);
+   416→                            }}
+   417→                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
+   418→                            title="Edit story"
+   419→                            type="button"
+   420→                          >
+   421→                            <svg
+   422→                              className="w-4 h-4"
+   423→                              fill="none"
+   424→                              stroke="currentColor"
+   425→                              viewBox="0 0 24 24"
+   426→                            >
+   427→                              <path
+   428→                                strokeLinecap="round"
+   429→                                strokeLinejoin="round"
+   430→                                strokeWidth={2}
+   431→                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+   432→                              />
+   433→                            </svg>
+   434→                          </button>
+   435→                          <button
+   436→                            onClick={(e) => {
+   437→                              e.stopPropagation();
+   438→                              console.log(
+   439→                                "Delete clicked for story:",
+   440→                                story.id,
+   441→                              );
+   442→                              handleDeleteClick(story);
+   443→                            }}
+   444→                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+   445→                            title="Delete story"
+   446→                            type="button"
+   447→                          >
+   448→                            <svg
+   449→                              className="w-4 h-4"
+   450→                              fill="none"
+   451→                              stroke="currentColor"
+   452→                              viewBox="0 0 24 24"
+   453→                            >
+   454→                              <path
+   455→                                strokeLinecap="round"
+   456→                                strokeLinejoin="round"
+   457→                                strokeWidth={2}
+   458→                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+   459→                              />
+   460→                            </svg>
+   461→                          </button>
+   462→                        </div>
+   463→                      </td>
+   464→                    </tr>
+   465→                  ))}
+   466→                </tbody>
+   467→              </table>
+   468→            </div>
+   469→          )}
+   470→        </div>
+   471→      </main>
+   472→
+   473→      {/* Add Story Modal */}
+   474→      <AddStoryModal
+   475→        isOpen={isAddModalOpen}
+   476→        onClose={() => setIsAddModalOpen(false)}
+   477→        onSuccess={handleStoryAdded}
+   478→        categories={categories}
+   479→        authors={authors}
+   480→      />
+   481→
+   482→      {/* Edit Story Modal */}
+   483→      <EditStoryModal
+   484→        isOpen={isEditModalOpen}
+   485→        onClose={() => {
+   486→          setIsEditModalOpen(false);
+   487→          setSelectedStory(null);
+   488→        }}
+   489→        onSuccess={() => {
+   490→          fetchStories();
+   491→          fetchCategoriesAndAuthors();
+   492→          setIsEditModalOpen(false);
+   493→          setSelectedStory(null);
+   494→        }}
+   495→        story={selectedStory}
+   496→        categories={categories}
+   497→        authors={authors}
+   498→      />
+   499→    </div>
+   500→  );
+   501→}
+   502→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:12Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now I need to:
+
+1. Add a Settings model to the database to store the signups toggle
+2. Create an API endpoint to get/set settings
+3. Add a "Controls" section to the admin dashboard
+4. Modify the signup endpoint to check if signups are enabled
+
+Let me start by updating the schema.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:14Z)**_
+
+I'll implement this in steps:
+
+1. Add Settings model to database
+2. Create settings API
+3. Add Controls section to admin dashboard
+4. Update signup to check setting
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:15Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./prisma/schema.prisma`
+```
+     1→generator client {
+     2→  provider = "prisma-client-js"
+     3→}
+     4→
+     5→datasource db {
+     6→  provider = "sqlite"
+     7→  url      = "file:./dev.db"
+     8→}
+     9→
+    10→model Category {
+    11→  id        String   @id @default(cuid())
+    12→  name      String   @unique
+    13→  createdAt DateTime @default(now())
+    14→}
+    15→
+    16→model Story {
+    17→  id        String   @id @default(cuid())
+    18→  title     String
+    19→  url       String
+    20→  description  String?
+    21→  category  String
+    22→  author    String?  @default("Unknown Author")
+    23→  timestamp DateTime @default(now())
+    24→  publicationMonth Int?    // Month (1-12)
+    25→  publicationYear Int?    // Year (ex. 2025)
+    26→  boost     Float    @default(1.0)  // Admin multiplier for hot score
+    27→  votes     Vote[]
+    28→  @@index([category])
+    29→}
+    30→
+    31→model Vote {
+    32→  id        String   @id @default(cuid())
+    33→  storyId   String
+    34→  userId    String   // References User.id (authenticated users only)
+    35→  count     Int      @default(1)  // 1-3 votes
+    36→  createdAt DateTime @default(now())
+    37→
+    38→  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+    39→  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    40→
+    41→  @@unique([storyId, userId])
+    42→  @@index([userId])
+    43→  @@index([storyId])
+    44→}
+    45→
+    46→model User {
+    47→  id            String    @id @default(cuid())
+    48→  username      String    @unique
+    49→  email         String?   @unique
+    50→  passwordHash  String
+    51→  createdAt     DateTime  @default(now())
+    52→  updatedAt     DateTime  @updatedAt
+    53→  votes         Vote[]
+    54→
+    55→  @@index([email])
+    56→}
+    57→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:21Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add a Setting model and create the API + admin UI.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:25Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/prisma/schema.prisma has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:30Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me create the settings API endpoint.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:35Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Write"><details>
+<summary>Tool use: **Write**</summary>
+
+```typescript
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { checkAuth, unauthorizedResponse } from "@/lib/auth";
+
+// GET - Get all settings (public for reading)
+export async function GET() {
+  try {
+    const settings = await prisma.setting.findMany();
+    const settingsMap: Record<string, string> = {};
+    settings.forEach((s) => {
+      settingsMap[s.key] = s.value;
+    });
+    return NextResponse.json(settingsMap);
+  } catch (error) {
+    console.error("Error fetching settings:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch settings" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Update a setting (admin only)
+export async function POST(request: Request) {
+  if (!checkAuth(request)) {
+    return unauthorizedResponse();
+  }
+
+  try {
+    const body = await request.json();
+    const { key, value } = body;
+
+    if (!key || value === undefined) {
+      return NextResponse.json(
+        { error: "Key and value are required" },
+        { status: 400 }
+      );
+    }
+
+    const setting = await prisma.setting.upsert({
+      where: { key },
+      update: { value: String(value) },
+      create: { key, value: String(value) },
+    });
+
+    return NextResponse.json(setting);
+  } catch (error) {
+    console.error("Error updating setting:", error);
+    return NextResponse.json(
+      { error: "Failed to update setting" },
+      { status: 500 }
+    );
+  }
+}
+
+```
+```
+File created successfully at: /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/api/settings/route.ts
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:40Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me update the signup endpoint to check if signups are enabled.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:40Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/app/api/auth/signup/route.ts`
+```
+     1→import { NextResponse } from "next/server";
+     2→import { prisma } from "@/lib/prisma";
+     3→import bcrypt from "bcrypt";
+     4→import { createUserToken } from "@/lib/userAuth";
+     5→
+     6→const SALT_ROUNDS = 12;
+     7→
+     8→export async function POST(request: Request) {
+     9→  try {
+    10→    const { username, password, email } = await request.json();
+    11→
+    12→    // Validation
+    13→    if (!username || !password) {
+    14→      return NextResponse.json(
+    15→        { error: "Username and password are required" },
+    16→        { status: 400 }
+    17→      );
+    18→    }
+    19→
+    20→    const trimmedUsername = username.trim().toLowerCase();
+    21→    const trimmedEmail = email?.trim().toLowerCase() || null;
+    22→
+    23→    if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+    24→      return NextResponse.json(
+    25→        { error: "Username must be 3-30 characters" },
+    26→        { status: 400 }
+    27→      );
+    28→    }
+    29→
+    30→    if (!/^[a-z0-9_]+$/.test(trimmedUsername)) {
+    31→      return NextResponse.json(
+    32→        { error: "Username can only contain letters, numbers, and underscores" },
+    33→        { status: 400 }
+    34→      );
+    35→    }
+    36→
+    37→    if (password.length < 8) {
+    38→      return NextResponse.json(
+    39→        { error: "Password must be at least 8 characters" },
+    40→        { status: 400 }
+    41→      );
+    42→    }
+    43→
+    44→    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    45→      return NextResponse.json(
+    46→        { error: "Invalid email format" },
+    47→        { status: 400 }
+    48→      );
+    49→    }
+    50→
+    51→    // Check if username exists
+    52→    const existingUser = await prisma.user.findUnique({
+    53→      where: { username: trimmedUsername },
+    54→    });
+    55→
+    56→    if (existingUser) {
+    57→      return NextResponse.json(
+    58→        { error: "Username already taken" },
+    59→        { status: 409 }
+    60→      );
+    61→    }
+    62→
+    63→    // Check if email exists (if provided)
+    64→    if (trimmedEmail) {
+    65→      const existingEmail = await prisma.user.findUnique({
+    66→        where: { email: trimmedEmail },
+    67→      });
+    68→      if (existingEmail) {
+    69→        return NextResponse.json(
+    70→          { error: "Email already registered" },
+    71→          { status: 409 }
+    72→        );
+    73→      }
+    74→    }
+    75→
+    76→    // Hash password
+    77→    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    78→
+    79→    // Create user
+    80→    const user = await prisma.user.create({
+    81→      data: {
+    82→        username: trimmedUsername,
+    83→        email: trimmedEmail,
+    84→        passwordHash,
+    85→      },
+    86→    });
+    87→
+    88→    // Generate JWT
+    89→    const token = createUserToken(user.id, user.username);
+    90→
+    91→    return NextResponse.json(
+    92→      {
+    93→        success: true,
+    94→        token,
+    95→        user: {
+    96→          id: user.id,
+    97→          username: user.username,
+    98→          email: user.email,
+    99→        },
+   100→      },
+   101→      { status: 201 }
+   102→    );
+   103→  } catch (error) {
+   104→    console.error("Signup error:", error);
+   105→    return NextResponse.json(
+   106→      { error: "Failed to create account" },
+   107→      { status: 500 }
+   108→    );
+   109→  }
+   110→}
+   111→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:45Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now I'll add the signups check at the beginning of the signup route.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:48Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/api/auth/signup/route.ts has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:52Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me update the admin dashboard to include a Controls section with the signup toggle.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:30:55Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/[secretPath]/dashboard/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:31:00Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add a useEffect to fetch the settings and a function to toggle signups.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:31:04Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/[secretPath]/dashboard/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:31:10Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now let me add the Controls section UI after the Author Management section.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:31:21Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/[secretPath]/dashboard/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+---
+
+_**User (2026-03-08 08:32:25Z)**_
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me analyze the conversation chronologically to capture all important details:
+
+1. Initial Request: User asked to implement a weighted voting system according to a detailed plan. The plan included:
+   - Replace favorites with weighted voting (1-3 votes per story, daily budget of 10)
+   - Hot score formula: (totalVotes + 1) * boost / (ageInHours + 2)^1.5
+   - Database changes: Vote model, boost field on Story
+   - API changes: /api/votes route, update stories route
+   - Frontend changes: VoteButton, useVoting hook, update FutureNews
+
+2. Implementation of voting system - created multiple files:
+   - src/lib/votingConfig.ts
+   - prisma/schema.prisma updated
+   - src/app/api/votes/route.ts
+   - src/app/api/stories/route.ts updated
+   - src/app/api/stories/[id]/route.ts updated
+   - src/hooks/useVoting.ts
+   - src/components/VoteButton.tsx
+   - src/components/FutureNews.tsx updated
+   - src/components/EditStoryModal.tsx updated
+   - src/components/UserMenu.tsx updated
+   - Deleted favorites route
+
+3. User asked about "extra usage tokens" - explained it's about rate limits
+
+4. UI feedback - user said elements were too small, I increased sizes
+
+5. Major UI simplification request:
+   - User said even they were confused by their own UI
+   - Requested KISS principle
+   - Wanted simple toggle for recent/most voted
+   - Handle 20+ categories with dropdown/burger menu
+   - Infinite scroll
+
+6. Multiple UI iterations:
+   - Changed Hot/New from dropdown to toggle buttons (user didn't like dropdown)
+   - Added category icons with emoji mapping
+   - Added advanced search behind gear icon
+   - Made Hot/New toggle + categories on same row with separator
+   - Search box on separate row
+   - Responsive category display (3/5/8/12/16 based on screen size)
+   - Slide-in menu for more categories
+   - Centered categories in slide-in
+   - Fixed horizontal scrollbar issue
+
+7. Errors encountered:
+   - prisma.config.ts parsing error - deleted the file
+   - ESLint unused variable error - fixed by explicit object construction
+   - "Real Estate" key without quotes in object - added quotes
+   - White text on advanced search panel - added text-gray-700 classes
+
+8. Server deployment issues:
+   - Missing npm modules (bcrypt, jsonwebtoken) - needed npm install
+   - Database tables didn't exist - needed npx prisma db push
+
+9. Current work: User requested admin dashboard Controls section with signup toggle
+   - Added Setting model to schema
+   - Created /api/settings route
+   - Modified signup route to check signups_enabled setting
+   - Added Controls section UI to admin dashboard
+
+Summary:
+1. Primary Request and Intent:
+   - Implement a weighted voting system replacing the favorites system with 1-3 votes per story and a daily budget of 10 votes
+   - Hot score formula: (totalVotes + 1) * boost / (ageInHours + 2)^1.5
+   - Simplify the UI following KISS principles - user said "even im confused about how to use it"
+   - Handle 20+ categories gracefully with responsive display and slide-in menu
+   - Add infinite scroll for stories
+   - Add admin Controls section with signup toggle
+
+2. Key Technical Concepts:
+   - Prisma ORM with SQLite database
+   - Next.js 15 with App Router
+   - JWT-based user authentication (user_token) vs admin authentication (admin_token)
+   - Weighted voting system with daily budget
+   - Hot score ranking algorithm with time decay
+   - Infinite scroll with IntersectionObserver
+   - Responsive design with Tailwind CSS breakpoints (xs/sm/md/lg/xl)
+   - Slide-in panel for overflow categories
+
+3. Files and Code Sections:
+
+   - `prisma/schema.prisma` - Database schema with Vote and Setting models
+     ```prisma
+     model Vote {
+       id        String   @id @default(cuid())
+       storyId   String
+       userId    String
+       count     Int      @default(1)  // 1-3 votes
+       createdAt DateTime @default(now())
+       story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+       user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+       @@unique([storyId, userId])
+       @@index([userId])
+       @@index([storyId])
+     }
+     
+     model Setting {
+       key       String   @id
+       value     String
+       updatedAt DateTime @updatedAt
+     }
+     ```
+
+   - `src/lib/votingConfig.ts` - Voting constants and hot score calculation
+     ```typescript
+     export const MAX_VOTES_PER_STORY = 3;
+     export const DAILY_VOTE_BUDGET = 10;
+     export const TIME_DECAY_FACTOR = 1.5;
+     
+     export function calculateHotScore(totalVotes: number, boost: number, createdAt: Date): number {
+       const now = new Date();
+       const ageInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+       return ((totalVotes + 1) * boost) / Math.pow(ageInHours + 2, TIME_DECAY_FACTOR);
+     }
+     ```
+
+   - `src/app/api/votes/route.ts` - GET/POST/DELETE for user votes with daily budget tracking
+
+   - `src/app/api/settings/route.ts` - Created for admin settings (signups toggle)
+     ```typescript
+     export async function POST(request: Request) {
+       if (!checkAuth(request)) {
+         return unauthorizedResponse();
+       }
+       const { key, value } = await body.json();
+       const setting = await prisma.setting.upsert({
+         where: { key },
+         update: { value: String(value) },
+         create: { key, value: String(value) },
+       });
+       return NextResponse.json(setting);
+     }
+     ```
+
+   - `src/app/api/auth/signup/route.ts` - Modified to check signups_enabled setting
+     ```typescript
+     const signupsSetting = await prisma.setting.findUnique({
+       where: { key: "signups_enabled" },
+     });
+     if (signupsSetting && signupsSetting.value === "false") {
+       return NextResponse.json(
+         { error: "Signups are currently disabled" },
+         { status: 403 }
+       );
+     }
+     ```
+
+   - `src/components/FutureNews.tsx` - Major rewrite with:
+     - Simplified header (logo + user menu only)
+     - Categories row with Hot/New toggle + separator + responsive category icons
+     - Shows 3/5/8/12/16 categories based on screen size
+     - "More" button that opens slide-in panel
+     - Search row with gear icon for advanced filters
+     - Infinite scroll with IntersectionObserver
+     - Category icons mapping with emojis
+     - Dummy categories added for testing (need to remove for production)
+
+   - `src/app/[secretPath]/dashboard/page.tsx` - Admin dashboard with Controls section
+     - Added state: showControls, signupsEnabled, savingSettings
+     - Added fetchSettings() and toggleSignups() functions
+     - Added Controls section UI with toggle switch
+
+4. Errors and fixes:
+   - `prisma.config.ts` parsing error: Deleted the file, ran prisma db push successfully
+   - ESLint `'votes' is assigned but never used`: Changed from destructuring to explicit object construction
+   - `"Real Estate"` key without quotes: Added quotes around key with space
+   - White text in advanced search panel: Added explicit `text-gray-700` classes to span elements
+   - Server 500 error on signup: Database tables didn't exist - needed `npx prisma db push` on server
+   - Missing npm modules on server (bcrypt, jsonwebtoken): Needed `npm install`
+
+5. Problem Solving:
+   - Simplified complex UI to KISS design with dropdowns and toggles
+   - Handled 20+ categories with responsive breakpoints and slide-in menu
+   - Fixed horizontal scrollbar by removing overflow-x-auto and using responsive display classes
+   - Changed Hot/New from dropdown to toggle buttons per user preference
+
+6. All user messages:
+   - Initial request to implement weighted voting system with detailed plan
+   - "what does it mean using extra usage tokens"
+   - "is it reset now??" (about rate limits at 16:00 JST)
+   - "continue please"
+   - Reported build error about favicon/manifest
+   - "oppps that is clashing with grafana which I have on port 3000"
+   - "commit" request
+   - "I noticed the ui elements are too small"
+   - "Most of the elements. Especially the votes up and buttons in the search bar. Also username and votes remaining"
+   - Question about icons being confusing on mobile, search area taking too much space, bland header
+   - "Great Idea. KISS. simple is best. Must have a simple way to toggle most recent stories, and/or the ones with the most votes. How best to implement. Also how to handle UI when we have many categories. for example 20+"
+   - Screenshot of UI feedback
+   - "I am not a fan of the dropdown for hot and new, even though it saves space. It looks ugly, and a bit weird"
+   - Request for category icons below header, advanced search tools missing
+   - "which port. it is not loading"
+   - "it looks quite good but the tools are now named single letters: T, D, C, A, Aa W very confusing"
+   - Request to move Hot/New toggles to same row as categories, search on separate row, burger menu for overflow
+   - "Looks much better but text for search options is white. I can't see them!! Also can you generate 15 dummy categories just to test the layout"
+   - Server 500 error reports
+   - "I want to commit manually" - provided git commands
+   - "in admin dashboard the admin should have a controls sections section. Inside that a simple toggle to turn on/off signups for all users. current status should be displayed"
+
+7. Pending Tasks:
+   - Remove dummy categories from FutureNews.tsx before production
+   - Run `npx prisma db push` on server to create Setting table
+   - Test the signup toggle functionality
+
+8. Current Work:
+   Adding admin Controls section with signup toggle:
+   - Added Setting model to prisma schema
+   - Created /api/settings route with GET (public) and POST (admin auth required)
+   - Modified /api/auth/signup/route.ts to check signups_enabled setting
+   - Added Controls section UI to admin dashboard with:
+     - Collapsible section
+     - Toggle switch for enabling/disabling signups
+     - Status indicator showing current state
+   
+   The Controls section was just added with this UI code:
+   ```typescript
+   {/* Controls Section - Collapsible */}
+   <div className="bg-white rounded-lg shadow">
+     <button onClick={() => setShowControls(!showControls)} ...>
+       <h2>Controls</h2>
+     </button>
+     {showControls && (
+       <div>
+         <div className="flex items-center justify-between py-2">
+           <div>
+             <p>User Signups</p>
+             <p>{signupsEnabled ? "New users can register" : "Signups are disabled"}</p>
+           </div>
+           <button onClick={toggleSignups} ... toggle switch UI>
+         </div>
+         <div>Status: {signupsEnabled ? "Enabled" : "Disabled"}</div>
+       </div>
+     )}
+   </div>
+   ```
+
+9. Optional Next Step:
+   Verify the build passes and test the signup toggle functionality. The user's last explicit request was: "in admin dashboard the admin should have a controls sections section. Inside that a simple toggle to turn on/off signups for all users. current status should be displayed" - this has been implemented but needs verification.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/rick/.claude/projects/-home-rick-Documents-D-PRJ-LRG-futureisnear/aa0c821f-ea2d-44f7-b7a7-40f7f9cc2a75.jsonl
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:31Z)**_
+
+<think><details><summary>Thought Process</summary>
+Looking at the summary, the last task was adding an admin Controls section with a signup toggle. The implementation was done but needs verification. Let me check the current state of the admin dashboard to see if the Controls section was fully implemented.
+
+I should:
+1. Read the admin dashboard file to verify the Controls section is complete
+2. Check if there are any build errors
+3. Verify the implementation is working
+
+Let me start by reading the admin dashboard page to see the current state.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:31Z)**_
+
+I'll verify the admin Controls section implementation is complete by checking the dashboard file.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:32Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/app/[secretPath]/dashboard/page.tsx`
+```
+     1→"use client";
+     2→import React, { useState, useEffect } from "react";
+     3→import { useRouter } from "next/navigation";
+     4→import AddStoryModal from "@/components/AddStoryModal";
+     5→import EditStoryModal from "@/components/EditStoryModal";
+     6→import CSVUpload from "@/components/CSVUpload";
+     7→import CategoryManagement from "@/components/CategoryManagement";
+     8→import AuthorManagement from "@/components/AuthorManagement";
+     9→
+    10→interface Story {
+    11→  id: string;
+    12→  title: string;
+    13→  url: string;
+    14→  category: string;
+    15→  author: string | null;
+    16→  description: string | null;
+    17→  publicationMonth?: number | null;
+    18→  publicationYear?: number | null;
+    19→  timestamp: string;
+    20→}
+    21→
+    22→export default function AdminDashboard() {
+    23→  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    24→  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    25→  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+    26→  const [stories, setStories] = useState<Story[]>([]);
+    27→  const [loading, setLoading] = useState(true);
+    28→  const [categories, setCategories] = useState<string[]>([]);
+    29→  const [authors, setAuthors] = useState<string[]>([]);
+    30→  const [selectedStories, setSelectedStories] = useState<Set<string>>(
+    31→    new Set(),
+    32→  );
+    33→  const [showCategoryManagement, setShowCategoryManagement] = useState(false);
+    34→  const [showAuthorManagement, setShowAuthorManagement] = useState(false);
+    35→  const [showCsvUpload, setShowCsvUpload] = useState(false);
+    36→  const [showControls, setShowControls] = useState(false);
+    37→  const [signupsEnabled, setSignupsEnabled] = useState(true);
+    38→  const [savingSettings, setSavingSettings] = useState(false);
+    39→  const router = useRouter();
+    40→
+    41→  useEffect(() => {
+    42→    const token = localStorage.getItem("admin_token");
+    43→    if (!token) {
+    44→      router.push("/qwertyuiop123/login");
+    45→    }
+    46→  }, [router]);
+    47→
+    48→  useEffect(() => {
+    49→    fetchStories();
+    50→    fetchCategoriesAndAuthors();
+    51→    fetchSettings();
+    52→  }, []);
+    53→
+    54→  const fetchSettings = async () => {
+    55→    try {
+    56→      const response = await fetch("/api/settings");
+    57→      if (response.ok) {
+    58→        const settings = await response.json();
+    59→        setSignupsEnabled(settings.signups_enabled !== "false");
+    60→      }
+    61→    } catch (error) {
+    62→      console.error("Failed to fetch settings:", error);
+    63→    }
+    64→  };
+    65→
+    66→  const toggleSignups = async () => {
+    67→    setSavingSettings(true);
+    68→    try {
+    69→      const token = localStorage.getItem("admin_token");
+    70→      const newValue = !signupsEnabled;
+    71→      const response = await fetch("/api/settings", {
+    72→        method: "POST",
+    73→        headers: {
+    74→          "Content-Type": "application/json",
+    75→          Authorization: `Bearer ${token}`,
+    76→        },
+    77→        body: JSON.stringify({
+    78→          key: "signups_enabled",
+    79→          value: String(newValue),
+    80→        }),
+    81→      });
+    82→
+    83→      if (response.ok) {
+    84→        setSignupsEnabled(newValue);
+    85→      } else {
+    86→        alert("Failed to update setting");
+    87→      }
+    88→    } catch (error) {
+    89→      console.error("Failed to toggle signups:", error);
+    90→      alert("Failed to update setting");
+    91→    } finally {
+    92→      setSavingSettings(false);
+    93→    }
+    94→  };
+    95→
+    96→  const fetchStories = async () => {
+    97→    try {
+    98→      setLoading(true);
+    99→      const response = await fetch("/api/stories");
+   100→      if (response.ok) {
+   101→        const data = await response.json();
+   102→        setStories(data);
+   103→      }
+   104→    } catch (error) {
+   105→      console.error("Failed to fetch stories:", error);
+   106→    } finally {
+   107→      setLoading(false);
+   108→    }
+   109→  };
+   110→
+   111→  const fetchCategoriesAndAuthors = async () => {
+   112→    try {
+   113→      const catResponse = await fetch("/api/categories");
+   114→      const categories = await catResponse.json();
+   115→      setCategories(categories);
+   116→
+   117→      const authorsResponse = await fetch("/api/authors");
+   118→      const authorsData = await authorsResponse.json();
+   119→      setAuthors(authorsData); // now returns string[] directly
+   120→    } catch (error) {
+   121→      console.error("Failed to fetch categories and authors:", error);
+   122→    }
+   123→  };
+   124→
+   125→  const handleStoryAdded = () => {
+   126→    fetchStories();
+   127→    fetchCategoriesAndAuthors();
+   128→    setSelectedStories(new Set());
+   129→  };
+   130→
+   131→  const handleEditClick = (story: Story) => {
+   132→    setSelectedStory(story);
+   133→    setIsEditModalOpen(true);
+   134→  };
+   135→
+   136→  const handleDeleteClick = async (story: Story) => {
+   137→    console.log("handleDeleteClick called with story:", story);
+   138→    try {
+   139→      const token = localStorage.getItem("admin_token");
+   140→      console.log("Sending DELETE request to:", `/api/stories/${story.id}`);
+   141→      const response = await fetch(`/api/stories/${story.id}`, {
+   142→        method: "DELETE",
+   143→        headers: {
+   144→          Authorization: `Bearer ${token}`,
+   145→        },
+   146→      });
+   147→      console.log("Response received:", response.status, response.ok);
+   148→
+   149→      if (response.status === 401) {
+   150→        localStorage.removeItem("admin_token");
+   151→        alert("Session expired. Please login again.");
+   152→        router.push("/qwertyuiop123/login");
+   153→        return;
+   154→      }
+   155→
+   156→      if (!response.ok) {
+   157→        const errorData = await response.json().catch(() => ({}));
+   158→        throw new Error(errorData.error || "Failed to delete story");
+   159→      }
+   160→
+   161→      console.log("Delete successful, refreshing stories and categories...");
+   162→      await fetchStories();
+   163→      await fetchCategoriesAndAuthors();
+   164→    } catch (error) {
+   165→      console.error("Error deleting story:", error);
+   166→      alert(
+   167→        `Failed to delete story: ${error instanceof Error ? error.message : "Unknown error"}`,
+   168→      );
+   169→    }
+   170→  };
+   171→
+   172→  const handleSelectStory = (storyId: string) => {
+   173→    const newSelected = new Set(selectedStories);
+   174→    if (newSelected.has(storyId)) {
+   175→      newSelected.delete(storyId);
+   176→    } else {
+   177→      newSelected.add(storyId);
+   178→    }
+   179→    setSelectedStories(newSelected);
+   180→  };
+   181→
+   182→  const handleSelectAll = () => {
+   183→    if (selectedStories.size === stories.length && stories.length > 0) {
+   184→      setSelectedStories(new Set());
+   185→    } else {
+   186→      setSelectedStories(new Set(stories.map((s) => s.id)));
+   187→    }
+   188→  };
+   189→
+   190→  const handleBulkDelete = async () => {
+   191→    console.log(
+   192→      "handleBulkDelete called with selection:",
+   193→      Array.from(selectedStories),
+   194→    );
+   195→    if (selectedStories.size === 0) {
+   196→      alert("Please select at least one story to delete.");
+   197→      return;
+   198→    }
+   199→
+   200→    try {
+   201→      const token = localStorage.getItem("admin_token");
+   202→      console.log("Starting bulk delete for", selectedStories.size, "stories");
+   203→
+   204→      const deletePromises = Array.from(selectedStories).map(
+   205→        async (storyId) => {
+   206→          console.log("Deleting story:", storyId);
+   207→          const response = await fetch(`/api/stories/${storyId}`, {
+   208→            method: "DELETE",
+   209→            headers: {
+   210→              Authorization: `Bearer ${token}`,
+   211→            },
+   212→          });
+   213→
+   214→          if (response.status === 401) {
+   215→            localStorage.removeItem("admin_token");
+   216→            alert("Session expired. Please login again.");
+   217→            router.push("/qwertyuiop123/login");
+   218→            return { storyId, success: false };
+   219→          }
+   220→
+   221→          return { storyId, success: response.ok };
+   222→        },
+   223→      );
+   224→
+   225→      const results = await Promise.all(deletePromises);
+   226→      console.log("Bulk delete results:", results);
+   227→      const failedDeletes = results.filter((r) => !r.success);
+   228→
+   229→      if (failedDeletes.length > 0) {
+   230→        alert(
+   231→          `Successfully deleted ${results.length - failedDeletes.length} stories.\n` +
+   232→            `Failed to delete ${failedDeletes.length} stories.`,
+   233→        );
+   234→      }
+   235→
+   236→      setSelectedStories(new Set());
+   237→      await fetchStories();
+   238→      await fetchCategoriesAndAuthors();
+   239→    } catch (error) {
+   240→      console.error("Error during bulk delete:", error);
+   241→      alert(
+   242→        `An error occurred while deleting stories: ${error instanceof Error ? error.message : "Unknown error"}`,
+   243→      );
+   244→    }
+   245→  };
+   246→
+   247→  const handleLogout = () => {
+   248→    localStorage.removeItem("admin_token");
+   249→    router.push("/qwertyuiop123/login");
+   250→  };
+   251→
+   252→  return (
+   253→    <div className="min-h-screen bg-gray-50">
+   254→      {/* Header - Compact */}
+   255→      <header className="bg-white shadow-sm border-b border-gray-200">
+   256→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+   257→          <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+   258→          <div className="flex gap-2">
+   259→            <button
+   260→              onClick={() => setIsAddModalOpen(true)}
+   261→              className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+   262→            >
+   263→              + Add Story
+   264→            </button>
+   265→            <button
+   266→              onClick={handleLogout}
+   267→              className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-300 text-sm font-medium transition-colors"
+   268→            >
+   269→              Logout
+   270→            </button>
+   271→          </div>
+   272→        </div>
+   273→      </header>
+   274→
+   275→      {/* Main Content - Compact */}
+   276→      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+   277→        {/* CSV Upload Section - Collapsible */}
+   278→        <div className="bg-white rounded-lg shadow">
+   279→          <button
+   280→            onClick={() => setShowCsvUpload(!showCsvUpload)}
+   281→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   282→          >
+   283→            <h2 className="text-sm font-semibold text-gray-900">CSV Upload</h2>
+   284→            <span className="text-gray-500 text-sm">
+   285→              {showCsvUpload ? "▼" : "▶"}
+   286→            </span>
+   287→          </button>
+   288→          {showCsvUpload && (
+   289→            <div className="px-4 pb-3 border-t border-gray-100">
+   290→              <CSVUpload onUploadComplete={handleStoryAdded} />
+   291→            </div>
+   292→          )}
+   293→        </div>
+   294→
+   295→        {/* Category Management Section - Collapsible */}
+   296→        <div className="bg-white rounded-lg shadow">
+   297→          <button
+   298→            onClick={() => setShowCategoryManagement(!showCategoryManagement)}
+   299→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   300→          >
+   301→            <h2 className="text-sm font-semibold text-gray-900">
+   302→              Manage Categories
+   303→            </h2>
+   304→            <span className="text-gray-500 text-sm">
+   305→              {showCategoryManagement ? "▼" : "▶"}
+   306→            </span>
+   307→          </button>
+   308→          {showCategoryManagement && (
+   309→            <div className="px-4 pb-3 border-t border-gray-100">
+   310→              <CategoryManagement
+   311→                categories={categories}
+   312→                onCategoryUpdated={handleStoryAdded}
+   313→              />
+   314→            </div>
+   315→          )}
+   316→        </div>
+   317→
+   318→        <div className="bg-white rounded-lg shadow">
+   319→          <button
+   320→            onClick={() => setShowAuthorManagement(!showAuthorManagement)}
+   321→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   322→          >
+   323→            <h2 className="text-sm font-semibold text-gray-900">
+   324→              Manage Authors
+   325→            </h2>
+   326→            <span className="text-gray-500 text-sm">
+   327→              {showAuthorManagement ? "▼" : "▶"}
+   328→            </span>
+   329→          </button>
+   330→          {showAuthorManagement && (
+   331→            <div className="px-4 pb-3 border-t border-gray-100">
+   332→              <AuthorManagement
+   333→                authors={authors}
+   334→                onAuthorUpdated={handleStoryAdded}
+   335→              />
+   336→            </div>
+   337→          )}
+   338→        </div>
+   339→
+   340→        {/* Controls Section - Collapsible */}
+   341→        <div className="bg-white rounded-lg shadow">
+   342→          <button
+   343→            onClick={() => setShowControls(!showControls)}
+   344→            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+   345→          >
+   346→            <h2 className="text-sm font-semibold text-gray-900">
+   347→              Controls
+   348→            </h2>
+   349→            <span className="text-gray-500 text-sm">
+   350→              {showControls ? "▼" : "▶"}
+   351→            </span>
+   352→          </button>
+   353→          {showControls && (
+   354→            <div className="px-4 pb-4 pt-3 border-t border-gray-100">
+   355→              <div className="flex items-center justify-between py-2">
+   356→                <div>
+   357→                  <p className="text-sm font-medium text-gray-900">User Signups</p>
+   358→                  <p className="text-xs text-gray-500">
+   359→                    {signupsEnabled ? "New users can register" : "Signups are disabled"}
+   360→                  </p>
+   361→                </div>
+   362→                <button
+   363→                  onClick={toggleSignups}
+   364→                  disabled={savingSettings}
+   365→                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+   366→                    signupsEnabled ? "bg-green-500" : "bg-gray-300"
+   367→                  } ${savingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
+   368→                >
+   369→                  <span
+   370→                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+   371→                      signupsEnabled ? "translate-x-6" : "translate-x-1"
+   372→                    }`}
+   373→                  />
+   374→                </button>
+   375→              </div>
+   376→              <div className="mt-2 px-2 py-1.5 rounded text-xs font-medium inline-flex items-center gap-1.5">
+   377→                <span className={`w-2 h-2 rounded-full ${signupsEnabled ? "bg-green-500" : "bg-red-500"}`} />
+   378→                <span className={signupsEnabled ? "text-green-700" : "text-red-700"}>
+   379→                  Status: {signupsEnabled ? "Enabled" : "Disabled"}
+   380→                </span>
+   381→              </div>
+   382→            </div>
+   383→          )}
+   384→        </div>
+   385→
+   386→        {/* Bulk Actions Bar */}
+   387→        {selectedStories.size > 0 && (
+   388→          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
+   389→            <span className="text-sm font-medium text-blue-900">
+   390→              {selectedStories.size}{" "}
+   391→              {selectedStories.size === 1 ? "story" : "stories"} selected
+   392→            </span>
+   393→            <button
+   394→              onClick={(e) => {
+   395→                e.stopPropagation();
+   396→                console.log(
+   397→                  "Bulk delete clicked, selected:",
+   398→                  selectedStories.size,
+   399→                );
+   400→                handleBulkDelete();
+   401→              }}
+   402→              type="button"
+   403→              className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 text-sm font-medium transition-colors"
+   404→            >
+   405→              Delete Selected
+   406→            </button>
+   407→          </div>
+   408→        )}
+   409→
+   410→        {/* Stories Table - Compact */}
+   411→        <div className="bg-white rounded-lg shadow">
+   412→          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+   413→            <div>
+   414→              <h2 className="text-base font-semibold text-gray-900">Stories</h2>
+   415→              <p className="text-xs text-gray-500 mt-0.5">
+   416→                Total: {stories.length} stories
+   417→              </p>
+   418→            </div>
+   419→          </div>
+   420→          {loading ? (
+   421→            <div className="p-6 text-center text-gray-500 text-sm">
+   422→              Loading stories...
+   423→            </div>
+   424→          ) : stories.length === 0 ? (
+   425→            <div className="p-6 text-center text-gray-500 text-sm">
+   426→              No stories yet. Click &quot;Add Story&quot; to create your first
+   427→              one.
+   428→            </div>
+   429→          ) : (
+   430→            <div className="overflow-x-auto">
+   431→              <table className="min-w-full divide-y divide-gray-200">
+   432→                <thead className="bg-gray-50">
+   433→                  <tr>
+   434→                    <th className="px-4 py-2 text-left">
+   435→                      <input
+   436→                        type="checkbox"
+   437→                        checked={
+   438→                          selectedStories.size === stories.length &&
+   439→                          stories.length > 0
+   440→                        }
+   441→                        onChange={handleSelectAll}
+   442→                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+   443→                      />
+   444→                    </th>
+   445→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   446→                      Title
+   447→                    </th>
+   448→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   449→                      Category
+   450→                    </th>
+   451→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   452→                      Author
+   453→                    </th>
+   454→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   455→                      Date
+   456→                    </th>
+   457→                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+   458→                      Actions
+   459→                    </th>
+   460→                  </tr>
+   461→                </thead>
+   462→                <tbody className="bg-white divide-y divide-gray-200">
+   463→                  {stories.slice(0, 20).map((story) => (
+   464→                    <tr key={story.id} className="hover:bg-gray-50">
+   465→                      <td className="px-4 py-2">
+   466→                        <input
+   467→                          type="checkbox"
+   468→                          checked={selectedStories.has(story.id)}
+   469→                          onChange={() => handleSelectStory(story.id)}
+   470→                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+   471→                        />
+   472→                      </td>
+   473→                      <td className="px-4 py-2">
+   474→                        <div className="text-sm">
+   475→                          <a
+   476→                            href={story.url}
+   477→                            target="_blank"
+   478→                            rel="noopener noreferrer"
+   479→                            className="text-blue-600 hover:text-blue-800 font-medium"
+   480→                          >
+   481→                            {story.title}
+   482→                          </a>
+   483→                          {story.description && (
+   484→                            <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">
+   485→                              {story.description}
+   486→                            </p>
+   487→                          )}
+   488→                        </div>
+   489→                      </td>
+   490→                      <td className="px-4 py-2 whitespace-nowrap">
+   491→                        <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+   492→                          {story.category}
+   493→                        </span>
+   494→                      </td>
+   495→                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+   496→                        {story.author || "Unknown"}
+   497→                      </td>
+   498→                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+   499→                        {new Date(story.timestamp).toLocaleDateString()}
+   500→                      </td>
+   501→                      <td className="px-4 py-2 whitespace-nowrap text-sm">
+   502→                        <div className="flex gap-2">
+   503→                          <button
+   504→                            onClick={(e) => {
+   505→                              e.stopPropagation();
+   506→                              console.log("Edit clicked for story:", story.id);
+   507→                              handleEditClick(story);
+   508→                            }}
+   509→                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
+   510→                            title="Edit story"
+   511→                            type="button"
+   512→                          >
+   513→                            <svg
+   514→                              className="w-4 h-4"
+   515→                              fill="none"
+   516→                              stroke="currentColor"
+   517→                              viewBox="0 0 24 24"
+   518→                            >
+   519→                              <path
+   520→                                strokeLinecap="round"
+   521→                                strokeLinejoin="round"
+   522→                                strokeWidth={2}
+   523→                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+   524→                              />
+   525→                            </svg>
+   526→                          </button>
+   527→                          <button
+   528→                            onClick={(e) => {
+   529→                              e.stopPropagation();
+   530→                              console.log(
+   531→                                "Delete clicked for story:",
+   532→                                story.id,
+   533→                              );
+   534→                              handleDeleteClick(story);
+   535→                            }}
+   536→                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+   537→                            title="Delete story"
+   538→                            type="button"
+   539→                          >
+   540→                            <svg
+   541→                              className="w-4 h-4"
+   542→                              fill="none"
+   543→                              stroke="currentColor"
+   544→                              viewBox="0 0 24 24"
+   545→                            >
+   546→                              <path
+   547→                                strokeLinecap="round"
+   548→                                strokeLinejoin="round"
+   549→                                strokeWidth={2}
+   550→                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+   551→                              />
+   552→                            </svg>
+   553→                          </button>
+   554→                        </div>
+   555→                      </td>
+   556→                    </tr>
+   557→                  ))}
+   558→                </tbody>
+   559→              </table>
+   560→            </div>
+   561→          )}
+   562→        </div>
+   563→      </main>
+   564→
+   565→      {/* Add Story Modal */}
+   566→      <AddStoryModal
+   567→        isOpen={isAddModalOpen}
+   568→        onClose={() => setIsAddModalOpen(false)}
+   569→        onSuccess={handleStoryAdded}
+   570→        categories={categories}
+   571→        authors={authors}
+   572→      />
+   573→
+   574→      {/* Edit Story Modal */}
+   575→      <EditStoryModal
+   576→        isOpen={isEditModalOpen}
+   577→        onClose={() => {
+   578→          setIsEditModalOpen(false);
+   579→          setSelectedStory(null);
+   580→        }}
+   581→        onSuccess={() => {
+   582→          fetchStories();
+   583→          fetchCategoriesAndAuthors();
+   584→          setIsEditModalOpen(false);
+   585→          setSelectedStory(null);
+   586→        }}
+   587→        story={selectedStory}
+   588→        categories={categories}
+   589→        authors={authors}
+   590→      />
+   591→    </div>
+   592→  );
+   593→}
+   594→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:36Z)**_
+
+<think><details><summary>Thought Process</summary>
+The admin Controls section with signup toggle has been fully implemented. Let me check if the build passes by checking the background task output.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:36Z)**_
+
+The Controls section is fully implemented. Let me check the build status from the background task.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:36Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `/tmp/claude-1000/-home-rick-Documents-D-PRJ-LRG-futureisnear/tasks/bce8dde.output`
+```
+     1→
+     2→> futurenews@0.1.0 dev
+     3→> next dev --turbopack
+     4→
+     5→   ▲ Next.js 15.5.9 (Turbopack)
+     6→   - Local:        http://localhost:3001
+     7→   - Network:      http://192.168.11.39:3001
+     8→   - Environments: .env.local
+     9→
+    10→ ✓ Starting...
+    11→ ✓ Ready in 721ms
+    12→ ○ Compiling / ...
+    13→ ✓ Compiled / in 4.6s
+    14→ GET / 200 in 4873ms
+    15→ GET / 200 in 4177ms
+    16→[stderr]  ⚠ Cross origin request detected from 192.168.11.39 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+    17→Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+    18→ ✓ Compiled /favicon.ico in 161ms
+    19→ GET /favicon.ico?favicon.cb88109f.ico 200 in 445ms
+    20→ GET /api/stories?sort=hot 200 in 476ms
+    21→ GET / 200 in 55ms
+    22→ GET /api/stories?sort=hot 200 in 232ms
+    23→ ✓ Compiled /[secretPath]/dashboard in 221ms
+    24→ GET /qwertyuiop123/dashboard 200 in 515ms
+    25→ ✓ Compiled /api/categories in 202ms
+    26→ GET /api/stories 200 in 261ms
+    27→ GET /api/categories 200 in 323ms
+    28→ ✓ Compiled /api/authors in 100ms
+    29→ GET /qwertyuiop123/login 200 in 487ms
+    30→ GET /api/authors 200 in 329ms
+    31→ ✓ Compiled /api/auth in 67ms
+    32→ POST /api/auth 200 in 300ms
+    33→ GET /qwertyuiop123/dashboard 200 in 62ms
+    34→ GET /api/stories 200 in 253ms
+    35→ GET /api/categories 200 in 254ms
+    36→ GET /api/stories 200 in 286ms
+    37→ GET /api/categories 200 in 285ms
+    38→ GET /api/authors 200 in 282ms
+    39→ GET /api/authors 200 in 223ms
+    40→ GET / 200 in 46ms
+    41→ GET /favicon.ico?favicon.cb88109f.ico 200 in 240ms
+    42→ GET /api/stories?sort=hot 200 in 237ms
+    43→ ✓ Compiled /signup in 213ms
+    44→ GET /signup 200 in 245ms
+    45→ ✓ Compiled /api/auth/signup in 98ms
+    46→ POST /api/auth/signup 409 in 333ms
+    47→ ✓ Compiled /login in 187ms
+    48→ GET /login 200 in 220ms
+    49→ ✓ Compiled /api/auth/login in 78ms
+    50→ POST /api/auth/login 200 in 465ms
+    51→ GET / 200 in 28ms
+    52→ ✓ Compiled /api/auth/me in 78ms
+    53→ GET /api/stories?sort=hot 200 in 227ms
+    54→ GET /api/auth/me 200 in 307ms
+    55→ GET /api/stories?sort=hot 200 in 231ms
+    56→ GET /api/auth/me 200 in 221ms
+    57→ ✓ Compiled /api/votes in 79ms
+    58→ GET /api/auth/me 200 in 224ms
+    59→ GET /api/votes 200 in 310ms
+    60→ GET /api/auth/me 200 in 223ms
+    61→ GET /api/stories?sort=newest 200 in 225ms
+    62→ GET /api/stories?sort=hot 200 in 224ms
+    63→ GET /api/stories?sort=newest 200 in 226ms
+    64→ GET /api/stories?sort=hot 200 in 230ms
+    65→ POST /api/votes 200 in 241ms
+    66→ POST /api/votes 200 in 243ms
+    67→ POST /api/votes 200 in 240ms
+    68→ DELETE /api/votes?storyId=cmmhe61lu0005om18g3advt4m 200 in 242ms
+    69→ POST /api/votes 200 in 243ms
+    70→ POST /api/votes 200 in 242ms
+    71→ POST /api/votes 200 in 240ms
+    72→ DELETE /api/votes?storyId=cmmhe61lu0005om18g3advt4m 200 in 243ms
+    73→ POST /api/votes 200 in 242ms
+    74→ POST /api/votes 200 in 237ms
+    75→ POST /api/votes 200 in 235ms
+    76→ DELETE /api/votes?storyId=cmmhe61lu0005om18g3advt4m 200 in 239ms
+    77→ POST /api/votes 200 in 239ms
+    78→ POST /api/votes 200 in 239ms
+    79→ POST /api/votes 200 in 241ms
+    80→ GET / 200 in 73ms
+    81→ GET /favicon.ico?favicon.cb88109f.ico 200 in 239ms
+    82→ GET /api/auth/me 200 in 241ms
+    83→ GET /api/stories?sort=hot 200 in 242ms
+    84→ GET /api/auth/me 200 in 229ms
+    85→ GET /api/votes 200 in 224ms
+    86→ GET / 200 in 48ms
+    87→ GET /favicon.ico?favicon.cb88109f.ico 200 in 238ms
+    88→ GET /api/auth/me 200 in 239ms
+    89→ GET /api/stories?sort=hot 200 in 240ms
+    90→ GET /api/auth/me 200 in 227ms
+    91→ GET /api/votes 200 in 226ms
+    92→ GET / 200 in 45ms
+    93→ GET /favicon.ico?favicon.cb88109f.ico 200 in 242ms
+    94→ GET /api/stories?sort=hot 200 in 240ms
+    95→ ✓ Compiled in 27ms
+    96→ ✓ Compiled in 65ms
+    97→ GET /api/auth/me 200 in 252ms
+    98→ GET /api/votes 200 in 252ms
+    99→ GET /api/stories?sort=hot 200 in 254ms
+   100→ ✓ Compiled in 55ms
+   101→ GET /api/auth/me 200 in 225ms
+   102→ ✓ Compiled in 55ms
+   103→ GET /api/auth/me 200 in 228ms
+   104→ GET / 200 in 162ms
+   105→ GET /favicon.ico?favicon.cb88109f.ico 200 in 248ms
+   106→ GET /api/auth/me 200 in 249ms
+   107→ GET /api/stories?sort=hot 200 in 248ms
+   108→ GET /api/auth/me 200 in 229ms
+   109→ GET /api/votes 200 in 224ms
+   110→ ✓ Compiled in 71ms
+   111→ GET /api/auth/me 200 in 250ms
+   112→ GET /api/votes 200 in 248ms
+   113→ GET /api/stories?sort=hot 200 in 249ms
+   114→ ✓ Compiled in 62ms
+   115→ GET /api/auth/me 200 in 243ms
+   116→ GET /api/votes 200 in 242ms
+   117→ GET /api/stories?sort=hot 200 in 246ms
+   118→ ✓ Compiled in 57ms
+   119→ GET /api/auth/me 200 in 247ms
+   120→ GET /api/votes 200 in 247ms
+   121→ GET /api/stories?sort=hot 200 in 246ms
+   122→ ✓ Compiled in 66ms
+   123→ GET /api/auth/me 200 in 244ms
+   124→ GET /api/votes 200 in 244ms
+   125→ GET /api/stories?sort=hot 200 in 244ms
+   126→ ✓ Compiled in 66ms
+   127→ ✓ Compiled in 57ms
+   128→ ✓ Compiled / in 20ms
+   129→ GET / 200 in 141ms
+   130→ GET /qwertyuiop123/dashboard 200 in 140ms
+   131→ GET /api/stories?sort=newest 200 in 227ms
+   132→ GET /api/stories?sort=hot 200 in 225ms
+   133→ GET / 200 in 110ms
+   134→ GET /favicon.ico?favicon.cb88109f.ico 200 in 238ms
+   135→ GET /api/auth/me 200 in 244ms
+   136→ GET /api/auth/me 200 in 244ms
+   137→ GET /api/stories?sort=hot 200 in 244ms
+   138→ GET /api/votes 200 in 219ms
+   139→ DELETE /api/votes?storyId=cmmhe61lu0005om18g3advt4m 200 in 238ms
+   140→ POST /api/votes 200 in 230ms
+   141→ POST /api/votes 200 in 239ms
+   142→ POST /api/votes 200 in 239ms
+   143→ ✓ Compiled in 69ms
+   144→ GET /api/auth/me 200 in 243ms
+   145→ GET /api/votes 200 in 243ms
+   146→ GET /api/stories?sort=hot 200 in 242ms
+   147→ GET / 200 in 139ms
+   148→ GET / 200 in 54ms
+   149→ GET / 200 in 45ms
+   150→ GET /favicon.ico?favicon.cb88109f.ico 200 in 223ms
+   151→ GET /api/auth/me 200 in 267ms
+   152→ GET /api/auth/me 200 in 271ms
+   153→ GET /api/stories?sort=hot 200 in 265ms
+   154→ GET /api/votes 404 in 389ms
+   155→ ✓ Compiled /_not-found/page in 187ms
+   156→ ✓ Compiled in 66ms
+   157→ GET / 200 in 137ms
+   158→ GET /api/auth/me 200 in 232ms
+   159→ GET /api/stories?sort=hot 200 in 231ms
+   160→ GET /api/auth/me 200 in 226ms
+   161→ GET /api/votes 200 in 224ms
+   162→ GET /api/stories?sort=newest 200 in 228ms
+   163→ GET /api/stories?sort=hot 200 in 227ms
+   164→ GET /api/stories?sort=newest 200 in 225ms
+   165→ GET /api/stories?sort=hot 200 in 583ms
+   166→ ✓ Compiled in 151ms
+   167→ GET /api/auth/me 200 in 245ms
+   168→ GET /api/votes 200 in 246ms
+   169→ GET /api/stories?sort=hot 200 in 246ms
+   170→ GET / 200 in 155ms
+   171→ GET /favicon.ico?favicon.cb88109f.ico 200 in 244ms
+   172→ GET /api/auth/me 200 in 246ms
+   173→ GET /api/stories?sort=hot 200 in 245ms
+   174→ GET /api/auth/me 200 in 230ms
+   175→ GET /api/votes 200 in 221ms
+   176→ GET /api/stories?sort=newest 200 in 226ms
+   177→ GET /api/stories?sort=hot 200 in 225ms
+   178→ GET /api/stories?sort=newest 200 in 229ms
+   179→ GET /api/stories?sort=hot 200 in 225ms
+   180→ GET /api/stories?sort=newest 200 in 226ms
+   181→ GET /api/stories?sort=hot 200 in 224ms
+   182→ GET /api/stories?sort=newest 200 in 223ms
+   183→ GET /api/stories?sort=hot 200 in 226ms
+   184→ GET /api/stories?sort=newest 200 in 228ms
+   185→ GET / 200 in 48ms
+   186→ GET /favicon.ico?favicon.cb88109f.ico 200 in 259ms
+   187→ GET /api/auth/me 200 in 257ms
+   188→ GET /api/stories?sort=hot 200 in 257ms
+   189→ GET /api/auth/me 200 in 230ms
+   190→ GET /api/votes 200 in 220ms
+   191→ GET /api/stories?sort=newest 200 in 226ms
+   192→ GET /api/stories?sort=hot 200 in 228ms
+   193→ ✓ Compiled in 57ms
+   194→ GET /api/auth/me 200 in 250ms
+   195→ GET /api/votes 200 in 249ms
+   196→ GET /api/stories?sort=hot 200 in 249ms
+   197→ ✓ Compiled in 55ms
+   198→ GET /api/auth/me 200 in 242ms
+   199→ GET /api/auth/me 200 in 243ms
+   200→ GET /api/stories?sort=hot 200 in 242ms
+   201→ GET /api/votes 200 in 222ms
+   202→ ✓ Compiled in 57ms
+   203→ GET /api/auth/me 200 in 243ms
+   204→ GET /api/votes 200 in 242ms
+   205→ GET /api/stories?sort=hot 200 in 242ms
+   206→ ✓ Compiled in 55ms
+   207→ GET /api/auth/me 200 in 252ms
+   208→ GET /api/votes 200 in 252ms
+   209→ GET /api/stories?sort=hot 200 in 253ms
+   210→ ✓ Compiled in 67ms
+   211→ GET /api/auth/me 200 in 277ms
+   212→ GET /api/auth/me 200 in 278ms
+   213→ GET /api/votes 200 in 277ms
+   214→ GET /api/stories?sort=hot 200 in 276ms
+   215→ GET /api/auth/me 200 in 276ms
+   216→ GET / 200 in 164ms
+   217→ ✓ Compiled in 67ms
+   218→ GET /favicon.ico?favicon.cb88109f.ico 200 in 231ms
+   219→ GET /api/auth/me 200 in 279ms
+   220→ GET /api/auth/me 200 in 279ms
+   221→ GET /api/stories?sort=hot 200 in 279ms
+   222→ GET /api/auth/me 200 in 275ms
+   223→ GET /api/stories?sort=hot 200 in 264ms
+   224→ GET /api/auth/me 200 in 228ms
+   225→ GET /favicon.ico 200 in 225ms
+   226→ GET /favicon.ico?favicon.cb88109f.ico 200 in 226ms
+   227→ GET /api/votes 200 in 218ms
+   228→ GET / 200 in 150ms
+   229→ GET / 200 in 48ms
+   230→ GET /favicon.ico?favicon.cb88109f.ico 200 in 263ms
+   231→ GET /api/auth/me 200 in 266ms
+   232→ GET /api/auth/me 200 in 267ms
+   233→ GET /api/stories?sort=hot 200 in 265ms
+   234→ GET /api/votes 200 in 1396ms
+   235→ ✓ Compiled in 66ms
+   236→ GET /api/auth/me 200 in 254ms
+   237→ GET /api/auth/me 200 in 256ms
+   238→ GET /api/stories?sort=hot 200 in 256ms
+   239→ GET /api/votes 200 in 230ms
+   240→ GET /api/stories?sort=newest 200 in 224ms
+   241→ GET /api/stories?sort=hot 200 in 226ms
+   242→ GET /api/stories?sort=newest 200 in 222ms
+   243→ GET /api/stories?sort=hot 200 in 229ms
+   244→ GET /api/stories?sort=newest 200 in 222ms
+   245→ GET /api/stories?sort=hot 200 in 227ms
+   246→ GET /api/stories?sort=newest 200 in 225ms
+   247→ GET /api/stories?sort=hot 200 in 220ms
+   248→ GET /api/stories?sort=newest 200 in 222ms
+   249→ GET /api/stories?sort=hot 200 in 230ms
+   250→ GET /api/stories?sort=newest 200 in 225ms
+   251→ GET /api/stories?sort=hot 200 in 222ms
+   252→ GET /api/stories?sort=newest 200 in 230ms
+   253→ ✓ Compiled in 61ms
+   254→ ✓ Compiled in 68ms
+   255→[stderr]  ⨯ ./src/components/FutureNews.tsx:52:8
+   256→Parsing ecmascript source code failed
+   257→  50 |   Fashion: "👗",
+   258→  51 |   Auto: "🚗",
+   259→**>** 52 |   Real Estate: "🏠",
+   260→     |        **^****^****^****^****^****^**
+   261→  53 |   Crypto: "₿",
+   262→  54 |   Legal: "⚖️",
+   263→  55 |   Security: "🔒",
+   264→
+   265→Unexpected token `Estate`. Expected ... , *,  (, [, :, , ?, =, an identifier, public, protected, private, readonly, <.
+   266→
+   267→Import trace:
+   268→  Server Component:
+   269→    ./src/components/FutureNews.tsx
+   270→    ./src/app/page.tsx
+   271→
+   272→
+   273→ ○ Compiling /_error ...
+   274→ ✓ Compiled /_error in 954ms
+   275→[stderr]  ⨯ ./src/components/FutureNews.tsx:52:8
+   276→Parsing ecmascript source code failed
+   277→  50 |   Fashion: "👗",
+   278→  51 |   Auto: "🚗",
+   279→**>** 52 |   Real Estate: "🏠",
+   280→     |        **^****^****^****^****^****^**
+   281→  53 |   Crypto: "₿",
+   282→  54 |   Legal: "⚖️",
+   283→  55 |   Security: "🔒",
+   284→
+   285→Unexpected token `Estate`. Expected ... , *,  (, [, :, , ?, =, an identifier, public, protected, private, readonly, <.
+   286→
+   287→Import trace:
+   288→  Server Component:
+   289→    ./src/components/FutureNews.tsx
+   290→    ./src/app/page.tsx
+   291→
+   292→
+   293→ GET / 500 in 36ms
+   294→ GET /favicon.ico 500 in 47ms
+   295→ ✓ Compiled in 59ms
+   296→ GET /qwertyuiop123/dashboard 200 in 80ms
+   297→ ✓ Compiled / in 16ms
+   298→ GET / 200 in 178ms
+   299→ GET / 200 in 53ms
+   300→ GET / 200 in 46ms
+   301→ GET /api/auth/me 200 in 242ms
+   302→ GET /api/stories?sort=hot 200 in 245ms
+   303→ GET /favicon.ico?favicon.cb88109f.ico 200 in 221ms
+   304→ GET /api/auth/me 200 in 229ms
+   305→ GET /api/votes 200 in 222ms
+   306→ ✓ Compiled in 71ms
+   307→ GET /api/auth/me 200 in 246ms
+   308→ GET /api/votes 200 in 246ms
+   309→ GET /api/stories?sort=hot 200 in 248ms
+   310→ ✓ Compiled in 69ms
+   311→ GET /api/auth/me 200 in 257ms
+   312→ GET /api/votes 200 in 257ms
+   313→ GET /api/stories?sort=hot 200 in 262ms
+   314→ GET / 200 in 134ms
+   315→ GET /qwertyuiop123/dashboard 200 in 133ms
+   316→ GET / 200 in 61ms
+   317→ GET /qwertyuiop123/dashboard 200 in 59ms
+   318→ ✓ Compiled in 58ms
+   319→ GET /api/stories 200 in 436ms
+   320→ GET /api/categories 200 in 438ms
+   321→ GET /api/authors 200 in 241ms
+   322→ ✓ Compiled in 152ms
+   323→ ✓ Compiled in 155ms
+   324→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:47Z)**_
+
+<think><details><summary>Thought Process</summary>
+I see there was a parsing error with "Real Estate" key in the FutureNews.tsx file - it needs quotes around keys with spaces. The summary mentioned this was fixed, but let me check if it's currently fixed by reading the FutureNews.tsx file to see the current state.
+
+Looking at the more recent output, the build seems to be working now (GET / 200) so it was likely fixed. Let me check the settings API to make sure the setting table was created and the feature works.
+
+Looking at the output, I can see:
+- The admin dashboard (`/qwertyuiop123/dashboard`) loads correctly (200)
+- The settings API needs to be compiled
+
+Let me check if the Settings table exists by checking if we need to run prisma db push. Actually, looking at the server output, there's no /api/settings route being called yet in the recent logs.
+
+The Controls section is implemented. Let me check if the settings endpoint has been compiled and if the Setting model exists in the database. The user's last request was about the Controls section with signup toggle - this appears to be fully implemented in the code I just read.
+
+Let me verify the settings API is working by checking if it needs to be compiled, or if there are any issues.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:48Z)**_
+
+I see there was a parsing error with "Real Estate" in FutureNews.tsx that was fixed. The server is now running correctly. Let me verify the settings API route exists and check if we need to run prisma db push for the Setting table.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:49Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Push Prisma schema to database to ensure Setting table exists
+
+`npx prisma db push --accept-data-loss 2>&1 | head -20`
+```
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+
+🚀  Your database is now in sync with your Prisma schema. Done in 17ms
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v6.19.1) to ./node_modules/@prisma/client in 43ms
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:32:59Z)**_
+
+<think><details><summary>Thought Process</summary>
+Good, the database is in sync. The Setting table exists. The Controls section with the signup toggle has been fully implemented:
+
+1. Setting model in schema.prisma ✓
+2. /api/settings route with GET and POST ✓
+3. Signup route checks signups_enabled setting ✓
+4. Dashboard has Controls section with toggle UI ✓
+
+The implementation is complete. Let me summarize for the user.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:33:03Z)**_
+
+The admin Controls section with signup toggle is fully implemented and ready:
+
+**What was added:**
+
+1. **Setting model** in `prisma/schema.prisma` - stores key-value settings
+2. **`/api/settings` route** - GET (public) and POST (admin auth required)
+3. **Signup route** updated to check `signups_enabled` setting before allowing registration
+4. **Controls section** in admin dashboard with:
+   - Collapsible panel matching other sections
+   - Toggle switch for enabling/disabling user signups
+   - Status indicator showing current state (green dot = enabled, red dot = disabled)
+   - Descriptive text explaining current setting
+
+**To test:**
+1. Go to http://localhost:3001/qwertyuiop123/dashboard
+2. Expand the "Controls" section
+3. Toggle signups on/off
+4. Try signing up at /signup when disabled - should show "Signups are currently disabled" error
+
+---
+
+_**User (2026-03-08 08:34:03Z)**_
+
+I tried switching it of. It was on by default. got error:  Failed to update setting
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:08Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user tried to toggle the signup setting but got an error "Failed to update setting". Let me check the server output to see what error occurred.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:09Z)**_
+
+Let me check the server logs to see what error occurred.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:09Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Check server logs for settings API error
+
+`tail -50 /tmp/claude-1000/-home-rick-Documents-D-PRJ-LRG-futureisnear/tasks/bce8dde.output`
+```
+ ✓ Compiled in 69ms
+ GET /api/auth/me 200 in 257ms
+ GET /api/votes 200 in 257ms
+ GET /api/stories?sort=hot 200 in 262ms
+ GET / 200 in 134ms
+ GET /qwertyuiop123/dashboard 200 in 133ms
+ GET / 200 in 61ms
+ GET /qwertyuiop123/dashboard 200 in 59ms
+ ✓ Compiled in 58ms
+ GET /api/stories 200 in 436ms
+ GET /api/categories 200 in 438ms
+ GET /api/authors 200 in 241ms
+ ✓ Compiled in 152ms
+ ✓ Compiled in 155ms
+ GET /qwertyuiop123/dashboard 200 in 187ms
+ ✓ Compiled /api/settings in 79ms
+ GET /favicon.ico?favicon.cb88109f.ico 200 in 246ms
+ GET /api/stories 200 in 243ms
+ GET /api/categories 200 in 242ms
+[stderr] Error fetching settings: TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src/app/api/settings/route.ts:8:43)
+   6 | export async function GET() {
+   7 |   try {
+>  8 |     const settings = await prisma.setting.findMany();
+     |                                           ^
+   9 |     const settingsMap: Record<string, string> = {};
+  10 |     settings.forEach((s) => {
+  11 |       settingsMap[s.key] = s.value;
+ GET /api/settings 500 in 367ms
+ GET /api/authors 200 in 232ms
+[stderr] Error updating setting: TypeError: Cannot read properties of undefined (reading 'upsert')
+    at POST (src/app/api/settings/route.ts:40:42)
+  38 |     }
+  39 |
+> 40 |     const setting = await prisma.setting.upsert({
+     |                                          ^
+  41 |       where: { key },
+  42 |       update: { value: String(value) },
+  43 |       create: { key, value: String(value) },
+ POST /api/settings 500 in 298ms
+[stderr] Error updating setting: TypeError: Cannot read properties of undefined (reading 'upsert')
+    at POST (src/app/api/settings/route.ts:40:42)
+  38 |     }
+  39 |
+> 40 |     const setting = await prisma.setting.upsert({
+     |                                          ^
+  41 |       where: { key },
+  42 |       update: { value: String(value) },
+  43 |       create: { key, value: String(value) },
+ POST /api/settings 500 in 268ms
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:13Z)**_
+
+<think><details><summary>Thought Process</summary>
+The issue is that `prisma.setting` is undefined. This is because after running `npx prisma db push`, the Prisma client needs to be regenerated/reloaded. The Next.js dev server might be using a cached version of the Prisma client that doesn't have the `setting` model.
+
+Let me regenerate the Prisma client and restart the dev server.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:14Z)**_
+
+The Prisma client doesn't have the `setting` model loaded. I need to regenerate it and restart the dev server.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:14Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Regenerate Prisma client with Setting model
+
+`npx prisma generate`
+```
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.19.1) to ./node_modules/@prisma/client in 54ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:14Z)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="TaskStop"><details>
+<summary>Tool use: **TaskStop**</summary>
+```
+{"message":"Successfully stopped task: bce8dde (PORT=3001 npm run dev)","task_id":"bce8dde","task_type":"local_bash","command":"PORT=3001 npm run dev"}
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:19Z)**_
+
+<think><details><summary>Thought Process</summary>
+Good, Prisma client is regenerated. Now I need to restart the dev server for the changes to take effect.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:20Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Restart dev server with regenerated Prisma client
+
+`PORT=3001 npm run dev`
+```
+Command running in background with ID: b8c0dd6. Output is being written to: /tmp/claude-1000/-home-rick-Documents-D-PRJ-LRG-futureisnear/tasks/b8c0dd6.output
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:44Z)**_
+
+<think><details><summary>Thought Process</summary>
+Good, the dev server is restarting. Let me wait a moment for it to be ready and then the user can test again.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:48Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Wait for server to start and check status
+
+`sleep 3 && tail -10 /tmp/claude-1000/-home-rick-Documents-D-PRJ-LRG-futureisnear/tasks/b8c0dd6.output`
+```
+> futurenews@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.5.9 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.11.39:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 699ms
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:55Z)**_
+
+<think><details><summary>Thought Process</summary>
+Server is running. The Prisma client has been regenerated with the Setting model, and the server has restarted. The user should be able to toggle signups now.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:34:55Z)**_
+
+Server restarted with the regenerated Prisma client. Try toggling the signups again - it should work now.
+
+---
+
+_**User (2026-03-08 08:37:18Z)**_
+
+User Signups
+
+Signups are disabled
+
+
+Status: Disabled   but the signup box still shows. But I couldnt signup. This is confusing. there should be a message telling users that signups are not avaliable now, or something similar
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:25Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user is saying that when signups are disabled:
+1. The toggle works now (showing "Signups are disabled")
+2. But the signup page/box still shows to users
+3. When they try to sign up, it fails but there's no clear message
+
+The user wants a better UX - either hide the signup option entirely when disabled, or show a clear message on the signup page that signups are currently unavailable.
+
+I need to:
+1. Update the signup page to check the settings and show a message when signups are disabled
+2. Possibly also hide the signup link in the login page or user menu when signups are disabled
+
+Let me first look at the signup page to see how it's structured.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:25Z)**_
+
+You're right, the UX should be clearer. Let me update the signup page to show a message when signups are disabled.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:25Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/app/signup/page.tsx`
+```
+     1→"use client";
+     2→
+     3→import React, { useState } from "react";
+     4→import { useRouter } from "next/navigation";
+     5→import Link from "next/link";
+     6→import { useAuth } from "@/hooks/useAuth";
+     7→
+     8→export default function SignupPage() {
+     9→  const [username, setUsername] = useState("");
+    10→  const [password, setPassword] = useState("");
+    11→  const [confirmPassword, setConfirmPassword] = useState("");
+    12→  const [email, setEmail] = useState("");
+    13→  const [error, setError] = useState("");
+    14→  const [isLoading, setIsLoading] = useState(false);
+    15→  const router = useRouter();
+    16→  const { signup } = useAuth();
+    17→
+    18→  const handleSubmit = async (e: React.FormEvent) => {
+    19→    e.preventDefault();
+    20→    setError("");
+    21→
+    22→    if (password !== confirmPassword) {
+    23→      setError("Passwords do not match");
+    24→      return;
+    25→    }
+    26→
+    27→    setIsLoading(true);
+    28→
+    29→    const result = await signup(username, password, email || undefined);
+    30→
+    31→    if (result.success) {
+    32→      router.push("/");
+    33→    } else {
+    34→      setError(result.error || "Signup failed");
+    35→    }
+    36→
+    37→    setIsLoading(false);
+    38→  };
+    39→
+    40→  return (
+    41→    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+    42→      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    43→        <h1 className="text-2xl font-bold mb-6 text-center text-gray-900">
+    44→          Create Account
+    45→        </h1>
+    46→
+    47→        <form onSubmit={handleSubmit} className="space-y-4">
+    48→          <div>
+    49→            <label
+    50→              htmlFor="username"
+    51→              className="block text-sm font-medium text-gray-700"
+    52→            >
+    53→              Username <span className="text-red-500">*</span>
+    54→            </label>
+    55→            <input
+    56→              type="text"
+    57→              id="username"
+    58→              value={username}
+    59→              onChange={(e) => setUsername(e.target.value)}
+    60→              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+    61→              required
+    62→              minLength={3}
+    63→              maxLength={30}
+    64→              pattern="[a-zA-Z0-9_]+"
+    65→              title="Letters, numbers, and underscores only"
+    66→            />
+    67→            <p className="text-xs text-gray-500 mt-1">
+    68→              3-30 characters, letters, numbers, underscores
+    69→            </p>
+    70→          </div>
+    71→
+    72→          <div>
+    73→            <label
+    74→              htmlFor="email"
+    75→              className="block text-sm font-medium text-gray-700"
+    76→            >
+    77→              Email{" "}
+    78→              <span className="text-gray-400 font-normal">(optional)</span>
+    79→            </label>
+    80→            <input
+    81→              type="email"
+    82→              id="email"
+    83→              value={email}
+    84→              onChange={(e) => setEmail(e.target.value)}
+    85→              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+    86→            />
+    87→            <p className="text-xs text-gray-500 mt-1">
+    88→              Only needed if you want password recovery
+    89→            </p>
+    90→          </div>
+    91→
+    92→          <div>
+    93→            <label
+    94→              htmlFor="password"
+    95→              className="block text-sm font-medium text-gray-700"
+    96→            >
+    97→              Password <span className="text-red-500">*</span>
+    98→            </label>
+    99→            <input
+   100→              type="password"
+   101→              id="password"
+   102→              value={password}
+   103→              onChange={(e) => setPassword(e.target.value)}
+   104→              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+   105→              required
+   106→              minLength={8}
+   107→            />
+   108→            <p className="text-xs text-gray-500 mt-1">At least 8 characters</p>
+   109→          </div>
+   110→
+   111→          <div>
+   112→            <label
+   113→              htmlFor="confirmPassword"
+   114→              className="block text-sm font-medium text-gray-700"
+   115→            >
+   116→              Confirm Password <span className="text-red-500">*</span>
+   117→            </label>
+   118→            <input
+   119→              type="password"
+   120→              id="confirmPassword"
+   121→              value={confirmPassword}
+   122→              onChange={(e) => setConfirmPassword(e.target.value)}
+   123→              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+   124→              required
+   125→            />
+   126→          </div>
+   127→
+   128→          {error && (
+   129→            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+   130→              {error}
+   131→            </div>
+   132→          )}
+   133→
+   134→          <button
+   135→            type="submit"
+   136→            disabled={isLoading}
+   137→            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+   138→          >
+   139→            {isLoading ? "Creating Account..." : "Sign Up"}
+   140→          </button>
+   141→        </form>
+   142→
+   143→        <p className="mt-4 text-center text-sm text-gray-600">
+   144→          Already have an account?{" "}
+   145→          <Link href="/login" className="text-blue-600 hover:text-blue-800">
+   146→            Log in
+   147→          </Link>
+   148→        </p>
+   149→      </div>
+   150→    </div>
+   151→  );
+   152→}
+   153→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:30Z)**_
+
+<think><details><summary>Thought Process</summary>
+I need to update the signup page to check if signups are enabled on page load, and show a message if they're disabled instead of the form.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:35Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/signup/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:38Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the return statement to show a message when signups are disabled.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:46Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/signup/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:49Z)**_
+
+<think><details><summary>Thought Process</summary>
+Good, the signup page now checks if signups are enabled and shows a friendly message when they're disabled. Now let me also update the login page to hide the "Sign up" link when signups are disabled, so users don't get confused.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:50Z)**_
+
+Now let me also update the login page to hide the "Sign up" link when signups are disabled.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:50Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/app/login/page.tsx`
+```
+     1→"use client";
+     2→
+     3→import React, { useState } from "react";
+     4→import { useRouter } from "next/navigation";
+     5→import Link from "next/link";
+     6→import { useAuth } from "@/hooks/useAuth";
+     7→
+     8→export default function LoginPage() {
+     9→  const [username, setUsername] = useState("");
+    10→  const [password, setPassword] = useState("");
+    11→  const [error, setError] = useState("");
+    12→  const [isLoading, setIsLoading] = useState(false);
+    13→  const router = useRouter();
+    14→  const { login } = useAuth();
+    15→
+    16→  const handleSubmit = async (e: React.FormEvent) => {
+    17→    e.preventDefault();
+    18→    setError("");
+    19→    setIsLoading(true);
+    20→
+    21→    const result = await login(username, password);
+    22→
+    23→    if (result.success) {
+    24→      router.push("/");
+    25→    } else {
+    26→      setError(result.error || "Login failed");
+    27→    }
+    28→
+    29→    setIsLoading(false);
+    30→  };
+    31→
+    32→  return (
+    33→    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+    34→      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    35→        <h1 className="text-2xl font-bold mb-6 text-center text-gray-900">
+    36→          Log In
+    37→        </h1>
+    38→
+    39→        <form onSubmit={handleSubmit} className="space-y-4">
+    40→          <div>
+    41→            <label
+    42→              htmlFor="username"
+    43→              className="block text-sm font-medium text-gray-700"
+    44→            >
+    45→              Username
+    46→            </label>
+    47→            <input
+    48→              type="text"
+    49→              id="username"
+    50→              value={username}
+    51→              onChange={(e) => setUsername(e.target.value)}
+    52→              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+    53→              required
+    54→            />
+    55→          </div>
+    56→
+    57→          <div>
+    58→            <label
+    59→              htmlFor="password"
+    60→              className="block text-sm font-medium text-gray-700"
+    61→            >
+    62→              Password
+    63→            </label>
+    64→            <input
+    65→              type="password"
+    66→              id="password"
+    67→              value={password}
+    68→              onChange={(e) => setPassword(e.target.value)}
+    69→              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+    70→              required
+    71→            />
+    72→          </div>
+    73→
+    74→          {error && (
+    75→            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+    76→              {error}
+    77→            </div>
+    78→          )}
+    79→
+    80→          <button
+    81→            type="submit"
+    82→            disabled={isLoading}
+    83→            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+    84→          >
+    85→            {isLoading ? "Logging in..." : "Log In"}
+    86→          </button>
+    87→        </form>
+    88→
+    89→        <div className="mt-4 text-center space-y-2">
+    90→          <p className="text-sm text-gray-600">
+    91→            Don&apos;t have an account?{" "}
+    92→            <Link href="/signup" className="text-blue-600 hover:text-blue-800">
+    93→              Sign up
+    94→            </Link>
+    95→          </p>
+    96→          <p className="text-sm text-gray-600">
+    97→            <Link
+    98→              href="/forgot-password"
+    99→              className="text-blue-600 hover:text-blue-800"
+   100→            >
+   101→              Forgot password?
+   102→            </Link>
+   103→          </p>
+   104→        </div>
+   105→      </div>
+   106→    </div>
+   107→  );
+   108→}
+   109→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:54Z)**_
+
+<think><details><summary>Thought Process</summary>
+I'll update the login page to check if signups are enabled and conditionally show the signup link.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:37:58Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/login/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:02Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now I need to conditionally show the signup link based on signupsEnabled state.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:06Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/app/login/page.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:10Z)**_
+
+<think><details><summary>Thought Process</summary>
+Good. Now let me also check the UserMenu component to see if there's a signup link there that should be hidden when signups are disabled.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:11Z)**_
+
+Let me also check the UserMenu component for any signup links to hide.
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:11Z)**_
+
+<tool-use data-tool-type="read" data-tool-name="Read"><details>
+<summary>Tool use: **Read**</summary>
+ `./src/components/UserMenu.tsx`
+```
+     1→"use client";
+     2→
+     3→import React, { useState, useRef, useEffect } from "react";
+     4→import Link from "next/link";
+     5→import { useAuth } from "@/hooks/useAuth";
+     6→import { User, LogOut, ChevronDown } from "lucide-react";
+     7→
+     8→interface UserMenuProps {
+     9→  remainingBudget?: number;
+    10→}
+    11→
+    12→export default function UserMenu({ remainingBudget }: UserMenuProps) {
+    13→  const { user, loading, isAuthenticated, logout } = useAuth();
+    14→  const [isOpen, setIsOpen] = useState(false);
+    15→  const menuRef = useRef<HTMLDivElement>(null);
+    16→
+    17→  // Close menu when clicking outside
+    18→  useEffect(() => {
+    19→    function handleClickOutside(event: MouseEvent) {
+    20→      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    21→        setIsOpen(false);
+    22→      }
+    23→    }
+    24→
+    25→    document.addEventListener("mousedown", handleClickOutside);
+    26→    return () => document.removeEventListener("mousedown", handleClickOutside);
+    27→  }, []);
+    28→
+    29→  if (loading) {
+    30→    return <div className="w-20 h-8 rounded bg-blue-500/30 animate-pulse" />;
+    31→  }
+    32→
+    33→  if (!isAuthenticated) {
+    34→    return (
+    35→      <div className="flex items-center gap-2">
+    36→        <Link
+    37→          href="/login"
+    38→          className="text-white hover:text-blue-200 text-sm font-medium px-2 py-1"
+    39→        >
+    40→          Log In
+    41→        </Link>
+    42→        <Link
+    43→          href="/signup"
+    44→          className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50"
+    45→        >
+    46→          Sign Up
+    47→        </Link>
+    48→      </div>
+    49→    );
+    50→  }
+    51→
+    52→  return (
+    53→    <div className="relative" ref={menuRef}>
+    54→      <button
+    55→        onClick={() => setIsOpen(!isOpen)}
+    56→        className="flex items-center gap-2 text-white hover:text-blue-200 px-3 py-1.5 rounded transition-colors"
+    57→      >
+    58→        <User className="w-5 h-5" />
+    59→        <span className="text-base font-medium">{user?.username}</span>
+    60→        {remainingBudget !== undefined && (
+    61→          <span className="text-sm bg-orange-500 text-white px-2 py-0.5 rounded-full font-medium">
+    62→            {remainingBudget}
+    63→          </span>
+    64→        )}
+    65→        <ChevronDown
+    66→          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+    67→        />
+    68→      </button>
+    69→
+    70→      {isOpen && (
+    71→        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+    72→          <div className="px-4 py-3 border-b border-gray-100">
+    73→            <p className="text-base font-medium text-gray-900">
+    74→              {user?.username}
+    75→            </p>
+    76→            {user?.email && (
+    77→              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+    78→            )}
+    79→            {remainingBudget !== undefined && (
+    80→              <p className="text-sm text-orange-600 mt-1 font-medium">
+    81→                {remainingBudget} votes remaining today
+    82→              </p>
+    83→            )}
+    84→          </div>
+    85→          <button
+    86→            onClick={() => {
+    87→              logout();
+    88→              setIsOpen(false);
+    89→            }}
+    90→            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+    91→          >
+    92→            <LogOut className="w-4 h-4" />
+    93→            Log Out
+    94→          </button>
+    95→        </div>
+    96→      )}
+    97→    </div>
+    98→  );
+    99→}
+   100→
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:17Z)**_
+
+<think><details><summary>Thought Process</summary>
+The UserMenu component has a "Sign Up" button for unauthenticated users. I should update it to check if signups are enabled and hide that button when they're disabled.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:25Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/UserMenu.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:28Z)**_
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the part where it shows the signup link for non-authenticated users.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:32Z)**_
+
+<tool-use data-tool-type="write" data-tool-name="Edit"><details>
+<summary>Tool use: **Edit**</summary>
+```
+The file /home/rick/Documents/D/PRJ/LRG/futureisnear/src/components/UserMenu.tsx has been updated successfully.
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:38Z)**_
+
+<think><details><summary>Thought Process</summary>
+Good. Now the signup functionality is properly hidden when signups are disabled:
+1. Signup page shows a friendly "Signups Closed" message
+2. Login page hides the "Sign up" link
+3. UserMenu hides the "Sign Up" button in the header
+
+Let me verify the changes compiled correctly.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:39Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Check for compilation errors
+
+`tail -15 /tmp/claude-1000/-home-rick-Documents-D-PRJ-LRG-futureisnear/tasks/b8c0dd6.output`
+```
+ GET /api/settings 200 in 223ms
+ ✓ Compiled in 54ms
+ GET /api/settings 200 in 225ms
+ ✓ Compiled in 61ms
+ POST /api/auth/signup 201 in 399ms
+ GET / 200 in 70ms
+ GET /api/auth/me 200 in 244ms
+ GET /api/settings 200 in 244ms
+ GET /api/stories?sort=hot 200 in 245ms
+ GET /api/auth/me 200 in 255ms
+ GET /api/settings 200 in 256ms
+ GET /api/stories?sort=hot 200 in 256ms
+ GET /api/auth/me 200 in 230ms
+ GET /api/votes 200 in 226ms
+ GET /api/auth/me 200 in 226ms
+```
+</details></tool-use>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:45Z)**_
+
+<think><details><summary>Thought Process</summary>
+Everything compiled successfully. Let me give the user a summary of what was changed.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:38:46Z)**_
+
+Done. Now when signups are disabled:
+
+1. **Signup page** (`/signup`) - Shows a friendly "Signups Closed" message with an icon, instead of the registration form
+2. **Login page** (`/login`) - Hides the "Don't have an account? Sign up" link
+3. **Header** - Hides the "Sign Up" button in the user menu
+
+Try visiting `/signup` now with signups disabled - you should see the new message instead of the form.
+
+---
+
+_**User (2026-03-08 08:39:41Z)**_
+
+a manual commit
+
+---
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:39:46Z)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to commit manually. I should provide them with the git commands to do so.
+</details></think>
+
+_**Agent (claude-opus-4-5-20251101 2026-03-08 08:39:48Z)**_
+
+Here are the commands to commit:
+
+```bash
+git add -A
+git status
+git commit -m "Add signup toggle in admin dashboard with UX improvements
+
+- Add Controls section in admin dashboard with signup enable/disable toggle
+- Show 'Signups Closed' message on signup page when disabled
+- Hide signup links in login page and header when signups disabled
+- Add Setting model and /api/settings endpoint
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```

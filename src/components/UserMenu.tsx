@@ -12,6 +12,7 @@ interface UserMenuProps {
 export default function UserMenu({ remainingBudget }: UserMenuProps) {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [signupsEnabled, setSignupsEnabled] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -24,6 +25,22 @@ export default function UserMenu({ remainingBudget }: UserMenuProps) {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Check if signups are enabled
+  useEffect(() => {
+    const checkSignupsEnabled = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const settings = await response.json();
+          setSignupsEnabled(settings.signups_enabled !== "false");
+        }
+      } catch {
+        // Default to enabled on error
+      }
+    };
+    checkSignupsEnabled();
   }, []);
 
   if (loading) {
@@ -39,12 +56,14 @@ export default function UserMenu({ remainingBudget }: UserMenuProps) {
         >
           Log In
         </Link>
-        <Link
-          href="/signup"
-          className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50"
-        >
-          Sign Up
-        </Link>
+        {signupsEnabled && (
+          <Link
+            href="/signup"
+            className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50"
+          >
+            Sign Up
+          </Link>
+        )}
       </div>
     );
   }

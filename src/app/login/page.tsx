@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +10,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [signupsEnabled, setSignupsEnabled] = useState(true);
   const router = useRouter();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const checkSignupsEnabled = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const settings = await response.json();
+          setSignupsEnabled(settings.signups_enabled !== "false");
+        }
+      } catch {
+        // Default to enabled on error
+      }
+    };
+    checkSignupsEnabled();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +103,14 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-blue-600 hover:text-blue-800">
-              Sign up
-            </Link>
-          </p>
+          {signupsEnabled && (
+            <p className="text-sm text-gray-600">
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-blue-600 hover:text-blue-800">
+                Sign up
+              </Link>
+            </p>
+          )}
           <p className="text-sm text-gray-600">
             <Link
               href="/forgot-password"

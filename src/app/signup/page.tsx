@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,8 +12,26 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [signupsEnabled, setSignupsEnabled] = useState<boolean | null>(null);
   const router = useRouter();
   const { signup } = useAuth();
+
+  useEffect(() => {
+    const checkSignupsEnabled = async () => {
+      try {
+        const response = await fetch("/api/settings");
+        if (response.ok) {
+          const settings = await response.json();
+          setSignupsEnabled(settings.signups_enabled !== "false");
+        } else {
+          setSignupsEnabled(true); // Default to enabled if can't fetch
+        }
+      } catch {
+        setSignupsEnabled(true); // Default to enabled on error
+      }
+    };
+    checkSignupsEnabled();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +54,47 @@ export default function SignupPage() {
 
     setIsLoading(false);
   };
+
+  // Loading state
+  if (signupsEnabled === null) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Signups disabled
+  if (!signupsEnabled) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="mb-4">
+            <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">
+            Signups Closed
+          </h1>
+          <p className="text-gray-600 mb-6">
+            New account registration is currently unavailable. Please check back later.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700"
+          >
+            Go to Login
+          </Link>
+          <p className="mt-4 text-sm text-gray-500">
+            Already have an account? You can still log in.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">

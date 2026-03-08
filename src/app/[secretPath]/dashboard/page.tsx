@@ -33,6 +33,9 @@ export default function AdminDashboard() {
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
   const [showAuthorManagement, setShowAuthorManagement] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const [signupsEnabled, setSignupsEnabled] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -45,7 +48,50 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchStories();
     fetchCategoriesAndAuthors();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch("/api/settings");
+      if (response.ok) {
+        const settings = await response.json();
+        setSignupsEnabled(settings.signups_enabled !== "false");
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  };
+
+  const toggleSignups = async () => {
+    setSavingSettings(true);
+    try {
+      const token = localStorage.getItem("admin_token");
+      const newValue = !signupsEnabled;
+      const response = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          key: "signups_enabled",
+          value: String(newValue),
+        }),
+      });
+
+      if (response.ok) {
+        setSignupsEnabled(newValue);
+      } else {
+        alert("Failed to update setting");
+      }
+    } catch (error) {
+      console.error("Failed to toggle signups:", error);
+      alert("Failed to update setting");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const fetchStories = async () => {
     try {
@@ -287,6 +333,52 @@ export default function AdminDashboard() {
                 authors={authors}
                 onAuthorUpdated={handleStoryAdded}
               />
+            </div>
+          )}
+        </div>
+
+        {/* Controls Section - Collapsible */}
+        <div className="bg-white rounded-lg shadow">
+          <button
+            onClick={() => setShowControls(!showControls)}
+            className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          >
+            <h2 className="text-sm font-semibold text-gray-900">
+              Controls
+            </h2>
+            <span className="text-gray-500 text-sm">
+              {showControls ? "▼" : "▶"}
+            </span>
+          </button>
+          {showControls && (
+            <div className="px-4 pb-4 pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">User Signups</p>
+                  <p className="text-xs text-gray-500">
+                    {signupsEnabled ? "New users can register" : "Signups are disabled"}
+                  </p>
+                </div>
+                <button
+                  onClick={toggleSignups}
+                  disabled={savingSettings}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    signupsEnabled ? "bg-green-500" : "bg-gray-300"
+                  } ${savingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      signupsEnabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-2 px-2 py-1.5 rounded text-xs font-medium inline-flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${signupsEnabled ? "bg-green-500" : "bg-red-500"}`} />
+                <span className={signupsEnabled ? "text-green-700" : "text-red-700"}>
+                  Status: {signupsEnabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
             </div>
           )}
         </div>
