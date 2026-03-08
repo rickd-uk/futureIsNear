@@ -1,9 +1,12 @@
 // src/components/FutureNews.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import PublicationDate from "./PublicationDate";
 import UserMenu from "./UserMenu";
+import VoteButton from "./VoteButton";
+import { useAuth } from "@/hooks/useAuth";
+import { useVoting } from "@/hooks/useVoting";
 
 interface Story {
   id: string;
@@ -15,16 +18,26 @@ interface Story {
   publicationMonth?: number | null;
   publicationYear?: number | null;
   timestamp: string;
+  totalVotes: number;
+  hotScore: number;
+  boost: number;
 }
 
 export default function FutureNews() {
+  const { isAuthenticated } = useAuth();
+  const {
+    remainingBudget,
+    vote,
+    removeVote,
+    getVoteCount,
+  } = useVoting(isAuthenticated);
+
   const [allStories, setAllStories] = useState<Story[]>([]);
   const [categoryFilteredStories, setCategoryFilteredStories] = useState<
     Story[]
   >([]);
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   // Category/Tab states
   const [categories, setCategories] = useState<string[]>([]);
@@ -39,22 +52,13 @@ export default function FutureNews() {
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWords, setWholeWords] = useState(false);
 
-  // Favorites filter
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-
   // Sort states
-  const [sortField, setSortField] = useState<"date" | "title">("date");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortMode, setSortMode] = useState<"hot" | "newest">("hot");
 
-  useEffect(() => {
-    fetchStories();
-    fetchFavorites();
-  }, []);
-
-  const fetchStories = async () => {
+  const fetchStories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/stories");
+      const response = await fetch(`/api/stories?sort=${sortMode}`);
       if (response.ok) {
         const data = await response.json();
         setAllStories(data);
@@ -74,51 +78,11 @@ export default function FutureNews() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortMode]);
 
-  const fetchFavorites = async () => {
-    try {
-      const response = await fetch("/api/favorites");
-      if (response.ok) {
-        const data = await response.json();
-        setFavorites(new Set(data.favoriteIds));
-      }
-    } catch (error) {
-      console.error("Failed to fetch favorites:", error);
-    }
-  };
-
-  const toggleFavorite = async (storyId: string) => {
-    const isFavorited = favorites.has(storyId);
-
-    // Optimistic update
-    const newFavorites = new Set(favorites);
-    if (isFavorited) {
-      newFavorites.delete(storyId);
-    } else {
-      newFavorites.add(storyId);
-    }
-    setFavorites(newFavorites);
-
-    try {
-      if (isFavorited) {
-        await fetch(`/api/favorites?storyId=${storyId}`, {
-          method: "DELETE",
-        });
-      } else {
-        await fetch("/api/favorites", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ storyId }),
-        });
-      }
-    } catch (error) {
-      console.error("Failed to toggle favorite:", error);
-      setFavorites(favorites);
-    }
-  };
+  useEffect(() => {
+    fetchStories();
+  }, [fetchStories]);
 
   // Filter by category when active tab changes
   useEffect(() => {
@@ -190,29 +154,6 @@ export default function FutureNews() {
       });
     }
 
-    // Apply favorites filter
-    if (showOnlyFavorites) {
-      result = result.filter((story) => favorites.has(story.id));
-    }
-
-    // Apply sorting
-    result = [...result].sort((a, b) => {
-      if (sortField === "date") {
-        const dateA = new Date(a.timestamp).getTime();
-        const dateB = new Date(b.timestamp).getTime();
-        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-      } else {
-        // Sort by title
-        const titleA = a.title.toLowerCase();
-        const titleB = b.title.toLowerCase();
-        if (sortDirection === "asc") {
-          return titleA.localeCompare(titleB);
-        } else {
-          return titleB.localeCompare(titleA);
-        }
-      }
-    });
-
     setFilteredStories(result);
   }, [
     searchQuery,
@@ -223,10 +164,6 @@ export default function FutureNews() {
     caseSensitive,
     wholeWords,
     categoryFilteredStories,
-    showOnlyFavorites,
-    favorites,
-    sortField,
-    sortDirection,
   ]);
 
   const handleClearSearch = () => {
@@ -239,7 +176,7 @@ export default function FutureNews() {
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-2 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-white">FutureIsNear</h1>
-          <UserMenu />
+          <UserMenu remainingBudget={remainingBudget} />
         </div>
       </header>
 
@@ -462,128 +399,31 @@ export default function FutureNews() {
 
               {/* Sort Controls */}
               <div className="flex items-center gap-1">
-                {/* Sort Field Toggle */}
                 <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                   <button
-                    onClick={() => setSortField("date")}
-                    title="Sort by date"
+                    onClick={() => setSortMode("hot")}
+                    title="Sort by hot score"
                     className={`px-2 py-1 text-xs transition-colors ${
-                      sortField === "date"
-                        ? "bg-blue-600 text-white"
+                      sortMode === "hot"
+                        ? "bg-orange-500 text-white"
                         : "bg-white text-gray-600 hover:bg-gray-100"
                     }`}
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
+                    Hot
                   </button>
                   <button
-                    onClick={() => setSortField("title")}
-                    title="Sort by title"
+                    onClick={() => setSortMode("newest")}
+                    title="Sort by newest"
                     className={`px-2 py-1 text-xs transition-colors ${
-                      sortField === "title"
+                      sortMode === "newest"
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-600 hover:bg-gray-100"
                     }`}
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                      />
-                    </svg>
+                    New
                   </button>
                 </div>
-
-                {/* Sort Direction Toggle */}
-                <button
-                  onClick={() =>
-                    setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-                  }
-                  title={
-                    sortDirection === "asc"
-                      ? "Ascending (oldest/A-Z first)"
-                      : "Descending (newest/Z-A first)"
-                  }
-                  className="px-2 py-1 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                  {sortDirection === "asc" ? (
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                      />
-                    </svg>
-                  )}
-                </button>
               </div>
-
-              {/* Divider */}
-              <div className="border-l border-gray-300 h-6"></div>
-
-              {/* Favorites Filter */}
-              <button
-                onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-                title="Show only favorites"
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                  showOnlyFavorites
-                    ? "bg-yellow-100 text-yellow-800 border-2 border-yellow-400"
-                    : "bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200"
-                }`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill={showOnlyFavorites ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-                  />
-                </svg>
-                <span>Favorites</span>
-              </button>
 
               {/* Results Count */}
               <div className="ml-auto text-xs text-gray-600">
@@ -592,9 +432,6 @@ export default function FutureNews() {
                     <span>
                       <strong>{filteredStories.length}</strong> result
                       {filteredStories.length !== 1 ? "s" : ""}
-                      {showOnlyFavorites && (
-                        <span className="text-yellow-600"> ★</span>
-                      )}
                     </span>
                   ) : (
                     <span className="text-red-600">No results</span>
@@ -603,18 +440,8 @@ export default function FutureNews() {
                   <span>
                     <strong>{categoryFilteredStories.length}</strong> in{" "}
                     {activeTab}
-                    {showOnlyFavorites && (
-                      <>
-                        {" "}
-                        → <strong>{filteredStories.length}</strong> ★
-                      </>
-                    )}
                   </span>
                 )}
-                <span className="text-gray-400 ml-2">
-                  {sortField === "date" ? "📅" : "🔤"}{" "}
-                  {sortDirection === "asc" ? "↑" : "↓"}
-                </span>
               </div>
             </div>
           </div>
@@ -635,47 +462,23 @@ export default function FutureNews() {
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="divide-y divide-gray-200">
               {filteredStories.map((story) => {
-                const isFavorited = favorites.has(story.id);
+                const userVoteCount = getVoteCount(story.id);
                 return (
                   <article
                     key={story.id}
                     className="p-3 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      {/* Favorite Star Button */}
-                      <button
-                        onClick={() => toggleFavorite(story.id)}
-                        className="flex-shrink-0"
-                        title={
-                          isFavorited
-                            ? "Remove from favorites"
-                            : "Add to favorites"
-                        }
-                      >
-                        {isFavorited ? (
-                          <svg
-                            className="w-5 h-5 text-yellow-400 hover:text-yellow-500"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-5 h-5 text-gray-300 hover:text-yellow-400"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-                            />
-                          </svg>
-                        )}
-                      </button>
+                      {/* Vote Button */}
+                      <VoteButton
+                        storyId={story.id}
+                        totalVotes={story.totalVotes}
+                        userVoteCount={userVoteCount}
+                        isAuthenticated={isAuthenticated}
+                        remainingBudget={remainingBudget}
+                        onVote={vote}
+                        onRemoveVote={removeVote}
+                      />
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">

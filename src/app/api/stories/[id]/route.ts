@@ -53,6 +53,7 @@ export async function PATCH(
       author?: string | null;
       publicationMonth?: number | null;
       publicationYear?: number | null;
+      boost?: number;
     } = {};
 
     if (body.title !== undefined) updateData.title = body.title;
@@ -65,6 +66,13 @@ export async function PATCH(
       updateData.publicationMonth = body.publicationMonth;
     if (body.publicationYear !== undefined)
       updateData.publicationYear = body.publicationYear;
+    if (body.boost !== undefined) {
+      // Validate boost range (0.1 - 10.0)
+      const boost = parseFloat(body.boost);
+      if (!isNaN(boost) && boost >= 0.1 && boost <= 10.0) {
+        updateData.boost = boost;
+      }
+    }
 
     const updatedStory = await prisma.story.update({
       where: { id },

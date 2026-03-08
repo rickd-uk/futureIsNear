@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { User, LogOut, ChevronDown } from "lucide-react";
 
-export default function UserMenu() {
+interface UserMenuProps {
+  remainingBudget?: number;
+}
+
+export default function UserMenu({ remainingBudget }: UserMenuProps) {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -53,6 +57,11 @@ export default function UserMenu() {
       >
         <User className="w-4 h-4" />
         <span className="text-sm font-medium">{user?.username}</span>
+        {remainingBudget !== undefined && (
+          <span className="text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded-full">
+            {remainingBudget}
+          </span>
+        )}
         <ChevronDown
           className={`w-3 h-3 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
@@ -66,6 +75,11 @@ export default function UserMenu() {
             </p>
             {user?.email && (
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            )}
+            {remainingBudget !== undefined && (
+              <p className="text-xs text-orange-600 mt-1">
+                {remainingBudget} votes remaining today
+              </p>
             )}
           </div>
           <button

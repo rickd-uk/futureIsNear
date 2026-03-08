@@ -12,6 +12,7 @@ interface Story {
   description: string | null;
   publicationMonth?: number | null;
   publicationYear?: number | null;
+  boost?: number;
 }
 
 interface EditStoryModalProps {
@@ -42,6 +43,7 @@ export default function EditStoryModal({
     author: "",
     publicationMonth: currentMonth,
     publicationYear: currentYear,
+    boost: 1.0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -75,6 +77,7 @@ export default function EditStoryModal({
         author: story.author || "",
         publicationMonth: story.publicationMonth || currentMonth,
         publicationYear: story.publicationYear || currentYear,
+        boost: story.boost ?? 1.0,
       });
     }
   }, [story, currentMonth, currentYear]);
@@ -90,7 +93,9 @@ export default function EditStoryModal({
       [name]:
         name === "publicationMonth" || name === "publicationYear"
           ? parseInt(value)
-          : value,
+          : name === "boost"
+            ? parseFloat(value) || 1.0
+            : value,
     }));
     if (name === "author") {
       setShowAuthorSuggestions(true);
@@ -149,6 +154,7 @@ export default function EditStoryModal({
           author: formData.author.trim() || undefined,
           publicationMonth: formData.publicationMonth,
           publicationYear: formData.publicationYear,
+          boost: formData.boost,
         }),
       });
 
@@ -372,6 +378,30 @@ export default function EditStoryModal({
                 })}
               </div>
             )}
+          </div>
+
+          {/* Boost (Admin multiplier for hot score) */}
+          <div>
+            <label
+              htmlFor="boost"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Boost Multiplier
+            </label>
+            <input
+              type="number"
+              id="boost"
+              name="boost"
+              value={formData.boost}
+              onChange={handleInputChange}
+              min="0.1"
+              max="10"
+              step="0.1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Affects hot score ranking (0.1 - 10.0, default: 1.0)
+            </p>
           </div>
 
           {/* Submit */}
