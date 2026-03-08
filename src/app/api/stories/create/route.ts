@@ -2,10 +2,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAuth, unauthorizedResponse } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/userAuth";
 
 export async function POST(request: Request) {
-  // CHECK AUTHENTICATION FIRST!
-  if (!checkAuth(request)) {
+  // Check for admin auth first
+  const isAdmin = checkAuth(request);
+
+  // If not admin, check for user auth
+  const user = !isAdmin ? getUserFromRequest(request) : null;
+
+  // Must be either admin or authenticated user
+  if (!isAdmin && !user) {
     return unauthorizedResponse();
   }
 
@@ -18,6 +25,7 @@ export async function POST(request: Request) {
       author,
       publicationMonth,
       publicationYear,
+      makePublic,
     } = await request.json();
 
     // Validate required fields
@@ -27,6 +35,9 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    // Admin stories are always public, user stories respect makePublic preference
+    const isPublic = isAdmin ? true : Boolean(makePublic);
 
     const newStory = await prisma.story.create({
       data: {
@@ -38,6 +49,8 @@ export async function POST(request: Request) {
         timestamp: new Date(),
         publicationMonth: publicationMonth || null,
         publicationYear: publicationYear || null,
+        isPublic,
+        createdById: user?.userId || null,
       },
     });
 

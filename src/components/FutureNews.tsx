@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import PublicationDate from "./PublicationDate";
 import UserMenu from "./UserMenu";
 import VoteButton from "./VoteButton";
+import UserSubmitStoryModal from "./UserSubmitStoryModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoting } from "@/hooks/useVoting";
 
@@ -21,47 +22,15 @@ interface Story {
   totalVotes: number;
   hotScore: number;
   boost: number;
+  isPublic: boolean;
+  createdById: string | null;
+  submittedBy: string | null;
 }
 
 const STORIES_PER_PAGE = 20;
 
-const CATEGORY_ICONS: Record<string, string> = {
-  All: "🌐",
-  Technology: "💻",
-  Health: "🏥",
-  Science: "🔬",
-  Business: "💼",
-  Politics: "🏛️",
-  Environment: "🌱",
-  Sports: "⚽",
-  Entertainment: "🎬",
-  Education: "📚",
-  Finance: "💰",
-  AI: "🤖",
-  Space: "🚀",
-  Energy: "⚡",
-  Climate: "🌍",
-  Food: "🍽️",
-  Travel: "✈️",
-  Culture: "🎭",
-  Conflict: "⚔️",
-  Gaming: "🎮",
-  Music: "🎵",
-  Fashion: "👗",
-  Auto: "🚗",
-  "Real Estate": "🏠",
-  Crypto: "₿",
-  Legal: "⚖️",
-  Security: "🔒",
-  Social: "👥",
-  Retail: "🛒",
-  Media: "📺",
-  Wellness: "🧘",
-  Architecture: "🏗️",
-};
-
 export default function FutureNews() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { remainingBudget, vote, removeVote, getVoteCount } =
     useVoting(isAuthenticated);
 
@@ -72,6 +41,7 @@ export default function FutureNews() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [categories, setCategories] = useState<string[]>([]);
+  const [categoryIcons, setCategoryIcons] = useState<Record<string, string>>({});
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +54,7 @@ export default function FutureNews() {
   const [sortMode, setSortMode] = useState<"hot" | "newest">("hot");
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -92,17 +63,31 @@ export default function FutureNews() {
   const fetchStories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/stories?sort=${sortMode}`);
-      if (response.ok) {
-        const data = await response.json();
+      const token = localStorage.getItem("user_token");
+      const headers: HeadersInit = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Fetch stories and categories with icons in parallel
+      const [storiesRes, categoriesRes] = await Promise.all([
+        fetch(`/api/stories?sort=${sortMode}`, { headers }),
+        fetch("/api/categories?withIcons=true"),
+      ]);
+
+      if (storiesRes.ok) {
+        const data = await storiesRes.json();
         setAllStories(data);
-        const uniqueCategories = Array.from(
-          new Set(data.map((s: Story) => s.category))
-        ) as string[];
-        // Add dummy categories for testing (remove in production)
-        const dummyCategories = ["Gaming", "Music", "Fashion", "Auto", "Real Estate", "Crypto", "Legal", "Security", "Social", "Retail", "Media", "Wellness", "Architecture"];
-        const allCats = [...new Set([...uniqueCategories, ...dummyCategories])].sort();
-        setCategories(["All", ...allCats]);
+      }
+
+      if (categoriesRes.ok) {
+        const catData = await categoriesRes.json();
+        const icons: Record<string, string> = { All: "🌐" };
+        catData.forEach((c: { name: string; icon: string }) => {
+          icons[c.name] = c.icon;
+        });
+        setCategoryIcons(icons);
+        setCategories(["All", ...catData.map((c: { name: string }) => c.name).sort()]);
       }
     } catch (error) {
       console.error("Failed to fetch stories:", error);
@@ -161,8 +146,33 @@ export default function FutureNews() {
     return () => observer.disconnect();
   }, [loadMore, hasMore, loadingMore]);
 
+  const toggleVisibility = async (storyId: string, makePublic: boolean) => {
+    try {
+      const token = localStorage.getItem("user_token");
+      const response = await fetch(`/api/stories/${storyId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isPublic: makePublic }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setAllStories((prev) =>
+          prev.map((s) =>
+            s.id === storyId ? { ...s, isPublic: makePublic } : s
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Failed to toggle visibility:", error);
+    }
+  };
+
   const CategoryButton = ({ cat, compact = false }: { cat: string; compact?: boolean }) => {
-    const icon = CATEGORY_ICONS[cat] || "📁";
+    const icon = categoryIcons[cat] || "📁";
     const isActive = selectedCategory === cat;
     return (
       <button
@@ -193,7 +203,20 @@ export default function FutureNews() {
             <span className="text-2xl">🚀</span>
             <span>FutureIsNear</span>
           </h1>
-          <UserMenu remainingBudget={remainingBudget} />
+          <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <button
+                onClick={() => setShowSubmitModal(true)}
+                className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Submit
+              </button>
+            )}
+            <UserMenu remainingBudget={remainingBudget} />
+          </div>
         </div>
       </header>
 
@@ -300,7 +323,7 @@ export default function FutureNews() {
             </div>
             <div className="p-4 flex flex-col items-center gap-2">
               {categories.map((cat) => {
-                const icon = CATEGORY_ICONS[cat] || "📁";
+                const icon = categoryIcons[cat] || "📁";
                 const isActive = selectedCategory === cat;
                 return (
                   <button
@@ -425,10 +448,19 @@ export default function FutureNews() {
                         onRemoveVote={removeVote}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="inline-block px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
                             {story.category}
                           </span>
+                          {/* Private badge for user's own private stories */}
+                          {!story.isPublic && story.createdById === user?.id && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
+                              Private
+                            </span>
+                          )}
                           <h2 className="text-sm font-semibold text-gray-900 flex-1">
                             <a
                               href={story.url}
@@ -446,18 +478,34 @@ export default function FutureNews() {
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span>{story.author || "Unknown"}</span>
                           <PublicationDate month={story.publicationMonth} year={story.publicationYear} className="flex items-center gap-1" />
+                          {/* Show submitter for user-created stories */}
+                          {story.submittedBy && (
+                            <span className="text-gray-400">by {story.submittedBy}</span>
+                          )}
                         </div>
                       </div>
-                      <a
-                        href={story.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 text-gray-400 hover:text-blue-600"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Toggle visibility button for user's own private stories */}
+                        {story.createdById === user?.id && !story.isPublic && (
+                          <button
+                            onClick={() => toggleVisibility(story.id, true)}
+                            className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                            title="Make this story public"
+                          >
+                            Make Public
+                          </button>
+                        )}
+                        <a
+                          href={story.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-blue-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                   </article>
                 );
@@ -471,6 +519,15 @@ export default function FutureNews() {
           </div>
         )}
       </main>
+
+      {/* Submit Story Modal */}
+      <UserSubmitStoryModal
+        isOpen={showSubmitModal}
+        onClose={() => setShowSubmitModal(false)}
+        onSuccess={() => {
+          fetchStories();
+        }}
+      />
     </div>
   );
 }

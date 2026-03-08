@@ -308,7 +308,6 @@ export default function AdminDashboard() {
           {showCategoryManagement && (
             <div className="px-4 pb-3 border-t border-gray-100">
               <CategoryManagement
-                categories={categories}
                 onCategoryUpdated={handleStoryAdded}
               />
             </div>

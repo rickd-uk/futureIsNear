@@ -8,24 +8,36 @@ datasource db {
 }
 
 model Category {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String   @unique
+  icon        String   @default("📁")  // Emoji icon for the category
+  isPublic    Boolean  @default(false)  // Admin categories are public, user categories are private
+  createdById String?  // null = admin created
+  createdBy   User?    @relation("UserCategories", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([createdById])
 }
 
 model Story {
-  id        String   @id @default(cuid())
-  title     String
-  url       String
-  description  String?
-  category  String
-  author    String?  @default("Unknown Author")
-  timestamp DateTime @default(now())
+  id          String   @id @default(cuid())
+  title       String
+  url         String
+  description String?
+  category    String
+  author      String?  @default("Unknown Author")
+  timestamp   DateTime @default(now())
   publicationMonth Int?    // Month (1-12)
-  publicationYear Int?    // Year (ex. 2025)
-  boost     Float    @default(1.0)  // Admin multiplier for hot score
-  votes     Vote[]
+  publicationYear  Int?    // Year (ex. 2025)
+  boost       Float    @default(1.0)  // Admin multiplier for hot score
+  isPublic    Boolean  @default(false)  // Admin stories are public, user stories are private
+  createdById String?  // null = admin created
+  createdBy   User?    @relation("UserStories", fields: [createdById], references: [id], onDelete: SetNull)
+  votes       Vote[]
+
   @@index([category])
+  @@index([createdById])
+  @@index([isPublic])
 }
 
 model Vote {
@@ -44,13 +56,15 @@ model Vote {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  username      String    @unique
-  email         String?   @unique
+  id            String     @id @default(cuid())
+  username      String     @unique
+  email         String?    @unique
   passwordHash  String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   votes         Vote[]
+  stories       Story[]    @relation("UserStories")
+  categories    Category[] @relation("UserCategories")
 
   @@index([email])
 }

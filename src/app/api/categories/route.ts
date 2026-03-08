@@ -2,27 +2,67 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Get all unique categories from stories
-    const stories = await prisma.story.findMany({
-      // where: {
-      //   NOT: {
-      //     author: "__SYSTEM__",
-      //   },
-      // },
+    const { searchParams } = new URL(request.url);
+    const includePrivate = searchParams.get("includePrivate") === "true";
+    const withIcons = searchParams.get("withIcons") === "true";
+
+    // Get categories from Category model (only public unless admin)
+    const categoryWhere: Record<string, unknown> = {};
+
+    if (includePrivate) {
+      // Admin can see all
+      if (!checkAuth(request)) {
+        return NextResponse.json(
+          { error: "Admin access required" },
+          { status: 403 }
+        );
+      }
+    } else {
+      // Default: only public categories
+      categoryWhere.isPublic = true;
+    }
+
+    const categoriesFromModel = await prisma.category.findMany({
+      where: categoryWhere,
+      select: { name: true, icon: true },
+    });
+
+    // Also get categories from public stories (for backward compatibility)
+    const storiesWithCategories = await prisma.story.findMany({
+      where: {
+        isPublic: true,
+        NOT: {
+          author: "__SYSTEM__",
+        },
+      },
       select: {
         category: true,
       },
       distinct: ["category"],
     });
 
-    const categories = stories
-      .map((story: { category: string | null }) => story.category)
-      .filter(Boolean)
-      .sort();
+    // Build category map with icons
+    const categoryMap = new Map<string, string>();
+    categoriesFromModel.forEach((c) => categoryMap.set(c.name, c.icon));
+    storiesWithCategories.forEach((s) => {
+      if (s.category && !categoryMap.has(s.category)) {
+        categoryMap.set(s.category, "📁"); // Default icon for legacy categories
+      }
+    });
 
-    return NextResponse.json(categories);
+    // Return based on format requested
+    if (withIcons) {
+      const categoriesWithIcons = Array.from(categoryMap.entries())
+        .map(([name, icon]) => ({ name, icon }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return NextResponse.json(categoriesWithIcons);
+    } else {
+      // Legacy format: just names
+      const categories = Array.from(categoryMap.keys()).sort();
+      return NextResponse.json(categories);
+    }
   } catch (error) {
     console.error("Failed to fetch categories:", error);
     return NextResponse.json(
@@ -33,13 +73,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  // CHECK AUTHENTICATION FIRST!
+  // Admin only - users cannot create categories
   if (!checkAuth(request)) {
     return unauthorizedResponse();
   }
 
   try {
-    const { categoryName } = await request.json();
+    const { categoryName, icon } = await request.json();
 
     if (
       !categoryName ||
@@ -52,38 +92,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if category already exists
-    const existingStory = await prisma.story.findFirst({
-      where: {
-        category: categoryName.trim(),
-      },
+    const trimmedName = categoryName.trim();
+    const categoryIcon = icon?.trim() || "📁";
+
+    // Check if category already exists in Category model
+    const existingCategory = await prisma.category.findUnique({
+      where: { name: trimmedName },
     });
 
-    if (existingStory) {
+    if (existingCategory) {
       return NextResponse.json(
         { error: "Category already exists" },
         { status: 400 },
       );
     }
 
-    // placeholder story to establish the category
-    // This is a workaround since categories are derived from stories
-    const placeholderStory = await prisma.story.create({
+    // Create category in Category model (admin categories are always public)
+    const newCategory = await prisma.category.create({
       data: {
-        title: `__PLACEHOLDER__${categoryName.trim()}`,
-        url: "about:blank",
-        category: categoryName.trim(),
-        description: "System placeholder - do not display",
-        author: "__SYSTEM__",
-        timestamp: new Date(),
+        name: trimmedName,
+        icon: categoryIcon,
+        isPublic: true,
+        createdById: null,
       },
     });
 
     return NextResponse.json({
       success: true,
       message: "Category created successfully",
-      category: categoryName.trim(),
-      placeholderId: placeholderStory.id,
+      category: newCategory.name,
+      icon: newCategory.icon,
+      id: newCategory.id,
+      isPublic: newCategory.isPublic,
     });
   } catch (error) {
     console.error("Failed to create category:", error);

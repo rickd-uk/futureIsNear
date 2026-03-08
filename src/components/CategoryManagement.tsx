@@ -3,17 +3,23 @@
 
 import React, { useState } from "react";
 
+interface Category {
+  name: string;
+  icon: string;
+}
+
 interface CategoryManagementProps {
-  categories: string[];
   onCategoryUpdated: () => void;
 }
 
 export default function CategoryManagement({
-  categories,
   onCategoryUpdated,
 }: CategoryManagementProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [newIcon, setNewIcon] = useState("");
   const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
   const [deleteAssociatedStories, setDeleteAssociatedStories] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -21,10 +27,33 @@ export default function CategoryManagement({
   const [success, setSuccess] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryIcon, setNewCategoryIcon] = useState("📁");
 
-  const handleRenameClick = (category: string) => {
-    setEditingCategory(category);
-    setNewName(category);
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      const response = await fetch("/api/categories?withIcons=true", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleRenameClick = (category: Category) => {
+    setEditingCategory(category.name);
+    setNewName(category.name);
+    setNewIcon(category.icon);
     setError("");
     setSuccess("");
     setIsAddingCategory(false);
@@ -33,16 +62,20 @@ export default function CategoryManagement({
   const handleCancelRename = () => {
     setEditingCategory(null);
     setNewName("");
+    setNewIcon("");
     setError("");
   };
 
-  const handleRenameSubmit = async (oldName: string) => {
+  const handleRenameSubmit = async (oldName: string, oldIcon: string) => {
     if (!newName.trim()) {
       setError("Category name cannot be empty");
       return;
     }
 
-    if (newName.trim() === oldName) {
+    const nameChanged = newName.trim() !== oldName;
+    const iconChanged = newIcon.trim() !== oldIcon;
+
+    if (!nameChanged && !iconChanged) {
       handleCancelRename();
       return;
     }
@@ -60,26 +93,29 @@ export default function CategoryManagement({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ newName: newName.trim() }),
+          body: JSON.stringify({
+            newName: nameChanged ? newName.trim() : undefined,
+            icon: iconChanged ? newIcon.trim() : undefined,
+          }),
         },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to rename category");
+        throw new Error(data.error || "Failed to update category");
       }
 
-      setSuccess(
-        `Category renamed successfully. ${data.updatedCount} stories updated.`,
-      );
+      setSuccess("Category updated successfully.");
       setEditingCategory(null);
       setNewName("");
+      setNewIcon("");
+      fetchCategories();
       onCategoryUpdated();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to rename category",
+        err instanceof Error ? err.message : "Failed to update category",
       );
     } finally {
       setIsProcessing(false);
@@ -168,7 +204,7 @@ export default function CategoryManagement({
       return;
     }
 
-    if (categories.includes(newCategoryName.trim())) {
+    if (categories.some(c => c.name === newCategoryName.trim())) {
       setError("Category already exists");
       return;
     }
@@ -184,7 +220,10 @@ export default function CategoryManagement({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ categoryName: newCategoryName.trim() }),
+        body: JSON.stringify({
+          categoryName: newCategoryName.trim(),
+          icon: newCategoryIcon.trim() || "📁",
+        }),
       });
 
       const data = await response.json();
@@ -196,6 +235,8 @@ export default function CategoryManagement({
       setSuccess(`Category "${newCategoryName.trim()}" added successfully!`);
       setIsAddingCategory(false);
       setNewCategoryName("");
+      setNewCategoryIcon("📁");
+      fetchCategories();
       onCategoryUpdated();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -252,21 +293,32 @@ export default function CategoryManagement({
       {isAddingCategory && (
         <div className="mb-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
           <div className="space-y-2">
-            <input
-              type="text"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddCategorySubmit();
-                }
-              }}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-              placeholder="New category name"
-              disabled={isProcessing}
-              autoFocus
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newCategoryIcon}
+                onChange={(e) => setNewCategoryIcon(e.target.value)}
+                className="w-16 px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg text-center"
+                placeholder="📁"
+                disabled={isProcessing}
+                maxLength={2}
+              />
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddCategorySubmit();
+                  }
+                }}
+                className="flex-1 px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                placeholder="New category name"
+                disabled={isProcessing}
+                autoFocus
+              />
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleAddCategorySubmit}
@@ -288,35 +340,48 @@ export default function CategoryManagement({
       )}
 
       {/* Categories Grid */}
-      {categories.length === 0 && !isAddingCategory ? (
+      {loading ? (
+        <p className="text-xs text-gray-500">Loading categories...</p>
+      ) : categories.length === 0 && !isAddingCategory ? (
         <p className="text-xs text-gray-500">No categories yet.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {categories.map((category) => (
             <div
-              key={category}
+              key={category.name}
               className="border border-gray-200 rounded-lg p-2 bg-gray-50 hover:bg-gray-100 transition-colors"
             >
-              {editingCategory === category ? (
+              {editingCategory === category.name ? (
                 <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleRenameSubmit(category);
-                      }
-                    }}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-                    placeholder="New category name"
-                    disabled={isProcessing}
-                    autoFocus
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newIcon}
+                      onChange={(e) => setNewIcon(e.target.value)}
+                      className="w-12 px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg text-center"
+                      placeholder="📁"
+                      disabled={isProcessing}
+                      maxLength={2}
+                    />
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleRenameSubmit(category.name, category.icon);
+                        }
+                      }}
+                      className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                      placeholder="Category name"
+                      disabled={isProcessing}
+                      autoFocus
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleRenameSubmit(category)}
+                      onClick={() => handleRenameSubmit(category.name, category.icon)}
                       disabled={isProcessing}
                       className="flex-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
                     >
@@ -331,10 +396,11 @@ export default function CategoryManagement({
                     </button>
                   </div>
                 </div>
-              ) : deletingCategory === category ? (
+              ) : deletingCategory === category.name ? (
                 <div className="space-y-2">
-                  <p className="text-xs text-red-600 font-medium">
-                    Delete &quot;{category}&quot;?
+                  <p className="text-sm text-red-600 font-medium flex items-center gap-2">
+                    <span>{category.icon}</span>
+                    Delete &quot;{category.name}&quot;?
                   </p>
                   <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
                     <input
@@ -350,7 +416,7 @@ export default function CategoryManagement({
                   </label>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleDeleteConfirm(category)}
+                      onClick={() => handleDeleteConfirm(category.name)}
                       disabled={isProcessing}
                       className="flex-1 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 disabled:opacity-50"
                     >
@@ -367,8 +433,9 @@ export default function CategoryManagement({
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-900 truncate flex-1">
-                    {category}
+                  <span className="text-sm font-medium text-gray-900 truncate flex-1 flex items-center gap-2">
+                    <span className="text-lg">{category.icon}</span>
+                    {category.name}
                   </span>
                   <div className="flex gap-1 ml-2">
                     <button
@@ -392,7 +459,7 @@ export default function CategoryManagement({
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(category)}
+                      onClick={() => handleDeleteClick(category.name)}
                       className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
                       title="Delete category"
                       type="button"

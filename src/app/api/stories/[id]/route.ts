@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAuth, unauthorizedResponse } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/userAuth";
 
 export async function DELETE(
   request: Request,
@@ -35,8 +36,11 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // CHECK AUTHENTICATION FIRST!
-  if (!checkAuth(request)) {
+  const isAdmin = checkAuth(request);
+  const user = !isAdmin ? getUserFromRequest(request) : null;
+
+  // Must be admin or authenticated user
+  if (!isAdmin && !user) {
     return unauthorizedResponse();
   }
 
@@ -44,7 +48,27 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    // only include valid story fields
+    // Get the story to check ownership
+    const story = await prisma.story.findUnique({
+      where: { id },
+    });
+
+    if (!story) {
+      return NextResponse.json(
+        { error: "Story not found" },
+        { status: 404 }
+      );
+    }
+
+    // Users can only update their own stories
+    if (!isAdmin && story.createdById !== user?.userId) {
+      return NextResponse.json(
+        { error: "You can only edit your own stories" },
+        { status: 403 }
+      );
+    }
+
+    // Build update data based on permissions
     const updateData: {
       title?: string;
       url?: string;
@@ -54,23 +78,29 @@ export async function PATCH(
       publicationMonth?: number | null;
       publicationYear?: number | null;
       boost?: number;
+      isPublic?: boolean;
     } = {};
 
+    // Fields that both users and admins can update
     if (body.title !== undefined) updateData.title = body.title;
     if (body.url !== undefined) updateData.url = body.url;
     if (body.category !== undefined) updateData.category = body.category;
     if (body.description !== undefined)
       updateData.description = body.description;
-    if (body.author !== undefined) updateData.author = body.author;
-    if (body.publicationMonth !== undefined)
-      updateData.publicationMonth = body.publicationMonth;
-    if (body.publicationYear !== undefined)
-      updateData.publicationYear = body.publicationYear;
-    if (body.boost !== undefined) {
-      // Validate boost range (0.1 - 10.0)
-      const boost = parseFloat(body.boost);
-      if (!isNaN(boost) && boost >= 0.1 && boost <= 10.0) {
-        updateData.boost = boost;
+    if (body.isPublic !== undefined) updateData.isPublic = body.isPublic;
+
+    // Admin-only fields
+    if (isAdmin) {
+      if (body.author !== undefined) updateData.author = body.author;
+      if (body.publicationMonth !== undefined)
+        updateData.publicationMonth = body.publicationMonth;
+      if (body.publicationYear !== undefined)
+        updateData.publicationYear = body.publicationYear;
+      if (body.boost !== undefined) {
+        const boost = parseFloat(body.boost);
+        if (!isNaN(boost) && boost >= 0.1 && boost <= 10.0) {
+          updateData.boost = boost;
+        }
       }
     }
 

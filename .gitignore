@@ -42,4 +42,7 @@ next-env.d.ts
 prisma/dev.db
 ecosystem.config.cjs
 
+# specstory conversation history
+.specstory/
+
 

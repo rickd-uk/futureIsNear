@@ -1,24 +1,84 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateHotScore } from "@/lib/votingConfig";
+import { getUserFromRequest } from "@/lib/userAuth";
+import { checkAuth } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const sort = searchParams.get("sort") || "hot";
+    const mine = searchParams.get("mine") === "true";
+    const includePrivate = searchParams.get("includePrivate") === "true";
+
+    // Check if user is authenticated
+    const user = getUserFromRequest(request);
+
+    // Build where clause
+    let whereClause: Record<string, unknown> = {
+      NOT: [
+        { author: "__SYSTEM__" },
+        { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
+        { title: { startsWith: "__PLACEHOLDER__" } },
+      ],
+    };
+
+    // If requesting only user's own stories
+    if (mine) {
+      if (!user) {
+        return NextResponse.json(
+          { error: "Authentication required" },
+          { status: 401 }
+        );
+      }
+      whereClause.createdById = user.userId;
+    } else if (includePrivate) {
+      // Admin can see all stories
+      if (!checkAuth(request)) {
+        return NextResponse.json(
+          { error: "Admin access required" },
+          { status: 403 }
+        );
+      }
+      // No filter - show all
+    } else {
+      // Default: show public stories + user's own private stories
+      if (user) {
+        // Authenticated: public OR own stories
+        whereClause = {
+          AND: [
+            {
+              NOT: [
+                { author: "__SYSTEM__" },
+                { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
+                { title: { startsWith: "__PLACEHOLDER__" } },
+              ],
+            },
+            {
+              OR: [
+                { isPublic: true },
+                { createdById: user.userId },
+              ],
+            },
+          ],
+        };
+      } else {
+        // Not authenticated: only public stories
+        whereClause.isPublic = true;
+      }
+    }
 
     const stories = await prisma.story.findMany({
-      where: {
-        NOT: [
-          { author: "__SYSTEM__" },
-          { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
-          { title: { startsWith: "__PLACEHOLDER__" } },
-        ],
-      },
+      where: whereClause,
       include: {
         votes: {
           select: {
             count: true,
+          },
+        },
+        createdBy: {
+          select: {
+            username: true,
           },
         },
       },
@@ -44,6 +104,9 @@ export async function GET(request: Request) {
         publicationMonth: story.publicationMonth,
         publicationYear: story.publicationYear,
         boost: story.boost,
+        isPublic: story.isPublic,
+        createdById: story.createdById,
+        submittedBy: story.createdBy?.username || null,
         totalVotes,
         hotScore,
       };
