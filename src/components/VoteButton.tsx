@@ -75,7 +75,7 @@ export default function VoteButton({
     >
       {/* Upvote Arrow */}
       <svg
-        className="w-4 h-4"
+        className="w-6 h-6"
         fill={userVoteCount > 0 ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth="2"
@@ -85,15 +85,15 @@ export default function VoteButton({
       </svg>
 
       {/* Vote Count */}
-      <span className="text-xs font-medium">{totalVotes}</span>
+      <span className="text-sm font-semibold">{totalVotes}</span>
 
       {/* User's vote indicator */}
       {isAuthenticated && userVoteCount > 0 && (
-        <div className="flex gap-0.5">
+        <div className="flex gap-1">
           {Array.from({ length: userVoteCount }).map((_, i) => (
             <div
               key={i}
-              className="w-1.5 h-1.5 rounded-full bg-orange-500"
+              className="w-2 h-2 rounded-full bg-orange-500"
             />
           ))}
         </div>
