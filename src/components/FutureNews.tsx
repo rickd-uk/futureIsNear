@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import PublicationDate from "./PublicationDate";
+import UserMenu from "./UserMenu";
 
 interface Story {
   id: string;
@@ -236,8 +237,9 @@ export default function FutureNews() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-800 p-2 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-white">FutureIsNear</h1>
+          <UserMenu />
         </div>
       </header>
 

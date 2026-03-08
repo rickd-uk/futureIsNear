@@ -37,4 +37,15 @@ model Favorite {
 
   @@unique([storyId, userId])
   @@index([userId])
-  }
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String?   @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+}
