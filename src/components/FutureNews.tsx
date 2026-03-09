@@ -194,6 +194,9 @@ export default function FutureNews() {
     setEditingLink(link);
   }, []);
 
+  const [triageLinks, setTriageLinks] = useState<Link[]>([]);
+  const [triageOpen, setTriageOpen] = useState(true);
+
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
@@ -270,7 +273,20 @@ export default function FutureNews() {
   }, [fetchLinks]);
 
   useEffect(() => {
+    // Triage: own uncategorized links, only shown in personal feed
+    if (isAuthenticated && !showPublicFeed && user?.id) {
+      setTriageLinks(
+        allLinks
+          .filter((l) => !l.category && l.createdById === user.id)
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      );
+    } else {
+      setTriageLinks([]);
+    }
+
     let result = [...allLinks];
+    // Always exclude uncategorized from main feed
+    result = result.filter((link) => Boolean(link.category));
     if (selectedCategory !== "All") {
       result = result.filter((link) => link.category === selectedCategory);
     }
@@ -557,6 +573,45 @@ export default function FutureNews() {
         {selectedCategory !== "All" && ` in ${selectedCategory}`}
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
+
+      {/* Triage Queue */}
+      {triageLinks.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 pb-3">
+          <div className="rounded-lg border border-amber-300 overflow-hidden">
+            <button
+              onClick={() => setTriageOpen((o) => !o)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-amber-50 hover:bg-amber-100 transition-colors text-left"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-amber-600 font-semibold text-sm">📥 To Organize</span>
+                <span className="bg-amber-200 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">{triageLinks.length}</span>
+              </div>
+              <svg className={`w-4 h-4 text-amber-500 transition-transform ${triageOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {triageOpen && (
+              <div className="divide-y divide-amber-100 bg-white">
+                {triageLinks.map((link) => (
+                  <LinkRow
+                    key={link.id}
+                    link={link}
+                    userVoteCount={getVoteCount(link.id)}
+                    isAuthenticated={isAuthenticated}
+                    remainingBudget={remainingBudget}
+                    userId={user?.id}
+                    showPublicFeed={showPublicFeed}
+                    onVote={vote}
+                    onRemoveVote={removeVote}
+                    onToggleVisibility={toggleVisibility}
+                    onEdit={handleEdit}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Links */}
       <main className="max-w-7xl mx-auto px-4 pb-8">
