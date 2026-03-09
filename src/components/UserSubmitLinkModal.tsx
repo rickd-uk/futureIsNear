@@ -297,15 +297,15 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
                 </button>
               )}
             </div>
-            {/* Desktop: pill grid */}
-            <div className="hidden sm:flex flex-wrap gap-1.5">
+            {/* Desktop: single-row scrollable pills */}
+            <div className="hidden sm:flex flex-nowrap gap-1.5 overflow-x-auto min-w-0 pb-1">
               {categories.map((cat) => {
                 const selected = formData.category === cat.name;
                 const suggested = !formData.category && suggestedCategory === cat.name;
                 return (
                   <button key={cat.name} type="button"
                     onClick={() => { setFormData((p) => ({ ...p, category: selected ? "" : cat.name })); setSuggestedCategory(""); }}
-                    className={`text-xs px-2.5 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
+                    className={`shrink-0 text-xs px-2.5 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
                       selected ? "bg-blue-600 text-white border-blue-600"
                       : suggested ? "bg-blue-50 border-blue-400 text-blue-700 border-dashed"
                       : "bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-100"
