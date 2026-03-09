@@ -14,38 +14,43 @@ interface AuthState {
   error: string | null;
 }
 
+function parseJwt(token: string): { userId: string; username: string; exp: number } | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (payload.type !== "user" || !payload.userId || !payload.username) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    error: null,
+  const [state, setState] = useState<AuthState>(() => {
+    // Synchronously decode token on first render — no network call needed
+    if (typeof window === "undefined") return { user: null, loading: false, error: null };
+    const token = localStorage.getItem("user_token");
+    if (!token) return { user: null, loading: false, error: null };
+    const payload = parseJwt(token);
+    if (!payload || payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem("user_token");
+      return { user: null, loading: false, error: null };
+    }
+    return { user: { id: payload.userId, username: payload.username, email: null }, loading: false, error: null };
   });
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = useCallback(() => {
     const token = localStorage.getItem("user_token");
-
     if (!token) {
       setState({ user: null, loading: false, error: null });
       return;
     }
-
-    try {
-      const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setState({ user: data.user, loading: false, error: null });
-      } else {
-        localStorage.removeItem("user_token");
-        setState({ user: null, loading: false, error: null });
-      }
-    } catch {
-      setState({ user: null, loading: false, error: "Failed to check auth" });
+    const payload = parseJwt(token);
+    if (!payload || payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem("user_token");
+      setState({ user: null, loading: false, error: null });
+      return;
     }
+    setState({ user: { id: payload.userId, username: payload.username, email: null }, loading: false, error: null });
   }, []);
 
   useEffect(() => {

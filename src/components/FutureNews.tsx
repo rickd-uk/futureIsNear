@@ -1,8 +1,7 @@
 // src/components/FutureNews.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import PublicationDate from "./PublicationDate";
+import React, { useState, useEffect, useCallback, useRef, memo } from "react";
 import UserMenu from "./UserMenu";
 import VoteButton from "./VoteButton";
 import UserSubmitLinkModal from "./UserSubmitLinkModal";
@@ -30,27 +29,111 @@ interface Link {
 
 const LINKS_PER_PAGE = 20;
 
+// Outside component — stable reference, no closure dependencies
+const fmtDate = (d: Date) => {
+  const now = new Date();
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric", month: "short",
+    ...(d.getFullYear() !== now.getFullYear() ? { year: "2-digit" } : {}),
+  });
+};
+
+const formatPubDate = (link: Link): string | null => {
+  if (!link.publicationYear) return null;
+  if (link.publicationDay && link.publicationMonth)
+    return fmtDate(new Date(link.publicationYear, link.publicationMonth - 1, link.publicationDay));
+  if (link.publicationMonth)
+    return new Date(link.publicationYear, link.publicationMonth - 1)
+      .toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+  return String(link.publicationYear);
+};
+
+// Memoized link row — only re-renders when its own data changes
+interface LinkRowProps {
+  link: Link;
+  userVoteCount: number;
+  isAuthenticated: boolean;
+  remainingBudget: number;
+  userId: string | undefined;
+  onVote: (linkId: string, count: number) => Promise<boolean>;
+  onRemoveVote: (linkId: string) => Promise<boolean>;
+  onToggleVisibility: (linkId: string, makePublic: boolean) => void;
+}
+
+const LinkRow = memo(function LinkRow({
+  link, userVoteCount, isAuthenticated, remainingBudget, userId, onVote, onRemoveVote, onToggleVisibility,
+}: LinkRowProps) {
+  const isOwn = link.createdById === userId;
+  const pubDate = formatPubDate(link);
+  const addedDate = fmtDate(new Date(link.timestamp));
+
+  return (
+    <article className="px-3 py-2.5 hover:bg-gray-50 transition-colors">
+      <div className="flex items-start gap-2.5">
+        <VoteButton
+          linkId={link.id}
+          totalVotes={link.totalVotes}
+          userVoteCount={userVoteCount}
+          isAuthenticated={isAuthenticated}
+          remainingBudget={remainingBudget}
+          onVote={onVote}
+          onRemoveVote={onRemoveVote}
+        />
+        <div className="flex-1 min-w-0 select-text">
+          <h2 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug mb-1">
+            <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
+              {link.title}
+            </a>
+          </h2>
+          <div className="flex items-center gap-x-1.5 text-xs text-gray-500 flex-wrap">
+            <span className="shrink-0 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded font-medium select-none">{link.category}</span>
+            {link.author && link.author !== "Unknown Author" && (
+              <span className="truncate max-w-[120px]">{link.author}</span>
+            )}
+            {pubDate && <span className="shrink-0">{pubDate}</span>}
+            <span className="shrink-0 text-gray-400" title="Added to LinX">🔗 {addedDate}</span>
+            {link.submittedBy && <span className="shrink-0 text-gray-400">via {link.submittedBy}</span>}
+            {!link.isPublic && isOwn && (
+              <span className="shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 bg-gray-100 text-gray-500 rounded">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                Private
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 shrink-0">
+          {isOwn && (
+            <button
+              onClick={() => onToggleVisibility(link.id, !link.isPublic)}
+              title={link.isPublic ? "Make private" : "Make public"}
+              className={`p-1 rounded transition-colors ${link.isPublic ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-green-600 hover:text-green-700 hover:bg-green-50"}`}
+            >
+              {link.isPublic
+                ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+              }
+            </button>
+          )}
+          <a href={link.url} target="_blank" rel="noopener noreferrer" className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+});
+
 export default function FutureNews() {
   const { isAuthenticated, user } = useAuth();
   const { remainingBudget, vote: castVote, removeVote, getVoteCount, initFromServer } =
     useVoting(isAuthenticated);
 
-  const vote = async (linkId: string, count: number): Promise<boolean> => {
-    const prev = getVoteCount(linkId);
-    const delta = count - prev;
-    if (delta > 0) {
-      setAllLinks((links) =>
-        links.map((l) => l.id === linkId ? { ...l, totalVotes: l.totalVotes + delta } : l)
-      );
-    }
-    const ok = await castVote(linkId, count);
-    if (!ok && delta > 0) {
-      setAllLinks((links) =>
-        links.map((l) => l.id === linkId ? { ...l, totalVotes: l.totalVotes - delta } : l)
-      );
-    }
-    return ok;
-  };
+  // Refs so fetchLinks can read current values without them being deps (avoids double-fetch)
+  const userRef = useRef(user);
+  const initFromServerRef = useRef(initFromServer);
+  const fetchCalledRef = useRef(false);
+  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { initFromServerRef.current = initFromServer; }, [initFromServer]);
 
   const [allLinks, setAllLinks] = useState<Link[]>([]);
   const [filteredLinks, setFilteredLinks] = useState<Link[]>([]);
@@ -63,6 +146,7 @@ export default function FutureNews() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchInTitle, setSearchInTitle] = useState(true);
   const [searchInDescription, setSearchInDescription] = useState(true);
@@ -78,13 +162,29 @@ export default function FutureNews() {
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
 
+  // Debounce search — only filter after 250ms of inactivity
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
+
+  // Memoized vote — stable reference so LinkRow memo works
+  const vote = useCallback(async (linkId: string, count: number): Promise<boolean> => {
+    const prev = getVoteCount(linkId);
+    const delta = count - prev;
+    if (delta > 0) setAllLinks((ls) => ls.map((l) => l.id === linkId ? { ...l, totalVotes: l.totalVotes + delta } : l));
+    const ok = await castVote(linkId, count);
+    if (!ok && delta > 0) setAllLinks((ls) => ls.map((l) => l.id === linkId ? { ...l, totalVotes: l.totalVotes - delta } : l));
+    return ok;
+  }, [castVote, getVoteCount]);
+
   const fetchLinks = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("user_token");
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const res = await fetch(`/api/links?sort=${sortMode}`, { headers });
+      const res = await fetch(`/api/links`, { headers });
       if (!res.ok) return;
 
       const data = await res.json();
@@ -93,7 +193,7 @@ export default function FutureNews() {
 
       // Initialize votes from server data (no separate /api/votes call needed)
       if (data.userVotes && data.remainingBudget !== null) {
-        initFromServer(data.userVotes, data.remainingBudget);
+        initFromServerRef.current(data.userVotes, data.remainingBudget);
       }
 
       // Categories from server data (no separate /api/categories call needed)
@@ -103,8 +203,9 @@ export default function FutureNews() {
       const now = Date.now();
       const WEEK = 7 * 24 * 60 * 60 * 1000;
       const scores = new Map<string, number>();
+      const currentUser = userRef.current;
       linkData.forEach((link) => {
-        const weight = user && link.createdById === user.id ? 3 : 1;
+        const weight = currentUser && link.createdById === currentUser.id ? 3 : 1;
         const age = now - new Date(link.timestamp).getTime();
         const recency = Math.exp(-age / WEEK);
         scores.set(link.category, (scores.get(link.category) || 0) + weight + recency * 5);
@@ -121,33 +222,42 @@ export default function FutureNews() {
     } finally {
       setLoading(false);
     }
-  }, [sortMode, user, initFromServer]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
+    // Guard against React StrictMode double-invocation
+    if (fetchCalledRef.current) return;
+    fetchCalledRef.current = true;
     fetchLinks();
   }, [fetchLinks]);
 
   useEffect(() => {
-    let result = allLinks;
+    let result = [...allLinks];
     if (selectedCategory !== "All") {
       result = result.filter((link) => link.category === selectedCategory);
     }
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedQuery.trim()) {
+      const query = debouncedQuery.toLowerCase();
       result = result.filter((link) => {
-        const matches: boolean[] = [];
-        if (searchInTitle) matches.push(link.title.toLowerCase().includes(query));
-        if (searchInDescription) matches.push(link.description?.toLowerCase().includes(query) || false);
-        if (searchInAuthor) matches.push(link.author?.toLowerCase().includes(query) || false);
-        if (searchInCategory) matches.push(link.category.toLowerCase().includes(query));
-        return matches.some(Boolean);
+        if (searchInTitle && link.title.toLowerCase().includes(query)) return true;
+        if (searchInDescription && link.description?.toLowerCase().includes(query)) return true;
+        if (searchInAuthor && link.author?.toLowerCase().includes(query)) return true;
+        if (searchInCategory && link.category.toLowerCase().includes(query)) return true;
+        return false;
       });
+    }
+    // Client-side sort — instant, no server round-trip
+    if (sortMode === "newest") {
+      result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } else {
+      result.sort((a, b) => b.hotScore - a.hotScore);
     }
     setFilteredLinks(result);
     setPage(1);
     setDisplayedLinks(result.slice(0, LINKS_PER_PAGE));
     setHasMore(result.length > LINKS_PER_PAGE);
-  }, [allLinks, selectedCategory, searchQuery, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
+  }, [allLinks, selectedCategory, debouncedQuery, sortMode, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
@@ -173,7 +283,7 @@ export default function FutureNews() {
     return () => observer.disconnect();
   }, [loadMore, hasMore, loadingMore]);
 
-  const toggleVisibility = async (linkId: string, makePublic: boolean) => {
+  const toggleVisibility = useCallback(async (linkId: string, makePublic: boolean) => {
     try {
       const token = localStorage.getItem("user_token");
       const response = await fetch(`/api/links/${linkId}`, {
@@ -196,29 +306,13 @@ export default function FutureNews() {
     } catch (error) {
       console.error("Failed to toggle visibility:", error);
     }
-  };
+  }, []);
 
-  const CategoryButton = ({ cat }: { cat: string }) => {
-    const icon = categoryIcons[cat] || "📁";
-    const isActive = selectedCategory === cat;
-    return (
-      <button
-        onClick={() => {
-          setSelectedCategory(cat);
-          setShowMobileMenu(false);
-        }}
-        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-          isActive
-            ? "bg-blue-600 text-white"
-            : "hover:bg-gray-100 text-gray-700"
-        }`}
-        title={cat}
-      >
-        <span className="text-base">{icon}</span>
-        <span className="text-sm hidden sm:inline">{cat}</span>
-      </button>
-    );
-  };
+  // Memoized category icons lookup for CategoryButton
+  const onSelectCategory = useCallback((cat: string) => {
+    setSelectedCategory(cat);
+    setShowMobileMenu(false);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 select-none">
@@ -229,20 +323,7 @@ export default function FutureNews() {
             <span className="text-2xl">🔗</span>
             <span>LinX</span>
           </h1>
-          <div className="flex items-center gap-3">
-            {isAuthenticated && (
-              <button
-                onClick={() => setShowSubmitModal(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Link
-              </button>
-            )}
-            <UserMenu remainingBudget={remainingBudget} />
-          </div>
+          <UserMenu remainingBudget={remainingBudget} />
         </div>
       </header>
 
@@ -280,9 +361,19 @@ export default function FutureNews() {
             {/* Categories - scrollable row, icon-only on mobile */}
             <div className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <div className="flex items-center gap-1 w-max">
-                {categories.map((cat) => (
-                  <CategoryButton key={cat} cat={cat} />
-                ))}
+                {categories.map((cat) => {
+                  const icon = categoryIcons[cat] || "📁";
+                  const isActive = selectedCategory === cat;
+                  return (
+                    <button key={cat} onClick={() => onSelectCategory(cat)}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors whitespace-nowrap ${isActive ? "bg-blue-600 text-white" : "hover:bg-gray-100 text-gray-700"}`}
+                      title={cat}
+                    >
+                      <span className="text-base">{icon}</span>
+                      <span className="text-sm hidden sm:inline">{cat}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -434,88 +525,19 @@ export default function FutureNews() {
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="divide-y divide-gray-200">
-              {displayedLinks.map((link) => {
-                const userVoteCount = getVoteCount(link.id);
-                return (
-                  <article key={link.id} className="p-3 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <VoteButton
-                        linkId={link.id}
-                        totalVotes={link.totalVotes}
-                        userVoteCount={userVoteCount}
-                        isAuthenticated={isAuthenticated}
-                        remainingBudget={remainingBudget}
-                        onVote={vote}
-                        onRemoveVote={removeVote}
-                      />
-                      <div className="flex-1 min-w-0 select-text">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="inline-block px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded select-none">
-                            {link.category}
-                          </span>
-                          {/* Private badge for user's own private links */}
-                          {!link.isPublic && link.createdById === user?.id && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                              </svg>
-                              Private
-                            </span>
-                          )}
-                          <h2 className="text-sm font-semibold text-gray-900 flex-1">
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-blue-600 transition-colors"
-                            >
-                              {link.title}
-                            </a>
-                          </h2>
-                        </div>
-                        {link.description && (
-                          <p className="text-gray-600 text-xs mb-1 line-clamp-1">{link.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                          <span>{link.author || "Unknown"}</span>
-                          <PublicationDate day={link.publicationDay} month={link.publicationMonth} year={link.publicationYear} className="flex items-center gap-1" />
-                          <span title="Added to LinX">🔗 {new Date(link.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
-                          {/* Show submitter for user-created links */}
-                          {link.submittedBy && (
-                            <span className="text-gray-400">by {link.submittedBy}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Toggle visibility for user's own links */}
-                        {link.createdById === user?.id && (
-                          <button
-                            onClick={() => toggleVisibility(link.id, !link.isPublic)}
-                            className={`text-xs px-2 py-1 rounded transition-colors ${
-                              link.isPublic
-                                ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                : "bg-green-100 text-green-700 hover:bg-green-200"
-                            }`}
-                            title={link.isPublic ? "Make private" : "Make public"}
-                          >
-                            {link.isPublic ? "Make Private" : "Make Public"}
-                          </button>
-                        )}
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-blue-600"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {displayedLinks.map((link) => (
+                <LinkRow
+                  key={link.id}
+                  link={link}
+                  userVoteCount={getVoteCount(link.id)}
+                  isAuthenticated={isAuthenticated}
+                  remainingBudget={remainingBudget}
+                  userId={user?.id}
+                  onVote={vote}
+                  onRemoveVote={removeVote}
+                  onToggleVisibility={toggleVisibility}
+                />
+              ))}
             </div>
             {hasMore && (
               <div ref={loaderRef} className="p-4 text-center text-gray-500 text-sm">
@@ -525,6 +547,19 @@ export default function FutureNews() {
           </div>
         )}
       </main>
+
+      {/* Floating Add Button */}
+      {isAuthenticated && (
+        <button
+          onClick={() => setShowSubmitModal(true)}
+          className="fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 shadow-xl flex items-center justify-center transition-colors"
+          title="Add Link"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
 
       {/* Submit Link Modal */}
       <UserSubmitLinkModal

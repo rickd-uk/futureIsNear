@@ -96,10 +96,12 @@ export default function AdminDashboard() {
   const fetchStories = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/links");
+      const token = localStorage.getItem("admin_token");
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await fetch("/api/links?includePrivate=true", { headers });
       if (response.ok) {
         const data = await response.json();
-        setStories(data);
+        setStories(data.links ?? []);
       }
     } catch (error) {
       console.error("Failed to fetch links:", error);
