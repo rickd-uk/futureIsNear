@@ -55,7 +55,7 @@ interface LinkRowProps {
   isAuthenticated: boolean;
   remainingBudget: number;
   userId: string | undefined;
-  showPublicFeed: boolean;
+  feedMode: "mine" | "both" | "public";
   onVote: (linkId: string, count: number) => Promise<boolean>;
   onRemoveVote: (linkId: string) => Promise<boolean>;
   onToggleVisibility: (linkId: string, makePublic: boolean) => void;
@@ -63,10 +63,11 @@ interface LinkRowProps {
 }
 
 const LinkRow = memo(function LinkRow({
-  link, userVoteCount, isAuthenticated, remainingBudget, userId, showPublicFeed, onVote, onRemoveVote, onToggleVisibility, onEdit,
+  link, userVoteCount, isAuthenticated, remainingBudget, userId, feedMode, onVote, onRemoveVote, onToggleVisibility, onEdit,
 }: LinkRowProps) {
   const isOwn = link.createdById === userId;
-  const isPrivate = !link.isPublic && isOwn;
+  // Amber tint only in "both" mode where private own links mix with public ones
+  const isPrivate = feedMode === "both" && !link.isPublic && isOwn;
   const isUncategorized = !link.category;
   const canVote = !isUncategorized || isOwn;
   const pubDate = formatPubDate(link);
@@ -74,7 +75,7 @@ const LinkRow = memo(function LinkRow({
 
   return (
     <article className={`px-3 py-2.5 transition-colors border-l-2 ${
-      isPrivate && showPublicFeed
+      isPrivate
         ? "border-amber-300 bg-amber-50 hover:bg-amber-100"
         : "border-transparent hover:bg-gray-50"
     }`}>
@@ -172,18 +173,16 @@ export default function FutureNews() {
 
   const [sortMode, setSortMode] = useState<"hot" | "newest">("hot");
 
-  // Logged-in users default to personal feed; persisted across sessions
-  const [showPublicFeed, setShowPublicFeed] = useState(false);
+  // Feed mode: "mine" | "both" | "public" — default "mine" for logged-in users
+  const [feedMode, setFeedMode] = useState<"mine" | "both" | "public">("mine");
   useEffect(() => {
-    setShowPublicFeed(localStorage.getItem("show_public_feed") === "true");
+    const saved = localStorage.getItem("feed_mode");
+    if (saved === "both" || saved === "public") setFeedMode(saved);
   }, []);
 
-  const togglePublicFeed = useCallback(() => {
-    setShowPublicFeed((prev) => {
-      const next = !prev;
-      localStorage.setItem("show_public_feed", String(next));
-      return next;
-    });
+  const setFeed = useCallback((mode: "mine" | "both" | "public") => {
+    setFeedMode(mode);
+    localStorage.setItem("feed_mode", mode);
   }, []);
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -236,7 +235,7 @@ export default function FutureNews() {
       }
 
       // Categories from server data (no separate /api/categories call needed)
-      const catIcons: Record<string, string> = { All: "🌐", ...data.categoryIcons };
+      const catIcons: Record<string, string> = { All: "", ...data.categoryIcons };
       setCategoryIcons(catIcons);
 
       const now = Date.now();
@@ -273,8 +272,8 @@ export default function FutureNews() {
   }, [fetchLinks]);
 
   useEffect(() => {
-    // Triage: own uncategorized links, only shown in personal feed
-    if (isAuthenticated && !showPublicFeed && user?.id) {
+    // Triage: own uncategorized links, only shown in "mine" mode
+    if (isAuthenticated && feedMode === "mine" && user?.id) {
       setTriageLinks(
         allLinks
           .filter((l) => !l.category && l.createdById === user.id)
@@ -300,9 +299,16 @@ export default function FutureNews() {
         return false;
       });
     }
-    // Logged-in users: restrict to own links unless public feed is enabled
-    if (isAuthenticated && !showPublicFeed && user?.id) {
-      result = result.filter((link) => link.createdById === user.id);
+    // Filter by feed mode
+    if (isAuthenticated && user?.id) {
+      if (feedMode === "mine") {
+        result = result.filter((link) => link.createdById === user.id);
+      } else if (feedMode === "public") {
+        result = result.filter((link) => link.isPublic);
+      } else {
+        // "both": own links + public links
+        result = result.filter((link) => link.isPublic || link.createdById === user.id);
+      }
     }
 
     // Client-side sort — instant, no server round-trip
@@ -315,7 +321,7 @@ export default function FutureNews() {
     setPage(1);
     setDisplayedLinks(result.slice(0, LINKS_PER_PAGE));
     setHasMore(result.length > LINKS_PER_PAGE);
-  }, [allLinks, selectedCategory, debouncedQuery, sortMode, showPublicFeed, isAuthenticated, user, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
+  }, [allLinks, selectedCategory, debouncedQuery, sortMode, feedMode, isAuthenticated, user, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
@@ -381,11 +387,7 @@ export default function FutureNews() {
             <span className="text-2xl">🔗</span>
             <span>LinX</span>
           </h1>
-          <UserMenu
-            remainingBudget={remainingBudget}
-            showPublicFeed={isAuthenticated ? showPublicFeed : undefined}
-            onTogglePublicFeed={isAuthenticated ? togglePublicFeed : undefined}
-          />
+          <UserMenu remainingBudget={remainingBudget} />
         </div>
       </header>
 
@@ -393,29 +395,41 @@ export default function FutureNews() {
       <div className="bg-white border-b border-gray-200 sticky top-[52px] z-40">
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center gap-2">
-            {/* Sort Toggle */}
+            {/* Sort Toggle — icon only */}
             <div className="flex rounded-lg overflow-hidden border border-gray-300 flex-shrink-0">
               <button
                 onClick={() => setSortMode("hot")}
-                className={`px-2.5 py-1.5 text-sm font-medium transition-colors ${
-                  sortMode === "hot"
-                    ? "bg-orange-500 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                title="Hot"
+                className={`px-2.5 py-1.5 text-base transition-colors ${
+                  sortMode === "hot" ? "bg-orange-500 text-white" : "bg-white hover:bg-gray-50"
                 }`}
-              >
-                🔥 Hot
-              </button>
+              >🔥</button>
               <button
                 onClick={() => setSortMode("newest")}
-                className={`px-2.5 py-1.5 text-sm font-medium transition-colors ${
-                  sortMode === "newest"
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                title="New"
+                className={`px-2.5 py-1.5 text-base transition-colors ${
+                  sortMode === "newest" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50"
                 }`}
-              >
-                ✨ New
-              </button>
+              >✨</button>
             </div>
+
+            {/* Feed mode toggle — only for authenticated users */}
+            {isAuthenticated && (
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 flex-shrink-0">
+                <button onClick={() => setFeed("mine")} title="My links"
+                  className={`px-2.5 py-1.5 text-base transition-colors ${feedMode === "mine" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50"}`}>
+                  👤
+                </button>
+                <button onClick={() => setFeed("both")} title="My links + public"
+                  className={`px-2.5 py-1.5 text-base transition-colors ${feedMode === "both" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50"}`}>
+                  👥
+                </button>
+                <button onClick={() => setFeed("public")} title="Public feed"
+                  className={`px-2.5 py-1.5 text-base transition-colors ${feedMode === "public" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50"}`}>
+                  🌐
+                </button>
+              </div>
+            )}
 
             {/* Separator */}
             <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
@@ -431,7 +445,7 @@ export default function FutureNews() {
                       className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors whitespace-nowrap ${isActive ? "bg-blue-600 text-white" : "hover:bg-gray-100 text-gray-700"}`}
                       title={cat}
                     >
-                      <span className="text-base">{icon}</span>
+                      {icon && <span className="text-base">{icon}</span>}
                       <span className="text-sm hidden sm:inline">{cat}</span>
                     </button>
                   );
@@ -492,7 +506,7 @@ export default function FutureNews() {
                         : "hover:bg-gray-100 text-gray-700"
                     }`}
                   >
-                    <span className="text-xl">{icon}</span>
+                    {icon && <span className="text-xl">{icon}</span>}
                     <span className="text-sm font-medium">{cat}</span>
                   </button>
                 );
@@ -600,7 +614,7 @@ export default function FutureNews() {
                     isAuthenticated={isAuthenticated}
                     remainingBudget={remainingBudget}
                     userId={user?.id}
-                    showPublicFeed={showPublicFeed}
+                    feedMode={feedMode}
                     onVote={vote}
                     onRemoveVote={removeVote}
                     onToggleVisibility={toggleVisibility}
@@ -634,7 +648,7 @@ export default function FutureNews() {
                   isAuthenticated={isAuthenticated}
                   remainingBudget={remainingBudget}
                   userId={user?.id}
-                  showPublicFeed={showPublicFeed}
+                  feedMode={feedMode}
                   onVote={vote}
                   onRemoveVote={removeVote}
                   onToggleVisibility={toggleVisibility}
