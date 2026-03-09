@@ -79,6 +79,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Link not found" }, { status: 404 });
     }
 
+    // Uncategorized links can only be voted on by their owner
+    if (!link.category && link.createdById !== user.userId) {
+      return NextResponse.json(
+        { error: "Cannot vote on uncategorized links" },
+        { status: 403 }
+      );
+    }
+
     // Get existing vote for this link
     const existingVote = await prisma.vote.findUnique({
       where: {

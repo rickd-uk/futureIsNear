@@ -11,7 +11,7 @@ interface LinkData {
   id: string;
   title: string;
   url: string;
-  category: string;
+  category: string | null;
   description: string | null;
   author: string | null;
   publicationDay?: number | null;
@@ -65,7 +65,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
     loadPreferences();
     if (isEditMode && link) {
       setFormData({
-        title: link.title, url: link.url, category: link.category,
+        title: link.title, url: link.url, category: link.category ?? "",
         description: link.description ?? "", author: link.author ?? "",
         publicationDate: buildDateString(link.publicationYear, link.publicationMonth, link.publicationDay),
       });
@@ -157,10 +157,9 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
     setIsSubmitting(true); setError("");
     try {
       const token = localStorage.getItem("user_token");
-      if (!formData.category) throw new Error("Please select a category");
       const pubDate = formData.publicationDate ? new Date(formData.publicationDate) : null;
       const payload = {
-        title: formData.title, url: formData.url, category: formData.category,
+        title: formData.title, url: formData.url, category: formData.category || null,
         description: formData.description, author: formData.author || null,
         publicationDay: pubDate ? pubDate.getUTCDate() : null,
         publicationMonth: pubDate ? pubDate.getUTCMonth() + 1 : null,
@@ -258,9 +257,9 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
 
           {/* Category + Author */}
           <div className={`shrink-0 ${fieldPrefs.showAuthor ? "flex gap-2" : ""}`}>
-            <select name="category" value={formData.category} onChange={handleInputChange} required
+            <select name="category" value={formData.category} onChange={handleInputChange}
               className={`border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldPrefs.showAuthor ? "flex-1" : "w-full"}`}>
-              <option value="">Category *</option>
+              <option value="">Category (optional)</option>
               {categories.map((cat) => <option key={cat.name} value={cat.name}>{cat.icon} {cat.name}</option>)}
             </select>
             {fieldPrefs.showAuthor && (
@@ -295,11 +294,15 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
             )}
             <div className="flex flex-col gap-1">
               <label className="text-xs text-gray-500">Visibility</label>
-              <div className="flex items-center gap-2 h-[34px]">
-                <span className="text-sm text-gray-700">{makePublic ? "Public" : "Private"}</span>
-                <button type="button" onClick={() => handlePublicToggle(!makePublic)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${makePublic ? "bg-green-500" : "bg-gray-300"}`}>
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${makePublic ? "translate-x-6" : "translate-x-1"}`} />
+              <div className="flex items-center gap-2 h-[34px]" title={!formData.category ? "Select a category to make public" : undefined}>
+                <span className={`text-sm ${!formData.category ? "text-gray-400" : "text-gray-700"}`}>
+                  {makePublic && formData.category ? "Public" : "Private"}
+                </span>
+                <button type="button"
+                  onClick={() => formData.category && handlePublicToggle(!makePublic)}
+                  disabled={!formData.category}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${makePublic && formData.category ? "bg-green-500" : "bg-gray-300"} ${!formData.category ? "opacity-50 cursor-not-allowed" : ""}`}>
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${makePublic && formData.category ? "translate-x-6" : "translate-x-1"}`} />
                 </button>
               </div>
             </div>

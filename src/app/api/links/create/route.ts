@@ -30,22 +30,24 @@ export async function POST(request: Request) {
     } = await request.json();
 
     // Validate required fields
-    if (!title || !url || !category) {
+    if (!title || !url) {
       return NextResponse.json(
-        { error: "Title, URL, and category are required" },
+        { error: "Title and URL are required" },
         { status: 400 },
       );
     }
 
-    // Admin links are always public, user links respect makePublic preference
-    const isPublic = isAdmin ? true : Boolean(makePublic);
+    // Uncategorized links are always private; public requires a category
+    const isPublic = isAdmin
+      ? Boolean(category)  // admin links with no category also stay private
+      : Boolean(makePublic) && Boolean(category);
 
     const newLink = await prisma.link.create({
       data: {
         title,
         url,
         description: description || null,
-        category,
+        category: category || null,
         author: author || "Unknown Author",
         timestamp: new Date(),
         publicationDay: publicationDay || null,

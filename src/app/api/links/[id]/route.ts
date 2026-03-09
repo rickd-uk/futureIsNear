@@ -68,6 +68,17 @@ export async function PATCH(
       );
     }
 
+    // Cannot make a link public without a category
+    if (body.isPublic === true) {
+      const effectiveCategory = body.category !== undefined ? body.category : link.category;
+      if (!effectiveCategory) {
+        return NextResponse.json(
+          { error: "A category is required to make a link public" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Build update data based on permissions
     const updateData: {
       title?: string;

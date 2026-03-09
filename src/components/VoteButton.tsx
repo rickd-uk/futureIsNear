@@ -9,6 +9,7 @@ interface VoteButtonProps {
   userVoteCount: number;
   isAuthenticated: boolean;
   remainingBudget: number;
+  locked?: boolean; // voting blocked (e.g. uncategorized, non-owner)
   onVote: (linkId: string, count: number) => Promise<boolean>;
   onRemoveVote: (linkId: string) => Promise<boolean>;
 }
@@ -19,10 +20,11 @@ export default function VoteButton({
   userVoteCount,
   isAuthenticated,
   remainingBudget,
+  locked = false,
   onVote,
 }: VoteButtonProps) {
   const atMax = userVoteCount >= MAX_VOTES_PER_LINK;
-  const canVote = isAuthenticated && !atMax && remainingBudget > 0;
+  const canVote = !locked && isAuthenticated && !atMax && remainingBudget > 0;
 
   const handleClick = async () => {
     if (!canVote) return;
@@ -30,6 +32,7 @@ export default function VoteButton({
   };
 
   const getButtonStyle = () => {
+    if (locked) return "text-gray-300 cursor-not-allowed";
     if (!isAuthenticated) return "text-gray-400 cursor-not-allowed";
     if (atMax) return "text-orange-500 cursor-default";
     if (userVoteCount > 0) return "text-orange-500 hover:text-orange-600";
@@ -38,6 +41,7 @@ export default function VoteButton({
   };
 
   const getTitle = () => {
+    if (locked) return "Assign a category to enable voting";
     if (!isAuthenticated) return "Login to vote";
     if (atMax) return `Max votes given (${MAX_VOTES_PER_LINK}/${MAX_VOTES_PER_LINK})`;
     if (remainingBudget === 0) return "No votes remaining today";

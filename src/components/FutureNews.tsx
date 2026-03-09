@@ -12,7 +12,7 @@ interface Link {
   id: string;
   title: string;
   url: string;
-  category: string;
+  category: string | null;
   author: string | null;
   description: string | null;
   publicationDay?: number | null;
@@ -67,6 +67,8 @@ const LinkRow = memo(function LinkRow({
 }: LinkRowProps) {
   const isOwn = link.createdById === userId;
   const isPrivate = !link.isPublic && isOwn;
+  const isUncategorized = !link.category;
+  const canVote = !isUncategorized || isOwn;
   const pubDate = formatPubDate(link);
   const addedDate = fmtDate(new Date(link.timestamp));
 
@@ -83,6 +85,7 @@ const LinkRow = memo(function LinkRow({
           userVoteCount={userVoteCount}
           isAuthenticated={isAuthenticated}
           remainingBudget={remainingBudget}
+          locked={!canVote}
           onVote={onVote}
           onRemoveVote={onRemoveVote}
         />
@@ -93,7 +96,10 @@ const LinkRow = memo(function LinkRow({
             </a>
           </h2>
           <div className="flex items-center gap-x-1.5 text-xs text-gray-500 flex-wrap">
-            <span className="shrink-0 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded font-medium select-none">{link.category}</span>
+            {link.category
+              ? <span className="shrink-0 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded font-medium select-none">{link.category}</span>
+              : <span className="shrink-0 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium select-none italic">Uncategorized</span>
+            }
             {link.author && link.author !== "Unknown Author" && (
               <span className="truncate max-w-[120px]">{link.author}</span>
             )}
@@ -112,12 +118,14 @@ const LinkRow = memo(function LinkRow({
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             </button>
             <button
-              onClick={() => onToggleVisibility(link.id, !link.isPublic)}
-              title={link.isPublic ? "Make private" : "Make public"}
+              onClick={() => !isUncategorized && onToggleVisibility(link.id, !link.isPublic)}
+              title={isUncategorized ? "Assign a category to make public" : link.isPublic ? "Make private" : "Make public"}
               className={`p-2.5 rounded-lg transition-colors ${
-                link.isPublic
-                  ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                  : "text-amber-500 hover:text-amber-600 hover:bg-amber-100"
+                isUncategorized
+                  ? "text-gray-300 cursor-not-allowed"
+                  : link.isPublic
+                    ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                    : "text-amber-500 hover:text-amber-600 hover:bg-amber-100"
               }`}
             >
               {link.isPublic
@@ -233,6 +241,7 @@ export default function FutureNews() {
       const scores = new Map<string, number>();
       const currentUser = userRef.current;
       linkData.forEach((link) => {
+        if (!link.category) return; // uncategorized links don't affect category bar
         const weight = currentUser && link.createdById === currentUser.id ? 3 : 1;
         const age = now - new Date(link.timestamp).getTime();
         const recency = Math.exp(-age / WEEK);
@@ -271,7 +280,7 @@ export default function FutureNews() {
         if (searchInTitle && link.title.toLowerCase().includes(query)) return true;
         if (searchInDescription && link.description?.toLowerCase().includes(query)) return true;
         if (searchInAuthor && link.author?.toLowerCase().includes(query)) return true;
-        if (searchInCategory && link.category.toLowerCase().includes(query)) return true;
+        if (searchInCategory && link.category?.toLowerCase().includes(query)) return true;
         return false;
       });
     }

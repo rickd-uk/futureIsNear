@@ -24,7 +24,7 @@ model Link {
   title       String
   url         String
   description String?
-  category    String
+  category    String?
   author      String?  @default("Unknown Author")
   timestamp   DateTime @default(now())
   publicationDay   Int?    // Day (1-31)
