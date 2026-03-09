@@ -86,19 +86,15 @@ export async function PATCH(
     if (body.title !== undefined) updateData.title = body.title;
     if (body.url !== undefined) updateData.url = body.url;
     if (body.category !== undefined) updateData.category = body.category;
-    if (body.description !== undefined)
-      updateData.description = body.description;
+    if (body.description !== undefined) updateData.description = body.description;
     if (body.isPublic !== undefined) updateData.isPublic = body.isPublic;
+    if (body.author !== undefined) updateData.author = body.author;
+    if (body.publicationDay !== undefined) updateData.publicationDay = body.publicationDay;
+    if (body.publicationMonth !== undefined) updateData.publicationMonth = body.publicationMonth;
+    if (body.publicationYear !== undefined) updateData.publicationYear = body.publicationYear;
 
     // Admin-only fields
     if (isAdmin) {
-      if (body.author !== undefined) updateData.author = body.author;
-      if (body.publicationDay !== undefined)
-        updateData.publicationDay = body.publicationDay;
-      if (body.publicationMonth !== undefined)
-        updateData.publicationMonth = body.publicationMonth;
-      if (body.publicationYear !== undefined)
-        updateData.publicationYear = body.publicationYear;
       if (body.boost !== undefined) {
         const boost = parseFloat(body.boost);
         if (!isNaN(boost) && boost >= 0.1 && boost <= 10.0) {

@@ -61,6 +61,7 @@ model User {
   username      String     @unique
   email         String?    @unique
   passwordHash  String
+  preferences   String     @default("{}") // JSON: user UI preferences
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   votes         Vote[]

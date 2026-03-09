@@ -59,10 +59,11 @@ interface LinkRowProps {
   onVote: (linkId: string, count: number) => Promise<boolean>;
   onRemoveVote: (linkId: string) => Promise<boolean>;
   onToggleVisibility: (linkId: string, makePublic: boolean) => void;
+  onEdit: (link: Link) => void;
 }
 
 const LinkRow = memo(function LinkRow({
-  link, userVoteCount, isAuthenticated, remainingBudget, userId, showPublicFeed, onVote, onRemoveVote, onToggleVisibility,
+  link, userVoteCount, isAuthenticated, remainingBudget, userId, showPublicFeed, onVote, onRemoveVote, onToggleVisibility, onEdit,
 }: LinkRowProps) {
   const isOwn = link.createdById === userId;
   const isPrivate = !link.isPublic && isOwn;
@@ -102,20 +103,29 @@ const LinkRow = memo(function LinkRow({
           </div>
         </div>
         {isOwn && (
-          <button
-            onClick={() => onToggleVisibility(link.id, !link.isPublic)}
-            title={link.isPublic ? "Make private" : "Make public"}
-            className={`p-2 rounded-lg transition-colors shrink-0 ${
-              link.isPublic
-                ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                : "text-amber-500 hover:text-amber-600 hover:bg-amber-100"
-            }`}
-          >
-            {link.isPublic
-              ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-              : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-            }
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => onEdit(link)}
+              title="Edit"
+              className="p-2.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+            </button>
+            <button
+              onClick={() => onToggleVisibility(link.id, !link.isPublic)}
+              title={link.isPublic ? "Make private" : "Make public"}
+              className={`p-2.5 rounded-lg transition-colors ${
+                link.isPublic
+                  ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  : "text-amber-500 hover:text-amber-600 hover:bg-amber-100"
+              }`}
+            >
+              {link.isPublic
+                ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+              }
+            </button>
+          </div>
         )}
       </div>
     </article>
@@ -170,6 +180,11 @@ export default function FutureNews() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [editingLink, setEditingLink] = useState<Link | null>(null);
+
+  const handleEdit = useCallback((link: Link) => {
+    setEditingLink(link);
+  }, []);
 
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -380,9 +395,9 @@ export default function FutureNews() {
             {/* Separator */}
             <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
 
-            {/* Categories - scrollable row, icon-only on mobile */}
-            <div className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <div className="flex items-center gap-1 w-max">
+            {/* Categories - scrollable on mobile, wrapping on larger screens */}
+            <div className="flex-1 overflow-x-auto sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-center gap-1 w-max sm:w-auto sm:flex-wrap">
                 {categories.map((cat) => {
                   const icon = categoryIcons[cat] || "📁";
                   const isActive = selectedCategory === cat;
@@ -559,6 +574,7 @@ export default function FutureNews() {
                   onVote={vote}
                   onRemoveVote={removeVote}
                   onToggleVisibility={toggleVisibility}
+                  onEdit={handleEdit}
                 />
               ))}
             </div>
@@ -584,13 +600,19 @@ export default function FutureNews() {
         </button>
       )}
 
-      {/* Submit Link Modal */}
+      {/* Add Link Modal */}
       <UserSubmitLinkModal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        onSuccess={() => {
-          fetchLinks();
-        }}
+        onSuccess={fetchLinks}
+      />
+
+      {/* Edit Link Modal */}
+      <UserSubmitLinkModal
+        isOpen={!!editingLink}
+        onClose={() => setEditingLink(null)}
+        onSuccess={() => { setEditingLink(null); fetchLinks(); }}
+        link={editingLink ?? undefined}
       />
     </div>
   );
