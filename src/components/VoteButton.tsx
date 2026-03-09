@@ -1,20 +1,20 @@
 "use client";
 
 import React from "react";
-import { MAX_VOTES_PER_STORY } from "@/lib/votingConfig";
+import { MAX_VOTES_PER_LINK } from "@/lib/votingConfig";
 
 interface VoteButtonProps {
-  storyId: string;
+  linkId: string;
   totalVotes: number;
   userVoteCount: number;
   isAuthenticated: boolean;
   remainingBudget: number;
-  onVote: (storyId: string, count: number) => Promise<boolean>;
-  onRemoveVote: (storyId: string) => Promise<boolean>;
+  onVote: (linkId: string, count: number) => Promise<boolean>;
+  onRemoveVote: (linkId: string) => Promise<boolean>;
 }
 
 export default function VoteButton({
-  storyId,
+  linkId,
   totalVotes,
   userVoteCount,
   isAuthenticated,
@@ -25,19 +25,19 @@ export default function VoteButton({
   const handleClick = async () => {
     if (!isAuthenticated) return;
 
-    if (userVoteCount >= MAX_VOTES_PER_STORY) {
+    if (userVoteCount >= MAX_VOTES_PER_LINK) {
       // Already at max, remove vote
-      await onRemoveVote(storyId);
+      await onRemoveVote(linkId);
     } else {
       // Increment vote
       const newCount = userVoteCount + 1;
-      await onVote(storyId, newCount);
+      await onVote(linkId, newCount);
     }
   };
 
   const canIncrement =
     isAuthenticated &&
-    userVoteCount < MAX_VOTES_PER_STORY &&
+    userVoteCount < MAX_VOTES_PER_LINK &&
     remainingBudget > 0;
 
   const getButtonStyle = () => {
@@ -57,13 +57,13 @@ export default function VoteButton({
     if (!isAuthenticated) {
       return "Login to vote";
     }
-    if (userVoteCount >= MAX_VOTES_PER_STORY) {
+    if (userVoteCount >= MAX_VOTES_PER_LINK) {
       return "Click to remove your votes";
     }
     if (remainingBudget === 0) {
       return "No daily votes remaining";
     }
-    return `Click to vote (${userVoteCount}/${MAX_VOTES_PER_STORY})`;
+    return `Click to vote (${userVoteCount}/${MAX_VOTES_PER_LINK})`;
   };
 
   return (

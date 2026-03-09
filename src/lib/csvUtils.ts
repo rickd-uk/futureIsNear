@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 
-export interface CSVStory {
+export interface CSVLink {
   title: string;
   url: string;
   points: string;
@@ -10,9 +10,9 @@ export interface CSVStory {
   category: string;
 }
 
-export function parseCSV(csvContent: string): Promise<CSVStory[]> {
-  return new Promise<CSVStory[]>((resolve, reject) => {
-    Papa.parse<CSVStory>(csvContent, {
+export function parseCSV(csvContent: string): Promise<CSVLink[]> {
+  return new Promise<CSVLink[]>((resolve, reject) => {
+    Papa.parse<CSVLink>(csvContent, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
@@ -29,16 +29,16 @@ export function parseCSV(csvContent: string): Promise<CSVStory[]> {
   });
 }
 
-export function validateCSVStory(story: CSVStory): string[] {
+export function validateCSVLink(link: CSVLink): string[] {
   const errors: string[] = [];
-  
-  if (!story.title) errors.push('Title is required');
-  if (!story.url) errors.push('URL is required');
-  if (isNaN(Number(story.points))) errors.push('Points must be a number');
-  if (!story.author) errors.push('Author is required');
-  if (isNaN(Number(story.comments))) errors.push('Comments must be a number');
-  if (!story.category) errors.push('Category is required');
-  if (isNaN(Date.parse(story.timestamp))) errors.push('Invalid timestamp format');
+
+  if (!link.title) errors.push('Title is required');
+  if (!link.url) errors.push('URL is required');
+  if (isNaN(Number(link.points))) errors.push('Points must be a number');
+  if (!link.author) errors.push('Author is required');
+  if (isNaN(Number(link.comments))) errors.push('Comments must be a number');
+  if (!link.category) errors.push('Category is required');
+  if (isNaN(Date.parse(link.timestamp))) errors.push('Invalid timestamp format');
 
   return errors;
 }

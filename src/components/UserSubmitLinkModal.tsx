@@ -7,17 +7,17 @@ interface Category {
   icon: string;
 }
 
-interface UserSubmitStoryModalProps {
+interface UserSubmitLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function UserSubmitStoryModal({
+export default function UserSubmitLinkModal({
   isOpen,
   onClose,
   onSuccess,
-}: UserSubmitStoryModalProps) {
+}: UserSubmitLinkModalProps) {
   const [formData, setFormData] = useState({
     title: "",
     url: "",
@@ -48,7 +48,7 @@ export default function UserSubmitStoryModal({
   };
 
   const loadUserPreference = () => {
-    const pref = localStorage.getItem("user_stories_public_default");
+    const pref = localStorage.getItem("user_links_public_default");
     setMakePublic(pref === "true");
   };
 
@@ -71,7 +71,7 @@ export default function UserSubmitStoryModal({
         throw new Error("Please select a category");
       }
 
-      const response = await fetch("/api/stories/create", {
+      const response = await fetch("/api/links/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export default function UserSubmitStoryModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to submit story");
+        throw new Error(errorData.error || "Failed to submit link");
       }
 
       // Reset form
@@ -93,7 +93,7 @@ export default function UserSubmitStoryModal({
       onSuccess();
       onClose();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to submit story");
+      setError(error instanceof Error ? error.message : "Failed to add link");
     } finally {
       setIsSubmitting(false);
     }
@@ -101,7 +101,7 @@ export default function UserSubmitStoryModal({
 
   const handleDefaultPreferenceChange = (checked: boolean) => {
     setMakePublic(checked);
-    localStorage.setItem("user_stories_public_default", String(checked));
+    localStorage.setItem("user_links_public_default", String(checked));
   };
 
   if (!isOpen) return null;
@@ -110,7 +110,7 @@ export default function UserSubmitStoryModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Submit a Story</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Add a Link</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
@@ -121,72 +121,54 @@ export default function UserSubmitStoryModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter story title"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Title *"
+          />
+
+          <input
+            type="url"
+            id="url"
+            name="url"
+            value={formData.url}
+            onChange={handleInputChange}
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="URL *  https://..."
+          />
+
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleInputChange}
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Category *</option>
+            {categories.map((cat) => (
+              <option key={cat.name} value={cat.name}>
+                {cat.icon} {cat.name}
+              </option>
+            ))}
+          </select>
 
           <div>
-            <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
-              URL <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="url"
-              id="url"
-              name="url"
-              value={formData.url}
-              onChange={handleInputChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/article"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description <span className="text-gray-400">(optional)</span>
-            </label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Brief description of the story"
+              rows={5}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:resize-y"
+              placeholder="Description (optional)"
             />
           </div>
 
@@ -196,7 +178,7 @@ export default function UserSubmitStoryModal({
               <div>
                 <p className="text-sm font-medium text-gray-900">Make Public</p>
                 <p className="text-xs text-gray-500">
-                  {makePublic ? "Story will be visible to everyone" : "Only you can see this story"}
+                  {makePublic ? "Link will be visible to everyone" : "Only you can see this link"}
                 </p>
               </div>
               <button
@@ -237,7 +219,7 @@ export default function UserSubmitStoryModal({
               disabled={isSubmitting}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium"
             >
-              {isSubmitting ? "Submitting..." : "Submit Story"}
+              {isSubmitting ? "Adding..." : "Add Link"}
             </button>
           </div>
         </form>

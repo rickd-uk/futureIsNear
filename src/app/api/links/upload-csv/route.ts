@@ -121,8 +121,8 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Create story in database
-        await prisma.story.create({
+        // Create link in database
+        await prisma.link.create({
           data: {
             title: title,
             url: url,

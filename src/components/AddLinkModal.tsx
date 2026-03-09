@@ -1,39 +1,25 @@
-// src/components/EditStoryModal.tsx
+// src/components/AddLinkModal.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 
-interface Story {
-  id: string;
-  title: string;
-  url: string;
-  category: string;
-  author: string | null;
-  description: string | null;
-  publicationMonth?: number | null;
-  publicationYear?: number | null;
-  boost?: number;
-}
-
-interface EditStoryModalProps {
+interface AddLinkModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  story: Story | null;
   categories: string[];
   authors: string[];
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
-export default function EditStoryModal({
+export default function AddLinkModal({
   isOpen,
-  onClose,
-  onSuccess,
-  story,
   categories,
   authors,
-}: EditStoryModalProps) {
-  const currentMonth = new Date().getMonth() + 1;
+  onClose,
+  onSuccess,
+}: AddLinkModalProps) {
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -43,7 +29,6 @@ export default function EditStoryModal({
     author: "",
     publicationMonth: currentMonth,
     publicationYear: currentYear,
-    boost: 1.0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -67,21 +52,6 @@ export default function EditStoryModal({
 
   const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
-  useEffect(() => {
-    if (story) {
-      setFormData({
-        title: story.title || "",
-        url: story.url || "",
-        category: story.category || "",
-        description: story.description || "",
-        author: story.author || "",
-        publicationMonth: story.publicationMonth || currentMonth,
-        publicationYear: story.publicationYear || currentYear,
-        boost: story.boost ?? 1.0,
-      });
-    }
-  }, [story, currentMonth, currentYear]);
-
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -93,17 +63,11 @@ export default function EditStoryModal({
       [name]:
         name === "publicationMonth" || name === "publicationYear"
           ? parseInt(value)
-          : name === "boost"
-            ? parseFloat(value) || 1.0
-            : value,
+          : value,
     }));
     if (name === "author") {
       setShowAuthorSuggestions(true);
     }
-  };
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData((prev) => ({ ...prev, category: e.target.value }));
   };
 
   const selectAuthor = (authorName: string) => {
@@ -131,17 +95,12 @@ export default function EditStoryModal({
       return;
     }
 
-    if (!story) {
-      setError("Story not found");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       const token = localStorage.getItem("admin_token");
-      const response = await fetch(`/api/stories/${story.id}`, {
-        method: "PATCH",
+      const response = await fetch("/api/links/create", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -154,30 +113,39 @@ export default function EditStoryModal({
           author: formData.author.trim() || undefined,
           publicationMonth: formData.publicationMonth,
           publicationYear: formData.publicationYear,
-          boost: formData.boost,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update story");
+        throw new Error("Failed to create link");
       }
+
+      setFormData({
+        title: "",
+        url: "",
+        category: "",
+        description: "",
+        author: "",
+        publicationMonth: currentMonth,
+        publicationYear: currentYear,
+      });
 
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update story");
+      setError(err instanceof Error ? err.message : "Failed to create link");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isOpen || !story) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Edit Story</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Add New Link</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -244,7 +212,7 @@ export default function EditStoryModal({
               id="category"
               name="category"
               value={formData.category}
-              onChange={handleCategoryChange}
+              onChange={handleInputChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             >
@@ -321,7 +289,8 @@ export default function EditStoryModal({
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows={3}
+              rows={4}
+              placeholder="Optional description"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
@@ -346,8 +315,8 @@ export default function EditStoryModal({
                 setTimeout(() => setShowAuthorSuggestions(false), 150)
               }
               autoComplete="off"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               placeholder="Type to search authors..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
             {showAuthorSuggestions && filteredAuthors.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
@@ -380,43 +349,19 @@ export default function EditStoryModal({
             )}
           </div>
 
-          {/* Boost (Admin multiplier for hot score) */}
-          <div>
-            <label
-              htmlFor="boost"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Boost Multiplier
-            </label>
-            <input
-              type="number"
-              id="boost"
-              name="boost"
-              value={formData.boost}
-              onChange={handleInputChange}
-              min="0.1"
-              max="10"
-              step="0.1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Affects hot score ranking (0.1 - 10.0, default: 1.0)
-            </p>
-          </div>
-
           {/* Submit */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Updating..." : "Update Story"}
+              {isSubmitting ? "Adding Link..." : "Add Link"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             >
               Cancel
             </button>

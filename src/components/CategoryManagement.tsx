@@ -21,7 +21,7 @@ export default function CategoryManagement({
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("");
   const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
-  const [deleteAssociatedStories, setDeleteAssociatedStories] = useState(false);
+  const [deleteAssociatedLinks, setDeleteAssociatedLinks] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -124,7 +124,7 @@ export default function CategoryManagement({
 
   const handleDeleteClick = (category: string) => {
     setDeletingCategory(category);
-    setDeleteAssociatedStories(false);
+    setDeleteAssociatedLinks(false);
     setError("");
     setSuccess("");
     setIsAddingCategory(false);
@@ -132,7 +132,7 @@ export default function CategoryManagement({
 
   const handleCancelDelete = () => {
     setDeletingCategory(null);
-    setDeleteAssociatedStories(false);
+    setDeleteAssociatedLinks(false);
     setError("");
   };
 
@@ -150,7 +150,7 @@ export default function CategoryManagement({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ deleteStories: deleteAssociatedStories }),
+          body: JSON.stringify({ deleteLinks: deleteAssociatedLinks }),
         },
       );
 
@@ -160,18 +160,18 @@ export default function CategoryManagement({
         throw new Error(data.error || "Failed to delete category");
       }
 
-      if (deleteAssociatedStories) {
+      if (deleteAssociatedLinks) {
         setSuccess(
-          `Category deleted and ${data.deletedStoriesCount} associated stories removed.`,
+          `Category deleted and ${data.deletedLinksCount} associated links removed.`,
         );
       } else {
         setSuccess(
-          `Category removed from ${data.updatedStoriesCount} stories (set to "Uncategorized").`,
+          `Category removed from ${data.updatedLinksCount} links (set to "Uncategorized").`,
         );
       }
 
       setDeletingCategory(null);
-      setDeleteAssociatedStories(false);
+      setDeleteAssociatedLinks(false);
       onCategoryUpdated();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -405,14 +405,14 @@ export default function CategoryManagement({
                   <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={deleteAssociatedStories}
+                      checked={deleteAssociatedLinks}
                       onChange={(e) =>
-                        setDeleteAssociatedStories(e.target.checked)
+                        setDeleteAssociatedLinks(e.target.checked)
                       }
                       disabled={isProcessing}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span>Also delete stories</span>
+                    <span>Also delete links</span>
                   </label>
                   <div className="flex gap-2">
                     <button
@@ -487,8 +487,8 @@ export default function CategoryManagement({
       )}
 
       <p className="text-xs text-gray-500 mt-3">
-        <strong>Note:</strong> Renaming updates all stories. Deleting removes or
-        sets stories to &quot;Uncategorized&quot;.
+        <strong>Note:</strong> Renaming updates all links. Deleting removes or
+        sets links to &quot;Uncategorized&quot;.
       </p>
     </div>
   );

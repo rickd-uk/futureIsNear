@@ -1,9 +1,9 @@
-// src/components/StorySearch.tsx
+// src/components/LinkSearch.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 
-interface Story {
+interface Link {
   id: string;
   title: string;
   url: string;
@@ -13,35 +13,35 @@ interface Story {
   timestamp: string;
 }
 
-interface StorySearchProps {
-  stories: Story[];
-  onFilteredResults: (filtered: Story[]) => void;
+interface LinkSearchProps {
+  links: Link[];
+  onFilteredResults: (filtered: Link[]) => void;
 }
 
-export default function StorySearch({ stories, onFilteredResults }: StorySearchProps) {
+export default function LinkSearch({ links, onFilteredResults }: LinkSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInTitle, setSearchInTitle] = useState(true);
   const [searchInDescription, setSearchInDescription] = useState(true);
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWords, setWholeWords] = useState(false);
 
-  // Filter stories whenever search parameters change
+  // Filter links whenever search parameters change
   useEffect(() => {
     if (!searchQuery.trim()) {
-      onFilteredResults(stories);
+      onFilteredResults(links);
       return;
     }
 
-    const filtered = stories.filter((story) => {
+    const filtered = links.filter((link) => {
       // Determine which fields to search
       const fieldsToSearch: string[] = [];
       
-      if (searchInTitle && story.title) {
-        fieldsToSearch.push(story.title);
+      if (searchInTitle && link.title) {
+        fieldsToSearch.push(link.title);
       }
       
-      if (searchInDescription && story.description) {
-        fieldsToSearch.push(story.description);
+      if (searchInDescription && link.description) {
+        fieldsToSearch.push(link.description);
       }
 
       // If no fields selected, search nothing
@@ -78,7 +78,7 @@ export default function StorySearch({ stories, onFilteredResults }: StorySearchP
     });
 
     onFilteredResults(filtered);
-  }, [searchQuery, searchInTitle, searchInDescription, caseSensitive, wholeWords, stories, onFilteredResults]);
+  }, [searchQuery, searchInTitle, searchInDescription, caseSensitive, wholeWords, links, onFilteredResults]);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -108,7 +108,7 @@ export default function StorySearch({ stories, onFilteredResults }: StorySearchP
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search stories..."
+            placeholder="Search links..."
             className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
           {searchQuery && (
@@ -184,12 +184,12 @@ export default function StorySearch({ stories, onFilteredResults }: StorySearchP
         {/* Results Count */}
         {searchQuery && (
           <div className="text-sm text-gray-600">
-            {stories.length > 0 ? (
+            {links.length > 0 ? (
               <span>
-                Found <strong>{stories.length}</strong> matching {stories.length === 1 ? 'story' : 'stories'}
+                Found <strong>{links.length}</strong> matching {links.length === 1 ? 'link' : 'links'}
               </span>
             ) : (
-              <span className="text-red-600">No stories match your search</span>
+              <span className="text-red-600">No links match your search</span>
             )}
           </div>
         )}

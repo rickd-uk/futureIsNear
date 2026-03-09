@@ -5,7 +5,7 @@ import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const stories = await prisma.story.findMany({
+    const links = await prisma.link.findMany({
       select: { author: true },
       distinct: ["author"],
       where: {
@@ -14,8 +14,8 @@ export async function GET() {
       },
     });
 
-    const authors = stories
-      .map((story: { author: string | null }) => story.author!)
+    const authors = links
+      .map((link: { author: string | null }) => link.author!)
       .filter((author: string) => author !== "Unknown Author")
       .sort((a: string, b: string) => a.localeCompare(b));
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const trimmed = authorName.trim();
 
     // Check if author already exists
-    const existing = await prisma.story.findFirst({
+    const existing = await prisma.link.findFirst({
       where: { author: trimmed },
     });
 
@@ -58,8 +58,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Placeholder story to establish the author
-    await prisma.story.create({
+    // Placeholder link to establish the author
+    await prisma.link.create({
       data: {
         title: `__AUTHOR_PLACEHOLDER__${trimmed}`,
         url: "about:blank",

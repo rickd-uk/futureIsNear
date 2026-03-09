@@ -1,4 +1,4 @@
-// src/app/api/stories/create/route.ts
+// src/app/api/links/create/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkAuth, unauthorizedResponse } from "@/lib/auth";
@@ -36,10 +36,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Admin stories are always public, user stories respect makePublic preference
+    // Admin links are always public, user links respect makePublic preference
     const isPublic = isAdmin ? true : Boolean(makePublic);
 
-    const newStory = await prisma.story.create({
+    const newLink = await prisma.link.create({
       data: {
         title,
         url,
@@ -54,11 +54,11 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(newStory, { status: 201 });
+    return NextResponse.json(newLink, { status: 201 });
   } catch (error) {
-    console.error("Error creating story:", error);
+    console.error("Error creating link:", error);
     return NextResponse.json(
-      { error: "Failed to create story" },
+      { error: "Failed to create link" },
       { status: 500 },
     );
   }

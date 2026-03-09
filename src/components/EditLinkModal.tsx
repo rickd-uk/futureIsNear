@@ -1,25 +1,39 @@
-// src/components/AddStoryModal.tsx
+// src/components/EditLinkModal.tsx
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
-interface AddStoryModalProps {
-  isOpen: boolean;
-  categories: string[];
-  authors: string[];
-  onClose: () => void;
-  onSuccess: () => void;
+interface Link {
+  id: string;
+  title: string;
+  url: string;
+  category: string;
+  author: string | null;
+  description: string | null;
+  publicationMonth?: number | null;
+  publicationYear?: number | null;
+  boost?: number;
 }
 
-export default function AddStoryModal({
+interface EditLinkModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  link: Link | null;
+  categories: string[];
+  authors: string[];
+}
+
+export default function EditLinkModal({
   isOpen,
-  categories,
-  authors,
   onClose,
   onSuccess,
-}: AddStoryModalProps) {
-  const currentYear = new Date().getFullYear();
+  link,
+  categories,
+  authors,
+}: EditLinkModalProps) {
   const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -29,6 +43,7 @@ export default function AddStoryModal({
     author: "",
     publicationMonth: currentMonth,
     publicationYear: currentYear,
+    boost: 1.0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -52,6 +67,21 @@ export default function AddStoryModal({
 
   const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
+  useEffect(() => {
+    if (link) {
+      setFormData({
+        title: link.title || "",
+        url: link.url || "",
+        category: link.category || "",
+        description: link.description || "",
+        author: link.author || "",
+        publicationMonth: link.publicationMonth || currentMonth,
+        publicationYear: link.publicationYear || currentYear,
+        boost: link.boost ?? 1.0,
+      });
+    }
+  }, [link, currentMonth, currentYear]);
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -63,11 +93,17 @@ export default function AddStoryModal({
       [name]:
         name === "publicationMonth" || name === "publicationYear"
           ? parseInt(value)
-          : value,
+          : name === "boost"
+            ? parseFloat(value) || 1.0
+            : value,
     }));
     if (name === "author") {
       setShowAuthorSuggestions(true);
     }
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, category: e.target.value }));
   };
 
   const selectAuthor = (authorName: string) => {
@@ -95,12 +131,17 @@ export default function AddStoryModal({
       return;
     }
 
+    if (!link) {
+      setError("Link not found");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const token = localStorage.getItem("admin_token");
-      const response = await fetch("/api/stories/create", {
-        method: "POST",
+      const response = await fetch(`/api/links/${link.id}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -113,39 +154,30 @@ export default function AddStoryModal({
           author: formData.author.trim() || undefined,
           publicationMonth: formData.publicationMonth,
           publicationYear: formData.publicationYear,
+          boost: formData.boost,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create story");
+        throw new Error("Failed to update link");
       }
-
-      setFormData({
-        title: "",
-        url: "",
-        category: "",
-        description: "",
-        author: "",
-        publicationMonth: currentMonth,
-        publicationYear: currentYear,
-      });
 
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create story");
+      setError(err instanceof Error ? err.message : "Failed to update link");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !link) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Add New Story</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Edit Link</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -212,7 +244,7 @@ export default function AddStoryModal({
               id="category"
               name="category"
               value={formData.category}
-              onChange={handleInputChange}
+              onChange={handleCategoryChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             >
@@ -289,8 +321,7 @@ export default function AddStoryModal({
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows={4}
-              placeholder="Optional description"
+              rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
@@ -315,8 +346,8 @@ export default function AddStoryModal({
                 setTimeout(() => setShowAuthorSuggestions(false), 150)
               }
               autoComplete="off"
-              placeholder="Type to search authors..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              placeholder="Type to search authors..."
             />
             {showAuthorSuggestions && filteredAuthors.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
@@ -349,19 +380,43 @@ export default function AddStoryModal({
             )}
           </div>
 
+          {/* Boost (Admin multiplier for hot score) */}
+          <div>
+            <label
+              htmlFor="boost"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Boost Multiplier
+            </label>
+            <input
+              type="number"
+              id="boost"
+              name="boost"
+              value={formData.boost}
+              onChange={handleInputChange}
+              min="0.1"
+              max="10"
+              step="0.1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Affects hot score ranking (0.1 - 10.0, default: 1.0)
+            </p>
+          </div>
+
           {/* Submit */}
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              {isSubmitting ? "Adding Story..." : "Add Story"}
+              {isSubmitting ? "Updating..." : "Update Link"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium"
             >
               Cancel
             </button>

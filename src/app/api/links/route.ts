@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       ],
     };
 
-    // If requesting only user's own stories
+    // If requesting only user's own links
     if (mine) {
       if (!user) {
         return NextResponse.json(
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       }
       whereClause.createdById = user.userId;
     } else if (includePrivate) {
-      // Admin can see all stories
+      // Admin can see all links
       if (!checkAuth(request)) {
         return NextResponse.json(
           { error: "Admin access required" },
@@ -42,9 +42,9 @@ export async function GET(request: Request) {
       }
       // No filter - show all
     } else {
-      // Default: show public stories + user's own private stories
+      // Default: show public links + user's own private links
       if (user) {
-        // Authenticated: public OR own stories
+        // Authenticated: public OR own links
         whereClause = {
           AND: [
             {
@@ -63,12 +63,12 @@ export async function GET(request: Request) {
           ],
         };
       } else {
-        // Not authenticated: only public stories
+        // Not authenticated: only public links
         whereClause.isPublic = true;
       }
     }
 
-    const stories = await prisma.story.findMany({
+    const links = await prisma.link.findMany({
       where: whereClause,
       include: {
         votes: {
@@ -84,29 +84,29 @@ export async function GET(request: Request) {
       },
     });
 
-    // Calculate totalVotes and hotScore for each story
-    const storiesWithScores = stories.map((story) => {
-      const totalVotes = story.votes.reduce((sum, v) => sum + v.count, 0);
+    // Calculate totalVotes and hotScore for each link
+    const linksWithScores = links.map((link) => {
+      const totalVotes = link.votes.reduce((sum, v) => sum + v.count, 0);
       const hotScore = calculateHotScore(
         totalVotes,
-        story.boost,
-        new Date(story.timestamp)
+        link.boost,
+        new Date(link.timestamp)
       );
 
       return {
-        id: story.id,
-        title: story.title,
-        url: story.url,
-        description: story.description,
-        category: story.category,
-        author: story.author,
-        timestamp: story.timestamp,
-        publicationMonth: story.publicationMonth,
-        publicationYear: story.publicationYear,
-        boost: story.boost,
-        isPublic: story.isPublic,
-        createdById: story.createdById,
-        submittedBy: story.createdBy?.username || null,
+        id: link.id,
+        title: link.title,
+        url: link.url,
+        description: link.description,
+        category: link.category,
+        author: link.author,
+        timestamp: link.timestamp,
+        publicationMonth: link.publicationMonth,
+        publicationYear: link.publicationYear,
+        boost: link.boost,
+        isPublic: link.isPublic,
+        createdById: link.createdById,
+        submittedBy: link.createdBy?.username || null,
         totalVotes,
         hotScore,
       };
@@ -114,20 +114,20 @@ export async function GET(request: Request) {
 
     // Sort based on query param
     if (sort === "newest") {
-      storiesWithScores.sort(
+      linksWithScores.sort(
         (a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
     } else {
       // Default: sort by hot score
-      storiesWithScores.sort((a, b) => b.hotScore - a.hotScore);
+      linksWithScores.sort((a, b) => b.hotScore - a.hotScore);
     }
 
-    return NextResponse.json(storiesWithScores);
+    return NextResponse.json(linksWithScores);
   } catch (error) {
-    console.error("Failed to fetch stories:", error);
+    console.error("Failed to fetch links:", error);
     return NextResponse.json(
-      { error: "Failed to fetch stories" },
+      { error: "Failed to fetch links" },
       { status: 500 }
     );
   }

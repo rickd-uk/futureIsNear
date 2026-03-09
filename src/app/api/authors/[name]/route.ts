@@ -25,15 +25,15 @@ export async function PUT(
       );
     }
 
-    const existingStories = await prisma.story.findMany({
+    const existingLinks = await prisma.link.findMany({
       where: { author: decodedName },
     });
 
-    if (existingStories.length === 0) {
+    if (existingLinks.length === 0) {
       return NextResponse.json({ error: "Author not found" }, { status: 404 });
     }
 
-    const result = await prisma.story.updateMany({
+    const result = await prisma.link.updateMany({
       where: { author: decodedName },
       data: { author: newName.trim() },
     });
@@ -65,30 +65,30 @@ export async function DELETE(
     const { name } = await params;
     const decodedName = decodeURIComponent(name);
     const body = await request.json();
-    const { deleteStories } = body;
+    const { deleteLinks } = body;
 
-    if (deleteStories === true) {
-      // Delete all stories by this author (excluding placeholders)
-      const result = await prisma.story.deleteMany({
+    if (deleteLinks === true) {
+      // Delete all links by this author (excluding placeholders)
+      const result = await prisma.link.deleteMany({
         where: { author: decodedName },
       });
 
       return NextResponse.json({
         success: true,
-        message: "Author and associated stories deleted",
-        deletedStoriesCount: result.count,
+        message: "Author and associated links deleted",
+        deletedLinksCount: result.count,
       });
     } else {
-      // Delete placeholder stories for this author
-      await prisma.story.deleteMany({
+      // Delete placeholder links for this author
+      await prisma.link.deleteMany({
         where: {
           author: decodedName,
           title: { startsWith: "__AUTHOR_PLACEHOLDER__" },
         },
       });
 
-      // Set real stories to "Unknown Author"
-      const result = await prisma.story.updateMany({
+      // Set real links to "Unknown Author"
+      const result = await prisma.link.updateMany({
         where: {
           author: decodedName,
           NOT: { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
@@ -98,8 +98,8 @@ export async function DELETE(
 
       return NextResponse.json({
         success: true,
-        message: "Author removed, stories set to Unknown Author",
-        updatedStoriesCount: result.count,
+        message: "Author removed, links set to Unknown Author",
+        updatedLinksCount: result.count,
       });
     }
   } catch (error) {

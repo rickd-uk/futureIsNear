@@ -15,18 +15,18 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await prisma.story.delete({
+    await prisma.link.delete({
       where: { id },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Story deleted successfully",
+      message: "Link deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting story:", error);
+    console.error("Error deleting link:", error);
     return NextResponse.json(
-      { error: "Failed to delete story" },
+      { error: "Failed to delete link" },
       { status: 500 },
     );
   }
@@ -48,22 +48,22 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    // Get the story to check ownership
-    const story = await prisma.story.findUnique({
+    // Get the link to check ownership
+    const link = await prisma.link.findUnique({
       where: { id },
     });
 
-    if (!story) {
+    if (!link) {
       return NextResponse.json(
-        { error: "Story not found" },
+        { error: "Link not found" },
         { status: 404 }
       );
     }
 
-    // Users can only update their own stories
-    if (!isAdmin && story.createdById !== user?.userId) {
+    // Users can only update their own links
+    if (!isAdmin && link.createdById !== user?.userId) {
       return NextResponse.json(
-        { error: "You can only edit your own stories" },
+        { error: "You can only edit your own links" },
         { status: 403 }
       );
     }
@@ -104,16 +104,16 @@ export async function PATCH(
       }
     }
 
-    const updatedStory = await prisma.story.update({
+    const updatedLink = await prisma.link.update({
       where: { id },
       data: updateData,
     });
 
-    return NextResponse.json(updatedStory);
+    return NextResponse.json(updatedLink);
   } catch (error) {
-    console.error("Error updating story:", error);
+    console.error("Error updating link:", error);
     return NextResponse.json(
-      { error: "Failed to update story" },
+      { error: "Failed to update link" },
       { status: 500 },
     );
   }

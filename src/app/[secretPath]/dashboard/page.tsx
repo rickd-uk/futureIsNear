@@ -1,13 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import AddStoryModal from "@/components/AddStoryModal";
-import EditStoryModal from "@/components/EditStoryModal";
+import AddLinkModal from "@/components/AddLinkModal";
+import EditLinkModal from "@/components/EditLinkModal";
 import CSVUpload from "@/components/CSVUpload";
 import CategoryManagement from "@/components/CategoryManagement";
 import AuthorManagement from "@/components/AuthorManagement";
 
-interface Story {
+interface Link {
   id: string;
   title: string;
   url: string;
@@ -22,12 +22,12 @@ interface Story {
 export default function AdminDashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
-  const [stories, setStories] = useState<Story[]>([]);
+  const [selectedLink, setSelectedLink] = useState<Link | null>(null);
+  const [links, setStories] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
-  const [selectedStories, setSelectedStories] = useState<Set<string>>(
+  const [selectedLinks, setSelectedStories] = useState<Set<string>>(
     new Set(),
   );
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
@@ -96,13 +96,13 @@ export default function AdminDashboard() {
   const fetchStories = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/stories");
+      const response = await fetch("/api/links");
       if (response.ok) {
         const data = await response.json();
         setStories(data);
       }
     } catch (error) {
-      console.error("Failed to fetch stories:", error);
+      console.error("Failed to fetch links:", error);
     } finally {
       setLoading(false);
     }
@@ -122,23 +122,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleStoryAdded = () => {
+  const handleLinkAdded = () => {
     fetchStories();
     fetchCategoriesAndAuthors();
     setSelectedStories(new Set());
   };
 
-  const handleEditClick = (story: Story) => {
-    setSelectedStory(story);
+  const handleEditClick = (link: Link) => {
+    setSelectedLink(link);
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteClick = async (story: Story) => {
-    console.log("handleDeleteClick called with story:", story);
+  const handleDeleteClick = async (link: Link) => {
+    console.log("handleDeleteClick called with link:", link);
     try {
       const token = localStorage.getItem("admin_token");
-      console.log("Sending DELETE request to:", `/api/stories/${story.id}`);
-      const response = await fetch(`/api/stories/${story.id}`, {
+      console.log("Sending DELETE request to:", `/api/links/${link.id}`);
+      const response = await fetch(`/api/links/${link.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -155,56 +155,56 @@ export default function AdminDashboard() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete story");
+        throw new Error(errorData.error || "Failed to delete link");
       }
 
-      console.log("Delete successful, refreshing stories and categories...");
+      console.log("Delete successful, refreshing links and categories...");
       await fetchStories();
       await fetchCategoriesAndAuthors();
     } catch (error) {
-      console.error("Error deleting story:", error);
+      console.error("Error deleting link:", error);
       alert(
-        `Failed to delete story: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete link: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   };
 
-  const handleSelectStory = (storyId: string) => {
-    const newSelected = new Set(selectedStories);
-    if (newSelected.has(storyId)) {
-      newSelected.delete(storyId);
+  const handleSelectLink = (linkId: string) => {
+    const newSelected = new Set(selectedLinks);
+    if (newSelected.has(linkId)) {
+      newSelected.delete(linkId);
     } else {
-      newSelected.add(storyId);
+      newSelected.add(linkId);
     }
     setSelectedStories(newSelected);
   };
 
   const handleSelectAll = () => {
-    if (selectedStories.size === stories.length && stories.length > 0) {
+    if (selectedLinks.size === links.length && links.length > 0) {
       setSelectedStories(new Set());
     } else {
-      setSelectedStories(new Set(stories.map((s) => s.id)));
+      setSelectedStories(new Set(links.map((s) => s.id)));
     }
   };
 
   const handleBulkDelete = async () => {
     console.log(
       "handleBulkDelete called with selection:",
-      Array.from(selectedStories),
+      Array.from(selectedLinks),
     );
-    if (selectedStories.size === 0) {
-      alert("Please select at least one story to delete.");
+    if (selectedLinks.size === 0) {
+      alert("Please select at least one link to delete.");
       return;
     }
 
     try {
       const token = localStorage.getItem("admin_token");
-      console.log("Starting bulk delete for", selectedStories.size, "stories");
+      console.log("Starting bulk delete for", selectedLinks.size, "links");
 
-      const deletePromises = Array.from(selectedStories).map(
-        async (storyId) => {
-          console.log("Deleting story:", storyId);
-          const response = await fetch(`/api/stories/${storyId}`, {
+      const deletePromises = Array.from(selectedLinks).map(
+        async (linkId) => {
+          console.log("Deleting link:", linkId);
+          const response = await fetch(`/api/links/${linkId}`, {
             method: "DELETE",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -215,10 +215,10 @@ export default function AdminDashboard() {
             localStorage.removeItem("admin_token");
             alert("Session expired. Please login again.");
             router.push("/qwertyuiop123/login");
-            return { storyId, success: false };
+            return { linkId, success: false };
           }
 
-          return { storyId, success: response.ok };
+          return { linkId, success: response.ok };
         },
       );
 
@@ -228,8 +228,8 @@ export default function AdminDashboard() {
 
       if (failedDeletes.length > 0) {
         alert(
-          `Successfully deleted ${results.length - failedDeletes.length} stories.\n` +
-            `Failed to delete ${failedDeletes.length} stories.`,
+          `Successfully deleted ${results.length - failedDeletes.length} links.\n` +
+            `Failed to delete ${failedDeletes.length} links.`,
         );
       }
 
@@ -239,7 +239,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error during bulk delete:", error);
       alert(
-        `An error occurred while deleting stories: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `An error occurred while deleting links: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   };
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
               onClick={() => setIsAddModalOpen(true)}
               className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
             >
-              + Add Story
+              + Add Link
             </button>
             <button
               onClick={handleLogout}
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
           </button>
           {showCsvUpload && (
             <div className="px-4 pb-3 border-t border-gray-100">
-              <CSVUpload onUploadComplete={handleStoryAdded} />
+              <CSVUpload onUploadComplete={handleLinkAdded} />
             </div>
           )}
         </div>
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
           {showCategoryManagement && (
             <div className="px-4 pb-3 border-t border-gray-100">
               <CategoryManagement
-                onCategoryUpdated={handleStoryAdded}
+                onCategoryUpdated={handleLinkAdded}
               />
             </div>
           )}
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
             <div className="px-4 pb-3 border-t border-gray-100">
               <AuthorManagement
                 authors={authors}
-                onAuthorUpdated={handleStoryAdded}
+                onAuthorUpdated={handleLinkAdded}
               />
             </div>
           )}
@@ -383,18 +383,18 @@ export default function AdminDashboard() {
         </div>
 
         {/* Bulk Actions Bar */}
-        {selectedStories.size > 0 && (
+        {selectedLinks.size > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
             <span className="text-sm font-medium text-blue-900">
-              {selectedStories.size}{" "}
-              {selectedStories.size === 1 ? "story" : "stories"} selected
+              {selectedLinks.size}{" "}
+              {selectedLinks.size === 1 ? "link" : "links"} selected
             </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 console.log(
                   "Bulk delete clicked, selected:",
-                  selectedStories.size,
+                  selectedLinks.size,
                 );
                 handleBulkDelete();
               }}
@@ -410,20 +410,19 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow">
           <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Stories</h2>
+              <h2 className="text-base font-semibold text-gray-900">Links</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Total: {stories.length} stories
+                Total: {links.length} links
               </p>
             </div>
           </div>
           {loading ? (
             <div className="p-6 text-center text-gray-500 text-sm">
-              Loading stories...
+              Loading links...
             </div>
-          ) : stories.length === 0 ? (
+          ) : links.length === 0 ? (
             <div className="p-6 text-center text-gray-500 text-sm">
-              No stories yet. Click &quot;Add Story&quot; to create your first
-              one.
+              No links yet. Click &quot;Add Link&quot; to add your first one.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -434,8 +433,8 @@ export default function AdminDashboard() {
                       <input
                         type="checkbox"
                         checked={
-                          selectedStories.size === stories.length &&
-                          stories.length > 0
+                          selectedLinks.size === links.length &&
+                          links.length > 0
                         }
                         onChange={handleSelectAll}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -459,54 +458,54 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {stories.slice(0, 20).map((story) => (
-                    <tr key={story.id} className="hover:bg-gray-50">
+                  {links.slice(0, 20).map((link) => (
+                    <tr key={link.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2">
                         <input
                           type="checkbox"
-                          checked={selectedStories.has(story.id)}
-                          onChange={() => handleSelectStory(story.id)}
+                          checked={selectedLinks.has(link.id)}
+                          onChange={() => handleSelectLink(link.id)}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-4 py-2">
                         <div className="text-sm">
                           <a
-                            href={story.url}
+                            href={link.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            {story.title}
+                            {link.title}
                           </a>
-                          {story.description && (
+                          {link.description && (
                             <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">
-                              {story.description}
+                              {link.description}
                             </p>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
                         <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                          {story.category}
+                          {link.category}
                         </span>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        {story.author || "Unknown"}
+                        {link.author || "Unknown"}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
-                        {new Date(story.timestamp).toLocaleDateString()}
+                        {new Date(link.timestamp).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              console.log("Edit clicked for story:", story.id);
-                              handleEditClick(story);
+                              console.log("Edit clicked for link:", link.id);
+                              handleEditClick(link);
                             }}
                             className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
-                            title="Edit story"
+                            title="Edit link"
                             type="button"
                           >
                             <svg
@@ -527,13 +526,13 @@ export default function AdminDashboard() {
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log(
-                                "Delete clicked for story:",
-                                story.id,
+                                "Delete clicked for link:",
+                                link.id,
                               );
-                              handleDeleteClick(story);
+                              handleDeleteClick(link);
                             }}
                             className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
-                            title="Delete story"
+                            title="Delete link"
                             type="button"
                           >
                             <svg
@@ -561,29 +560,29 @@ export default function AdminDashboard() {
         </div>
       </main>
 
-      {/* Add Story Modal */}
-      <AddStoryModal
+      {/* Add Link Modal */}
+      <AddLinkModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSuccess={handleStoryAdded}
+        onSuccess={handleLinkAdded}
         categories={categories}
         authors={authors}
       />
 
-      {/* Edit Story Modal */}
-      <EditStoryModal
+      {/* Edit Link Modal */}
+      <EditLinkModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
-          setSelectedStory(null);
+          setSelectedLink(null);
         }}
         onSuccess={() => {
           fetchStories();
           fetchCategoriesAndAuthors();
           setIsEditModalOpen(false);
-          setSelectedStory(null);
+          setSelectedLink(null);
         }}
-        story={selectedStory}
+        link={selectedLink}
         categories={categories}
         authors={authors}
       />

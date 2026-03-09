@@ -1,4 +1,4 @@
-export type Story = {
+export type Link = {
   category: string;
   title: string;
   url: string;

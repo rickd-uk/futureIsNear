@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MAX_VOTES_PER_STORY, DAILY_VOTE_BUDGET } from "@/lib/votingConfig";
+import { MAX_VOTES_PER_LINK, DAILY_VOTE_BUDGET } from "@/lib/votingConfig";
 
 interface VoteData {
-  storyId: string;
+  linkId: string;
   count: number;
 }
 
@@ -12,10 +12,10 @@ interface UseVotingReturn {
   votes: Map<string, number>;
   remainingBudget: number;
   loading: boolean;
-  vote: (storyId: string, count: number) => Promise<boolean>;
-  removeVote: (storyId: string) => Promise<boolean>;
-  getVoteCount: (storyId: string) => number;
-  canVote: (storyId: string, additionalVotes?: number) => boolean;
+  vote: (linkId: string, count: number) => Promise<boolean>;
+  removeVote: (linkId: string) => Promise<boolean>;
+  getVoteCount: (linkId: string) => number;
+  canVote: (linkId: string, additionalVotes?: number) => boolean;
 }
 
 export function useVoting(isAuthenticated: boolean): UseVotingReturn {
@@ -43,7 +43,7 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
         const data = await response.json();
         const voteMap = new Map<string, number>();
         data.votes.forEach((v: VoteData) => {
-          voteMap.set(v.storyId, v.count);
+          voteMap.set(v.linkId, v.count);
         });
         setVotes(voteMap);
         setRemainingBudget(data.remainingBudget);
@@ -60,21 +60,21 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
   }, [fetchVotes]);
 
   const getVoteCount = useCallback(
-    (storyId: string): number => {
-      return votes.get(storyId) || 0;
+    (linkId: string): number => {
+      return votes.get(linkId) || 0;
     },
     [votes]
   );
 
   const canVote = useCallback(
-    (storyId: string, additionalVotes: number = 1): boolean => {
+    (linkId: string, additionalVotes: number = 1): boolean => {
       if (!isAuthenticated) return false;
 
-      const currentVotes = getVoteCount(storyId);
+      const currentVotes = getVoteCount(linkId);
       const newTotal = currentVotes + additionalVotes;
 
-      // Check if exceeds max votes per story
-      if (newTotal > MAX_VOTES_PER_STORY) return false;
+      // Check if exceeds max votes per link
+      if (newTotal > MAX_VOTES_PER_LINK) return false;
 
       // Check if has remaining budget
       if (additionalVotes > remainingBudget) return false;
@@ -85,10 +85,10 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
   );
 
   const vote = useCallback(
-    async (storyId: string, count: number): Promise<boolean> => {
+    async (linkId: string, count: number): Promise<boolean> => {
       if (!isAuthenticated) return false;
 
-      const currentCount = getVoteCount(storyId);
+      const currentCount = getVoteCount(linkId);
       const additionalVotes = count - currentCount;
 
       // Optimistic update
@@ -97,7 +97,7 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
 
       setVotes((prev) => {
         const newVotes = new Map(prev);
-        newVotes.set(storyId, count);
+        newVotes.set(linkId, count);
         return newVotes;
       });
 
@@ -113,7 +113,7 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ storyId, count }),
+          body: JSON.stringify({ linkId, count }),
         });
 
         if (!response.ok) {
@@ -138,7 +138,7 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
   );
 
   const removeVote = useCallback(
-    async (storyId: string): Promise<boolean> => {
+    async (linkId: string): Promise<boolean> => {
       if (!isAuthenticated) return false;
 
       // Optimistic update
@@ -147,13 +147,13 @@ export function useVoting(isAuthenticated: boolean): UseVotingReturn {
 
       setVotes((prev) => {
         const newVotes = new Map(prev);
-        newVotes.delete(storyId);
+        newVotes.delete(linkId);
         return newVotes;
       });
 
       try {
         const token = localStorage.getItem("user_token");
-        const response = await fetch(`/api/votes?storyId=${storyId}`, {
+        const response = await fetch(`/api/votes?linkId=${linkId}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,

@@ -19,7 +19,7 @@ model Category {
   @@index([createdById])
 }
 
-model Story {
+model Link {
   id          String   @id @default(cuid())
   title       String
   url         String
@@ -30,9 +30,9 @@ model Story {
   publicationMonth Int?    // Month (1-12)
   publicationYear  Int?    // Year (ex. 2025)
   boost       Float    @default(1.0)  // Admin multiplier for hot score
-  isPublic    Boolean  @default(false)  // Admin stories are public, user stories are private
+  isPublic    Boolean  @default(false)  // Admin links are public, user links are private
   createdById String?  // null = admin created
-  createdBy   User?    @relation("UserStories", fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy   User?    @relation("UserLinks", fields: [createdById], references: [id], onDelete: SetNull)
   votes       Vote[]
 
   @@index([category])
@@ -42,17 +42,17 @@ model Story {
 
 model Vote {
   id        String   @id @default(cuid())
-  storyId   String
+  linkId    String
   userId    String   // References User.id (authenticated users only)
   count     Int      @default(1)  // 1-3 votes
   createdAt DateTime @default(now())
 
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([storyId, userId])
+  @@unique([linkId, userId])
   @@index([userId])
-  @@index([storyId])
+  @@index([linkId])
 }
 
 model User {
@@ -63,7 +63,7 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   votes         Vote[]
-  stories       Story[]    @relation("UserStories")
+  links         Link[]     @relation("UserLinks")
   categories    Category[] @relation("UserCategories")
 
   @@index([email])

@@ -29,8 +29,8 @@ export async function GET(request: Request) {
       select: { name: true, icon: true },
     });
 
-    // Also get categories from public stories (for backward compatibility)
-    const storiesWithCategories = await prisma.story.findMany({
+    // Also get categories from public links (for backward compatibility)
+    const linksWithCategories = await prisma.link.findMany({
       where: {
         isPublic: true,
         NOT: {
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     // Build category map with icons
     const categoryMap = new Map<string, string>();
     categoriesFromModel.forEach((c) => categoryMap.set(c.name, c.icon));
-    storiesWithCategories.forEach((s) => {
+    linksWithCategories.forEach((s) => {
       if (s.category && !categoryMap.has(s.category)) {
         categoryMap.set(s.category, "📁"); // Default icon for legacy categories
       }

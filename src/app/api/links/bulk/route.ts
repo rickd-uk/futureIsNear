@@ -4,7 +4,7 @@ import Papa from "papaparse";
 import { checkAuth, unauthorizedResponse } from "@/lib/auth";
 
 // Define required CSV fields
-interface CSVStory {
+interface CSVLink {
   title: string;
   url: string;
   category: string;
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     console.log("CSV Content preview:", csvText.substring(0, 100));
 
     // Parse CSV
-    const parseResult = Papa.parse<CSVStory>(csvText, {
+    const parseResult = Papa.parse<CSVLink>(csvText, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.trim(),
@@ -51,49 +51,49 @@ export async function POST(request: Request) {
       );
     }
 
-    const stories = parseResult.data;
-    console.log("Parsed stories:", stories.length);
+    const links = parseResult.data;
+    console.log("Parsed links:", links.length);
 
     // Validate required fields
-    const invalidStories = stories.filter((story) => {
-      return !story.title || !story.url || !story.category;
+    const invalidStories = links.filter((link) => {
+      return !link.title || !link.url || !link.category;
     });
 
     if (invalidStories.length > 0) {
-      console.log("Invalid stories:", invalidStories);
+      console.log("Invalid links:", invalidStories);
       return NextResponse.json(
         {
           error: "Invalid data in CSV",
           details:
-            "Some stories are missing required fields (title, url, category)",
+            "Some links are missing required fields (title, url, category)",
         },
         { status: 400 },
       );
     }
 
-    // Insert stories into the database
+    // Insert links into the database
     let inserted = 0;
-    for (const story of stories) {
+    for (const link of links) {
       try {
-        await prisma.story.create({
+        await prisma.link.create({
           data: {
-            title: story.title.trim(),
-            url: story.url.trim(),
-            category: story.category.trim(),
-            description: story.description?.trim() || "No description provided",
-            author: story.author?.trim() || "Unknown Author", // Default if missing
+            title: link.title.trim(),
+            url: link.url.trim(),
+            category: link.category.trim(),
+            description: link.description?.trim() || "No description provided",
+            author: link.author?.trim() || "Unknown Author", // Default if missing
             timestamp: new Date(), // Default to current date/time
           },
         });
         inserted++;
       } catch (err) {
-        console.error("Error inserting story:", err);
+        console.error("Error inserting link:", err);
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Successfully added ${inserted} stories out of ${stories.length} total`,
+      message: `Successfully added ${inserted} links out of ${links.length} total`,
     });
   } catch (error) {
     console.error("Bulk upload error:", error);

@@ -51,7 +51,7 @@ export default function CSVUpload({ onUploadComplete }: CSVUploadProps) {
 
       // Send to API
       const token = localStorage.getItem("admin_token");
-      const response = await fetch("/api/stories/upload-csv", {
+      const response = await fetch("/api/links/upload-csv", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export default function CSVUpload({ onUploadComplete }: CSVUploadProps) {
       setUploadResults(data);
       setShowResults(true);
 
-      // Refresh the stories list
+      // Refresh the links list
       onUploadComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload CSV");
@@ -262,10 +262,10 @@ export default function CSVUpload({ onUploadComplete }: CSVUploadProps) {
           <div className="bg-white p-3 rounded border border-gray-200 font-mono text-xs mb-3">
             title;url;category;description;author
             <br />
-            Story Title 1;https://example.com/story1;Technology;A brief
+            Link Title 1;https://example.com/story1;Technology;A brief
             description;John Doe
             <br />
-            Story Title 2;https://example.com/story2;Science;Another
+            Link Title 2;https://example.com/story2;Science;Another
             description;Jane Smith
           </div>
           <ul className="list-disc list-inside space-y-1">

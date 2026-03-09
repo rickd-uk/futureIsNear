@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import fs from 'fs';
 import path from 'path';
 
-interface CSVStory {
+interface CSVLink {
     title: string;
     url: string;
     category: string;
@@ -20,7 +20,7 @@ export async function GET() {
         const csvContent = fs.readFileSync(csvPath, 'utf-8');
         
         // Parse CSV
-        const parseResult = Papa.parse<CSVStory>(csvContent, {
+        const parseResult = Papa.parse<CSVLink>(csvContent, {
             header: true,
             skipEmptyLines: true,
         });
@@ -32,18 +32,18 @@ export async function GET() {
             );
         }
 
-        const stories = parseResult.data;
+        const links = parseResult.data;
         let inserted = 0;
 
-        // Process stories
-        for (const story of stories) {
-            await prisma.story.create({
+        // Process links
+        for (const link of links) {
+            await prisma.link.create({
                 data: {
-                    title: story.title,
-                    url: story.url,
-                    category: story.category,
-                    description: story.description?.trim(), 
-                    author: story.author?.trim() || 'Unknown Author',
+                    title: link.title,
+                    url: link.url,
+                    category: link.category,
+                    description: link.description?.trim(), 
+                    author: link.author?.trim() || 'Unknown Author',
                     timestamp: new Date(),
                 }
             });
@@ -52,8 +52,8 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true,
-            message: `Successfully added ${inserted} stories`,
-            stories: stories
+            message: `Successfully added ${inserted} links`,
+            links: links
         });
 
     } catch (error) {

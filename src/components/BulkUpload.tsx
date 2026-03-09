@@ -27,7 +27,7 @@ export default function BulkUpload() {
 
       console.log('Uploading file:', file.name);
 
-      const response = await fetch('/api/stories/bulk', {
+      const response = await fetch('/api/links/bulk', {
         method: 'POST',
         body: formData,
       });

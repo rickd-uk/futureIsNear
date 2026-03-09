@@ -15,7 +15,7 @@ export default function AuthorManagement({
   const [editingAuthor, setEditingAuthor] = useState<string | null>(null);
   const [deletingAuthor, setDeletingAuthor] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
-  const [deleteAssociatedStories, setDeleteAssociatedStories] = useState(false);
+  const [deleteAssociatedLinks, setDeleteAssociatedLinks] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -61,7 +61,7 @@ export default function AuthorManagement({
       }
 
       setSuccess(
-        `Renamed to "${newName.trim()}". ${data.updatedCount} stories updated.`,
+        `Renamed to "${newName.trim()}". ${data.updatedCount} links updated.`,
       );
       setEditingAuthor(null);
       setNewName("");
@@ -76,7 +76,7 @@ export default function AuthorManagement({
 
   const handleDeleteClick = (author: string) => {
     setDeletingAuthor(author);
-    setDeleteAssociatedStories(false);
+    setDeleteAssociatedLinks(false);
     setError("");
     setSuccess("");
     setIsAddingAuthor(false);
@@ -84,7 +84,7 @@ export default function AuthorManagement({
 
   const handleCancelDelete = () => {
     setDeletingAuthor(null);
-    setDeleteAssociatedStories(false);
+    setDeleteAssociatedLinks(false);
     setError("");
   };
 
@@ -102,7 +102,7 @@ export default function AuthorManagement({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ deleteStories: deleteAssociatedStories }),
+          body: JSON.stringify({ deleteLinks: deleteAssociatedLinks }),
         },
       );
 
@@ -112,18 +112,18 @@ export default function AuthorManagement({
         throw new Error(data.error || "Failed to delete author");
       }
 
-      if (deleteAssociatedStories) {
+      if (deleteAssociatedLinks) {
         setSuccess(
-          `Author deleted and ${data.deletedStoriesCount} associated stories removed.`,
+          `Author deleted and ${data.deletedLinksCount} associated links removed.`,
         );
       } else {
         setSuccess(
-          `Author removed from ${data.updatedStoriesCount} stories (set to "Unknown Author").`,
+          `Author removed from ${data.updatedLinksCount} links (set to "Unknown Author").`,
         );
       }
 
       setDeletingAuthor(null);
-      setDeleteAssociatedStories(false);
+      setDeleteAssociatedLinks(false);
       onAuthorUpdated();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -326,13 +326,13 @@ export default function AuthorManagement({
                   <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={deleteAssociatedStories}
+                      checked={deleteAssociatedLinks}
                       onChange={(e) =>
-                        setDeleteAssociatedStories(e.target.checked)
+                        setDeleteAssociatedLinks(e.target.checked)
                       }
                       className="rounded"
                     />
-                    Also delete stories
+                    Also delete links
                   </label>
                   <div className="flex gap-2">
                     <button
@@ -406,8 +406,8 @@ export default function AuthorManagement({
       )}
 
       <p className="text-xs text-gray-500 mt-3">
-        <strong>Note:</strong> Renaming updates all stories. Deleting sets
-        stories to &quot;Unknown Author&quot;.
+        <strong>Note:</strong> Renaming updates all links. Deleting sets
+        links to &quot;Unknown Author&quot;.
       </p>
     </div>
   );

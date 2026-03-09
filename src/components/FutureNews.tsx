@@ -5,11 +5,11 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import PublicationDate from "./PublicationDate";
 import UserMenu from "./UserMenu";
 import VoteButton from "./VoteButton";
-import UserSubmitStoryModal from "./UserSubmitStoryModal";
+import UserSubmitLinkModal from "./UserSubmitLinkModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoting } from "@/hooks/useVoting";
 
-interface Story {
+interface Link {
   id: string;
   title: string;
   url: string;
@@ -27,16 +27,16 @@ interface Story {
   submittedBy: string | null;
 }
 
-const STORIES_PER_PAGE = 20;
+const LINKS_PER_PAGE = 20;
 
 export default function FutureNews() {
   const { isAuthenticated, user } = useAuth();
   const { remainingBudget, vote, removeVote, getVoteCount } =
     useVoting(isAuthenticated);
 
-  const [allStories, setAllStories] = useState<Story[]>([]);
-  const [filteredStories, setFilteredStories] = useState<Story[]>([]);
-  const [displayedStories, setDisplayedStories] = useState<Story[]>([]);
+  const [allLinks, setAllLinks] = useState<Link[]>([]);
+  const [filteredLinks, setFilteredLinks] = useState<Link[]>([]);
+  const [displayedLinks, setDisplayedLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -60,7 +60,7 @@ export default function FutureNews() {
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  const fetchStories = useCallback(async () => {
+  const fetchLinks = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("user_token");
@@ -69,15 +69,16 @@ export default function FutureNews() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      // Fetch stories and categories with icons in parallel
-      const [storiesRes, categoriesRes] = await Promise.all([
-        fetch(`/api/stories?sort=${sortMode}`, { headers }),
+      // Fetch links and categories with icons in parallel
+      const [linksRes, categoriesRes] = await Promise.all([
+        fetch(`/api/links?sort=${sortMode}`, { headers }),
         fetch("/api/categories?withIcons=true"),
       ]);
 
-      if (storiesRes.ok) {
-        const data = await storiesRes.json();
-        setAllStories(data);
+      let linkData: Link[] = [];
+      if (linksRes.ok) {
+        linkData = await linksRes.json();
+        setAllLinks(linkData);
       }
 
       if (categoriesRes.ok) {
@@ -87,51 +88,58 @@ export default function FutureNews() {
           icons[c.name] = c.icon;
         });
         setCategoryIcons(icons);
-        setCategories(["All", ...catData.map((c: { name: string }) => c.name).sort()]);
+        const categoriesWithLinks = new Set(linkData.map((s) => s.category));
+        setCategories([
+          "All",
+          ...catData
+            .map((c: { name: string }) => c.name)
+            .filter((name: string) => categoriesWithLinks.has(name))
+            .sort(),
+        ]);
       }
     } catch (error) {
-      console.error("Failed to fetch stories:", error);
+      console.error("Failed to fetch links:", error);
     } finally {
       setLoading(false);
     }
   }, [sortMode]);
 
   useEffect(() => {
-    fetchStories();
-  }, [fetchStories]);
+    fetchLinks();
+  }, [fetchLinks]);
 
   useEffect(() => {
-    let result = allStories;
+    let result = allLinks;
     if (selectedCategory !== "All") {
-      result = result.filter((story) => story.category === selectedCategory);
+      result = result.filter((link) => link.category === selectedCategory);
     }
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter((story) => {
+      result = result.filter((link) => {
         const matches: boolean[] = [];
-        if (searchInTitle) matches.push(story.title.toLowerCase().includes(query));
-        if (searchInDescription) matches.push(story.description?.toLowerCase().includes(query) || false);
-        if (searchInAuthor) matches.push(story.author?.toLowerCase().includes(query) || false);
-        if (searchInCategory) matches.push(story.category.toLowerCase().includes(query));
+        if (searchInTitle) matches.push(link.title.toLowerCase().includes(query));
+        if (searchInDescription) matches.push(link.description?.toLowerCase().includes(query) || false);
+        if (searchInAuthor) matches.push(link.author?.toLowerCase().includes(query) || false);
+        if (searchInCategory) matches.push(link.category.toLowerCase().includes(query));
         return matches.some(Boolean);
       });
     }
-    setFilteredStories(result);
+    setFilteredLinks(result);
     setPage(1);
-    setDisplayedStories(result.slice(0, STORIES_PER_PAGE));
-    setHasMore(result.length > STORIES_PER_PAGE);
-  }, [allStories, selectedCategory, searchQuery, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
+    setDisplayedLinks(result.slice(0, LINKS_PER_PAGE));
+    setHasMore(result.length > LINKS_PER_PAGE);
+  }, [allLinks, selectedCategory, searchQuery, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
-    const end = nextPage * STORIES_PER_PAGE;
-    setDisplayedStories(filteredStories.slice(0, end));
+    const end = nextPage * LINKS_PER_PAGE;
+    setDisplayedLinks(filteredLinks.slice(0, end));
     setPage(nextPage);
-    setHasMore(end < filteredStories.length);
+    setHasMore(end < filteredLinks.length);
     setLoadingMore(false);
-  }, [page, filteredStories, loadingMore, hasMore]);
+  }, [page, filteredLinks, loadingMore, hasMore]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -146,10 +154,10 @@ export default function FutureNews() {
     return () => observer.disconnect();
   }, [loadMore, hasMore, loadingMore]);
 
-  const toggleVisibility = async (storyId: string, makePublic: boolean) => {
+  const toggleVisibility = async (linkId: string, makePublic: boolean) => {
     try {
       const token = localStorage.getItem("user_token");
-      const response = await fetch(`/api/stories/${storyId}`, {
+      const response = await fetch(`/api/links/${linkId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -160,9 +168,9 @@ export default function FutureNews() {
 
       if (response.ok) {
         // Update local state
-        setAllStories((prev) =>
+        setAllLinks((prev) =>
           prev.map((s) =>
-            s.id === storyId ? { ...s, isPublic: makePublic } : s
+            s.id === linkId ? { ...s, isPublic: makePublic } : s
           )
         );
       }
@@ -171,7 +179,7 @@ export default function FutureNews() {
     }
   };
 
-  const CategoryButton = ({ cat, compact = false }: { cat: string; compact?: boolean }) => {
+  const CategoryButton = ({ cat }: { cat: string }) => {
     const icon = categoryIcons[cat] || "📁";
     const isActive = selectedCategory === cat;
     return (
@@ -188,20 +196,19 @@ export default function FutureNews() {
         title={cat}
       >
         <span className="text-base">{icon}</span>
-        {!compact && <span className="text-sm">{cat}</span>}
-        {compact && <span className="text-xs">{cat.slice(0, 4)}</span>}
+        <span className="text-sm hidden sm:inline">{cat}</span>
       </button>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 select-none">
       {/* Header - Logo and User only */}
       <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-3 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="text-2xl">🚀</span>
-            <span>FutureIsNear</span>
+            <span className="text-2xl">🔗</span>
+            <span>LinX</span>
           </h1>
           <div className="flex items-center gap-3">
             {isAuthenticated && (
@@ -212,7 +219,7 @@ export default function FutureNews() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Submit
+                Add Link
               </button>
             )}
             <UserMenu remainingBudget={remainingBudget} />
@@ -251,35 +258,10 @@ export default function FutureNews() {
             {/* Separator */}
             <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
 
-            {/* Categories - responsive: show more on larger screens */}
-            <div className="flex-1 flex items-center gap-1 overflow-hidden">
-              {/* Extra small: 3 categories */}
-              <div className="flex sm:hidden items-center gap-1">
-                {categories.slice(0, 3).map((cat) => (
-                  <CategoryButton key={cat} cat={cat} compact />
-                ))}
-              </div>
-              {/* Small: 5 categories */}
-              <div className="hidden sm:flex md:hidden items-center gap-1">
-                {categories.slice(0, 5).map((cat) => (
-                  <CategoryButton key={cat} cat={cat} />
-                ))}
-              </div>
-              {/* Medium: 8 categories */}
-              <div className="hidden md:flex lg:hidden items-center gap-1">
-                {categories.slice(0, 8).map((cat) => (
-                  <CategoryButton key={cat} cat={cat} />
-                ))}
-              </div>
-              {/* Large: 12 categories */}
-              <div className="hidden lg:flex xl:hidden items-center gap-1">
-                {categories.slice(0, 12).map((cat) => (
-                  <CategoryButton key={cat} cat={cat} />
-                ))}
-              </div>
-              {/* Extra large: 16 categories */}
-              <div className="hidden xl:flex items-center gap-1">
-                {categories.slice(0, 16).map((cat) => (
+            {/* Categories - scrollable row, icon-only on mobile */}
+            <div className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-center gap-1 w-max">
+                {categories.map((cat) => (
                   <CategoryButton key={cat} cat={cat} />
                 ))}
               </div>
@@ -357,8 +339,8 @@ export default function FutureNews() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search stories..."
-                className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search links..."
+                className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -415,45 +397,45 @@ export default function FutureNews() {
 
       {/* Results count */}
       <div className="max-w-7xl mx-auto px-4 py-2 text-sm text-gray-500">
-        {filteredStories.length} stories
+        {filteredLinks.length} links
         {selectedCategory !== "All" && ` in ${selectedCategory}`}
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
 
-      {/* Stories */}
+      {/* Links */}
       <main className="max-w-7xl mx-auto px-4 pb-8">
         {loading ? (
           <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            Loading stories...
+            Loading links...
           </div>
-        ) : displayedStories.length === 0 ? (
+        ) : displayedLinks.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            No stories found.
+            No links found.
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="divide-y divide-gray-200">
-              {displayedStories.map((story) => {
-                const userVoteCount = getVoteCount(story.id);
+              {displayedLinks.map((link) => {
+                const userVoteCount = getVoteCount(link.id);
                 return (
-                  <article key={story.id} className="p-3 hover:bg-gray-50 transition-colors">
+                  <article key={link.id} className="p-3 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start gap-3">
                       <VoteButton
-                        storyId={story.id}
-                        totalVotes={story.totalVotes}
+                        linkId={link.id}
+                        totalVotes={link.totalVotes}
                         userVoteCount={userVoteCount}
                         isAuthenticated={isAuthenticated}
                         remainingBudget={remainingBudget}
                         onVote={vote}
                         onRemoveVote={removeVote}
                       />
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 select-text">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="inline-block px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
-                            {story.category}
+                          <span className="inline-block px-1.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded select-none">
+                            {link.category}
                           </span>
-                          {/* Private badge for user's own private stories */}
-                          {!story.isPublic && story.createdById === user?.id && (
+                          {/* Private badge for user's own private links */}
+                          {!link.isPublic && link.createdById === user?.id && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -463,40 +445,40 @@ export default function FutureNews() {
                           )}
                           <h2 className="text-sm font-semibold text-gray-900 flex-1">
                             <a
-                              href={story.url}
+                              href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="hover:text-blue-600 transition-colors"
                             >
-                              {story.title}
+                              {link.title}
                             </a>
                           </h2>
                         </div>
-                        {story.description && (
-                          <p className="text-gray-600 text-xs mb-1 line-clamp-1">{story.description}</p>
+                        {link.description && (
+                          <p className="text-gray-600 text-xs mb-1 line-clamp-1">{link.description}</p>
                         )}
                         <div className="flex items-center gap-3 text-xs text-gray-500">
-                          <span>{story.author || "Unknown"}</span>
-                          <PublicationDate month={story.publicationMonth} year={story.publicationYear} className="flex items-center gap-1" />
-                          {/* Show submitter for user-created stories */}
-                          {story.submittedBy && (
-                            <span className="text-gray-400">by {story.submittedBy}</span>
+                          <span>{link.author || "Unknown"}</span>
+                          <PublicationDate month={link.publicationMonth} year={link.publicationYear} className="flex items-center gap-1" />
+                          {/* Show submitter for user-created links */}
+                          {link.submittedBy && (
+                            <span className="text-gray-400">by {link.submittedBy}</span>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Toggle visibility button for user's own private stories */}
-                        {story.createdById === user?.id && !story.isPublic && (
+                        {/* Toggle visibility button for user's own private links */}
+                        {link.createdById === user?.id && !link.isPublic && (
                           <button
-                            onClick={() => toggleVisibility(story.id, true)}
+                            onClick={() => toggleVisibility(link.id, true)}
                             className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                            title="Make this story public"
+                            title="Make this link public"
                           >
                             Make Public
                           </button>
                         )}
                         <a
-                          href={story.url}
+                          href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-gray-400 hover:text-blue-600"
@@ -520,12 +502,12 @@ export default function FutureNews() {
         )}
       </main>
 
-      {/* Submit Story Modal */}
-      <UserSubmitStoryModal
+      {/* Submit Link Modal */}
+      <UserSubmitLinkModal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
         onSuccess={() => {
-          fetchStories();
+          fetchLinks();
         }}
       />
     </div>

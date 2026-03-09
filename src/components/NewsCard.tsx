@@ -35,13 +35,13 @@ const NewsCard: React.FC<NewsCardProps> = ({
     setIsToggling(true);
     
     try {
-      const response = await fetch(`/api/stories/${id}/favorite`, {
+      const response = await fetch(`/api/links/${id}/favorite`, {
         method: 'PATCH',
       });
       
       if (response.ok) {
-        const updatedStory = await response.json();
-        setFavorited(updatedStory.favorited);
+        const updatedLink = await response.json();
+        setFavorited(updatedLink.favorited);
       } else {
         console.error('Failed to toggle favorite');
       }

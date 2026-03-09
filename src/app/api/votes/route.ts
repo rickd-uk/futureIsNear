@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserFromRequest, userUnauthorizedResponse } from "@/lib/userAuth";
-import { MAX_VOTES_PER_STORY, DAILY_VOTE_BUDGET } from "@/lib/votingConfig";
+import { MAX_VOTES_PER_LINK, DAILY_VOTE_BUDGET } from "@/lib/votingConfig";
 
 // GET - Get user's votes and remaining daily budget
 export async function GET(request: Request) {
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const votes = await prisma.vote.findMany({
       where: { userId: user.userId },
       select: {
-        storyId: true,
+        linkId: true,
         count: true,
         createdAt: true,
       },
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const remainingBudget = Math.max(0, DAILY_VOTE_BUDGET - usedBudget);
 
     return NextResponse.json({
-      votes: votes.map((v) => ({ storyId: v.storyId, count: v.count })),
+      votes: votes.map((v) => ({ linkId: v.linkId, count: v.count })),
       remainingBudget,
       usedBudget,
     });
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST - Add/update vote on a story
+// POST - Add/update vote on a link
 export async function POST(request: Request) {
   const user = getUserFromRequest(request);
 
@@ -54,36 +54,36 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { storyId, count } = body;
+    const { linkId, count } = body;
 
-    if (!storyId) {
+    if (!linkId) {
       return NextResponse.json(
-        { error: "Story ID is required" },
+        { error: "Link ID is required" },
         { status: 400 }
       );
     }
 
-    if (!count || count < 1 || count > MAX_VOTES_PER_STORY) {
+    if (!count || count < 1 || count > MAX_VOTES_PER_LINK) {
       return NextResponse.json(
-        { error: `Vote count must be between 1 and ${MAX_VOTES_PER_STORY}` },
+        { error: `Vote count must be between 1 and ${MAX_VOTES_PER_LINK}` },
         { status: 400 }
       );
     }
 
-    // Check if story exists
-    const story = await prisma.story.findUnique({
-      where: { id: storyId },
+    // Check if link exists
+    const link = await prisma.link.findUnique({
+      where: { id: linkId },
     });
 
-    if (!story) {
-      return NextResponse.json({ error: "Story not found" }, { status: 404 });
+    if (!link) {
+      return NextResponse.json({ error: "Link not found" }, { status: 404 });
     }
 
-    // Get existing vote for this story
+    // Get existing vote for this link
     const existingVote = await prisma.vote.findUnique({
       where: {
-        storyId_userId: {
-          storyId,
+        linkId_userId: {
+          linkId,
           userId: user.userId,
         },
       },
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     } else {
       await prisma.vote.create({
         data: {
-          storyId,
+          linkId,
           userId: user.userId,
           count,
         },
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE - Remove vote from a story
+// DELETE - Remove vote from a link
 export async function DELETE(request: Request) {
   const user = getUserFromRequest(request);
 
@@ -164,11 +164,11 @@ export async function DELETE(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const storyId = searchParams.get("storyId");
+    const linkId = searchParams.get("linkId");
 
-    if (!storyId) {
+    if (!linkId) {
       return NextResponse.json(
-        { error: "Story ID is required" },
+        { error: "Link ID is required" },
         { status: 400 }
       );
     }
@@ -176,7 +176,7 @@ export async function DELETE(request: Request) {
     // Delete the vote
     const deletedVote = await prisma.vote.deleteMany({
       where: {
-        storyId,
+        linkId,
         userId: user.userId,
       },
     });

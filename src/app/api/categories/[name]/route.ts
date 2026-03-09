@@ -50,20 +50,20 @@ export async function PUT(
       data: updateData,
     });
 
-    // If name changed, update all stories with the old category name
-    let storiesUpdated = 0;
+    // If name changed, update all links with the old category name
+    let linksUpdated = 0;
     if (updateData.name) {
-      const result = await prisma.story.updateMany({
+      const result = await prisma.link.updateMany({
         where: { category: decodedName },
         data: { category: updateData.name },
       });
-      storiesUpdated = result.count;
+      linksUpdated = result.count;
     }
 
     return NextResponse.json({
       success: true,
       message: "Category updated successfully",
-      updatedCount: storiesUpdated,
+      updatedCount: linksUpdated,
     });
   } catch (error) {
     console.error("Error updating category:", error);
@@ -86,7 +86,7 @@ export async function DELETE(
     const { name } = await params;
     const decodedName = decodeURIComponent(name);
     const body = await request.json();
-    const { deleteStories } = body;
+    const { deleteLinks } = body;
 
     // Delete from Category model
     await prisma.category.delete({
@@ -95,21 +95,21 @@ export async function DELETE(
       // Category might not exist in model (legacy)
     });
 
-    if (deleteStories === true) {
-      // Delete all stories with this category
-      const result = await prisma.story.deleteMany({
+    if (deleteLinks === true) {
+      // Delete all links with this category
+      const result = await prisma.link.deleteMany({
         where: {
           category: decodedName,
         },
       });
       return NextResponse.json({
         success: true,
-        message: "Category and associated stories deleted",
-        deletedStoriesCount: result.count,
+        message: "Category and associated links deleted",
+        deletedLinksCount: result.count,
       });
     } else {
-      // Delete placeholder stories for this category
-      await prisma.story.deleteMany({
+      // Delete placeholder links for this category
+      await prisma.link.deleteMany({
         where: {
           category: decodedName,
           author: "__SYSTEM__",
@@ -117,8 +117,8 @@ export async function DELETE(
         },
       });
 
-      // Set category to "Uncategorized" for real stories only
-      const result = await prisma.story.updateMany({
+      // Set category to "Uncategorized" for real links only
+      const result = await prisma.link.updateMany({
         where: {
           category: decodedName,
           NOT: {
@@ -132,8 +132,8 @@ export async function DELETE(
 
       return NextResponse.json({
         success: true,
-        message: "Category removed, stories set to Uncategorized",
-        updatedStoriesCount: result.count,
+        message: "Category removed, links set to Uncategorized",
+        updatedLinksCount: result.count,
       });
     }
   } catch (error) {

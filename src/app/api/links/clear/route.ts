@@ -9,17 +9,17 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const result = await prisma.story.deleteMany({});
+    const result = await prisma.link.deleteMany({});
 
     return NextResponse.json({
       success: true,
-      message: `Deleted ${result.count} stories`,
+      message: `Deleted ${result.count} links`,
       count: result.count,
     });
   } catch (error) {
-    console.error("Error clearing stories:", error);
+    console.error("Error clearing links:", error);
     return NextResponse.json(
-      { error: "Failed to clear stories" },
+      { error: "Failed to clear links" },
       { status: 500 },
     );
   }
