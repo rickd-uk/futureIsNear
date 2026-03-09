@@ -1,14 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
-// Helper function to generate timestamps within the last week
-const getRandomTimestamp = () => {
-  const now = new Date()
-  const pastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  return new Date(pastWeek.getTime() + Math.random() * (now.getTime() - pastWeek.getTime()))
-}
-
-const stories = [
+const _stories = [
   // AI & Machine Learning
   {
     title: "New Language Model Achieves Human-Level Understanding",
@@ -142,18 +135,26 @@ const stories = [
 
 const categories = [
   { name: "AI", icon: "🤖" },
+  { name: "ASMR", icon: "🎧" },
   { name: "Business", icon: "💼" },
-  { name: "Conflict", icon: "⚔️" },
   { name: "Culture", icon: "🎭" },
+  { name: "Design", icon: "🎨" },
+  { name: "Dev", icon: "💻" },
   { name: "Education", icon: "📚" },
   { name: "Entertainment", icon: "🎬" },
-  { name: "Gaming", icon: "🎮" },
+  { name: "Finance", icon: "📈" },
+  { name: "Food", icon: "🍽️" },
+  { name: "Guitar", icon: "🎸" },
   { name: "Health", icon: "🏥" },
+  { name: "History", icon: "📜" },
   { name: "Music", icon: "🎵" },
+  { name: "Philosophy", icon: "🧠" },
   { name: "Politics", icon: "🏛️" },
   { name: "Science", icon: "🔬" },
   { name: "Space", icon: "🚀" },
-  { name: "Technology", icon: "💻" },
+  { name: "Spicy", icon: "🌶️" },
+  { name: "Sport", icon: "⚽" },
+  { name: "World", icon: "🌍" },
 ]
 
 async function main() {
@@ -167,17 +168,6 @@ async function main() {
       create: { name: category.name, icon: category.icon, isPublic: true },
     })
     console.log(`Upserted category: ${category.icon} ${category.name}`)
-  }
-
-  // Clear existing data
-  await prisma.story.deleteMany()
-
-  // Insert stories
-  for (const story of stories) {
-    const createdStory = await prisma.story.create({
-      data: story,
-    })
-    console.log(`Created story with id: ${createdStory.id}`)
   }
 
   console.log('Seeding finished.')

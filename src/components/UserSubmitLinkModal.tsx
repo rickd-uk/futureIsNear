@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { suggestCategory } from "@/lib/suggestCategory";
 
 interface Category {
   name: string;
@@ -54,6 +55,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
   const [fetchingTitle, setFetchingTitle] = useState(false);
   const [suggestedTitle, setSuggestedTitle] = useState("");
   const [suggestedAuthor, setSuggestedAuthor] = useState("");
+  const [suggestedCategory, setSuggestedCategory] = useState("");
   const [pasteHint, setPasteHint] = useState<"url" | "title" | null>(null);
   const [fieldPrefs, setFieldPrefs] = useState<FieldPrefs>(DEFAULT_PREFS);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +74,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
       setMakePublic(link.isPublic);
     } else {
       setFormData({ title: "", url: "", category: "", description: "", author: "", publicationDate: today });
-      setSuggestedTitle(""); setSuggestedAuthor("");
+      setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory("");
       const pref = localStorage.getItem("user_links_public_default");
       setMakePublic(pref === "true");
     }
@@ -118,10 +120,8 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
 
   const fetchTitle = async (url: string) => {
     setSuggestedTitle(""); setFetchingTitle(true);
-    try {
-      const domain = new URL(url).hostname.replace(/^www\./, "");
-      setSuggestedAuthor((prev) => prev || domain);
-    } catch { /* ignore */ }
+    let domain = "";
+    try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch { /* ignore */ }
     try {
       const res = await fetch(`/api/fetch-title?url=${encodeURIComponent(url)}`);
       if (res.ok) {
@@ -133,8 +133,14 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
             setSuggestedTitle((prev) => prev || data.title);
           }
         }
+        // Use fetched author if available, otherwise fall back to domain
+        const authorHint = data.author || domain;
+        if (authorHint) setSuggestedAuthor((prev) => prev || authorHint);
+      } else if (domain) {
+        setSuggestedAuthor((prev) => prev || domain);
       }
-    } catch { /* ignore */ } finally { setFetchingTitle(false); }
+    } catch { if (domain) setSuggestedAuthor((prev) => prev || domain); }
+    finally { setFetchingTitle(false); }
   };
 
   const readClipboard = async (field: "url" | "title", fallbackRef?: React.RefObject<HTMLInputElement | null>): Promise<string> => {
@@ -147,6 +153,13 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
       return "";
     }
   };
+
+  useEffect(() => {
+    if (formData.category) { setSuggestedCategory(""); return; }
+    if (!formData.url && !formData.title) return;
+    const s = suggestCategory(formData.url, formData.title, categories);
+    setSuggestedCategory(s ?? "");
+  }, [formData.url, formData.title, formData.category, categories]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -187,8 +200,8 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg sm:max-w-xl lg:max-w-2xl my-auto flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg sm:max-w-2xl lg:max-w-3xl flex flex-col max-h-[92vh] sm:max-h-[85vh]">
 
         {/* Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
@@ -211,10 +224,23 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
               </button>
             );
           })}
+          {(suggestedTitle || suggestedAuthor || suggestedCategory) && (
+            <button type="button" onClick={() => {
+              setFormData((p) => ({
+                ...p,
+                ...(suggestedTitle && !p.title ? { title: suggestedTitle } : {}),
+                ...(suggestedAuthor && !p.author ? { author: suggestedAuthor } : {}),
+                ...(suggestedCategory && !p.category ? { category: suggestedCategory } : {}),
+              }));
+              setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory("");
+            }} className="ml-auto text-xs px-2.5 py-1 rounded-full border border-green-300 bg-green-50 text-green-700 hover:bg-green-100 transition-colors">
+              ✓ Accept all
+            </button>
+          )}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 flex flex-col gap-3 flex-1 overflow-y-auto">
 
           {/* Title */}
           <div className="space-y-1 shrink-0">
@@ -256,14 +282,41 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
           </div>
 
           {/* Category + Author */}
-          <div className={`shrink-0 ${fieldPrefs.showAuthor ? "flex gap-2" : ""}`}>
-            <select name="category" value={formData.category} onChange={handleInputChange}
-              className={`border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldPrefs.showAuthor ? "flex-1" : "w-full"}`}>
-              <option value="">Category (optional)</option>
-              {categories.map((cat) => <option key={cat.name} value={cat.name}>{cat.icon} {cat.name}</option>)}
-            </select>
+          <div className="shrink-0 space-y-2">
+            {/* Mobile: native select */}
+            <div className="sm:hidden space-y-1">
+              <select name="category" value={formData.category} onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Category (optional)</option>
+                {categories.map((cat) => <option key={cat.name} value={cat.name}>{cat.icon} {cat.name}</option>)}
+              </select>
+              {suggestedCategory && !formData.category && (
+                <button type="button" onClick={() => { setFormData((p) => ({ ...p, category: suggestedCategory })); setSuggestedCategory(""); }}
+                  className="text-xs text-blue-600 hover:text-blue-800 text-left px-1">
+                  ↑ Use: {categories.find((c) => c.name === suggestedCategory)?.icon} {suggestedCategory}
+                </button>
+              )}
+            </div>
+            {/* Desktop: pill grid */}
+            <div className="hidden sm:flex flex-wrap gap-1.5">
+              {categories.map((cat) => {
+                const selected = formData.category === cat.name;
+                const suggested = !formData.category && suggestedCategory === cat.name;
+                return (
+                  <button key={cat.name} type="button"
+                    onClick={() => { setFormData((p) => ({ ...p, category: selected ? "" : cat.name })); setSuggestedCategory(""); }}
+                    className={`text-xs px-2.5 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
+                      selected ? "bg-blue-600 text-white border-blue-600"
+                      : suggested ? "bg-blue-50 border-blue-400 text-blue-700 border-dashed"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-100"
+                    }`}>
+                    {cat.icon} {cat.name}
+                  </button>
+                );
+              })}
+            </div>
             {fieldPrefs.showAuthor && (
-              <div className="flex-1 space-y-1">
+              <div className="space-y-1">
                 <input type="text" name="author" value={formData.author} onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Author (optional)" />

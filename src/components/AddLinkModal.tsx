@@ -1,7 +1,8 @@
 // src/components/AddLinkModal.tsx
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { suggestCategory } from "@/lib/suggestCategory";
 
 interface AddLinkModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export default function AddLinkModal({
   const [fetchingTitle, setFetchingTitle] = useState(false);
   const [suggestedTitle, setSuggestedTitle] = useState("");
   const [suggestedAuthor, setSuggestedAuthor] = useState("");
+  const [suggestedCategory, setSuggestedCategory] = useState("");
   const [pasteHint, setPasteHint] = useState<"url" | "title" | null>(null);
   const authorInputRef = useRef<HTMLInputElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -54,10 +56,8 @@ export default function AddLinkModal({
   const fetchTitle = async (url: string) => {
     setSuggestedTitle("");
     setFetchingTitle(true);
-    try {
-      const domain = new URL(url).hostname.replace(/^www\./, "");
-      setSuggestedAuthor((prev) => prev || domain);
-    } catch { /* ignore */ }
+    let domain = "";
+    try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch { /* ignore */ }
     try {
       const res = await fetch(`/api/fetch-title?url=${encodeURIComponent(url)}`);
       if (res.ok) {
@@ -69,10 +69,21 @@ export default function AddLinkModal({
             setSuggestedTitle((prev) => prev || data.title);
           }
         }
+        const authorHint = data.author || domain;
+        if (authorHint) setSuggestedAuthor((prev) => prev || authorHint);
+      } else if (domain) {
+        setSuggestedAuthor((prev) => prev || domain);
       }
-    } catch { /* silently fail */ }
+    } catch { if (domain) setSuggestedAuthor((prev) => prev || domain); }
     finally { setFetchingTitle(false); }
   };
+
+  useEffect(() => {
+    if (formData.category) { setSuggestedCategory(""); return; }
+    if (!formData.url && !formData.title) return;
+    const s = suggestCategory(formData.url, formData.title, categories);
+    setSuggestedCategory(s ?? "");
+  }, [formData.url, formData.title, formData.category, categories]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -264,27 +275,26 @@ export default function AddLinkModal({
 
           {/* Category */}
           <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Category <span className="text-red-500">*</span>
             </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {categories.map((cat) => {
+                const selected = formData.category === cat.name;
+                const suggested = !formData.category && suggestedCategory === cat.name;
+                return (
+                  <button key={cat.name} type="button"
+                    onClick={() => { setFormData((p) => ({ ...p, category: selected ? "" : cat.name })); setSuggestedCategory(""); }}
+                    className={`text-xs px-2.5 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
+                      selected ? "bg-blue-600 text-white border-blue-600"
+                      : suggested ? "bg-blue-50 border-blue-400 text-blue-700 border-dashed"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-400 hover:bg-gray-100"
+                    }`}>
+                    {cat.icon} {cat.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Publication Date */}
