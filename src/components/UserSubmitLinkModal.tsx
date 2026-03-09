@@ -201,7 +201,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-6">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg sm:max-w-2xl lg:max-w-3xl flex flex-col max-h-[92vh] sm:max-h-[85vh]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg sm:max-w-3xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
 
         {/* Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
@@ -297,8 +297,8 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
                 </button>
               )}
             </div>
-            {/* Desktop: single-row scrollable pills */}
-            <div className="hidden sm:flex flex-nowrap gap-1.5 overflow-x-auto min-w-0 pb-1">
+            {/* Desktop: wrapping pill grid */}
+            <div className="hidden sm:flex flex-wrap gap-1.5">
               {categories.map((cat) => {
                 const selected = formData.category === cat.name;
                 const suggested = !formData.category && suggestedCategory === cat.name;

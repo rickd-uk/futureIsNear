@@ -278,7 +278,7 @@ export default function AddLinkModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Category <span className="text-red-500">*</span>
             </label>
-            <div className="flex flex-nowrap gap-1.5 overflow-x-auto min-w-0 pb-1">
+            <div className="flex flex-wrap gap-1.5">
               {categories.map((cat) => {
                 const selected = formData.category === cat.name;
                 const suggested = !formData.category && suggestedCategory === cat.name;
