@@ -75,6 +75,7 @@ export async function PATCH(
       category?: string;
       description?: string | null;
       author?: string | null;
+      publicationDay?: number | null;
       publicationMonth?: number | null;
       publicationYear?: number | null;
       boost?: number;
@@ -92,6 +93,8 @@ export async function PATCH(
     // Admin-only fields
     if (isAdmin) {
       if (body.author !== undefined) updateData.author = body.author;
+      if (body.publicationDay !== undefined)
+        updateData.publicationDay = body.publicationDay;
       if (body.publicationMonth !== undefined)
         updateData.publicationMonth = body.publicationMonth;
       if (body.publicationYear !== undefined)

@@ -10,6 +10,7 @@ interface Link {
   category: string;
   author: string | null;
   description: string | null;
+  publicationDay?: number | null;
   publicationMonth?: number | null;
   publicationYear?: number | null;
   boost?: number;
@@ -20,7 +21,7 @@ interface EditLinkModalProps {
   onClose: () => void;
   onSuccess: () => void;
   link: Link | null;
-  categories: string[];
+  categories: { name: string; icon: string }[];
   authors: string[];
 }
 
@@ -32,8 +33,7 @@ export default function EditLinkModal({
   categories,
   authors,
 }: EditLinkModalProps) {
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
+  const today = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState({
     title: "",
@@ -41,8 +41,7 @@ export default function EditLinkModal({
     category: "",
     description: "",
     author: "",
-    publicationMonth: currentMonth,
-    publicationYear: currentYear,
+    publicationDate: today,
     boost: 1.0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,37 +49,28 @@ export default function EditLinkModal({
   const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
   const authorInputRef = useRef<HTMLInputElement>(null);
 
-  const months = [
-    { value: 1, label: "January" },
-    { value: 2, label: "February" },
-    { value: 3, label: "March" },
-    { value: 4, label: "April" },
-    { value: 5, label: "May" },
-    { value: 6, label: "June" },
-    { value: 7, label: "July" },
-    { value: 8, label: "August" },
-    { value: 9, label: "September" },
-    { value: 10, label: "October" },
-    { value: 11, label: "November" },
-    { value: 12, label: "December" },
-  ];
-
-  const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
-
   useEffect(() => {
     if (link) {
+      let publicationDate = today;
+      if (link.publicationYear && link.publicationMonth && link.publicationDay) {
+        const m = String(link.publicationMonth).padStart(2, "0");
+        const d = String(link.publicationDay).padStart(2, "0");
+        publicationDate = `${link.publicationYear}-${m}-${d}`;
+      } else if (link.publicationYear && link.publicationMonth) {
+        const m = String(link.publicationMonth).padStart(2, "0");
+        publicationDate = `${link.publicationYear}-${m}-01`;
+      }
       setFormData({
         title: link.title || "",
         url: link.url || "",
         category: link.category || "",
         description: link.description || "",
         author: link.author || "",
-        publicationMonth: link.publicationMonth || currentMonth,
-        publicationYear: link.publicationYear || currentYear,
+        publicationDate,
         boost: link.boost ?? 1.0,
       });
     }
-  }, [link, currentMonth, currentYear]);
+  }, [link, today]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -90,12 +80,7 @@ export default function EditLinkModal({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        name === "publicationMonth" || name === "publicationYear"
-          ? parseInt(value)
-          : name === "boost"
-            ? parseFloat(value) || 1.0
-            : value,
+      [name]: name === "boost" ? parseFloat(value) || 1.0 : value,
     }));
     if (name === "author") {
       setShowAuthorSuggestions(true);
@@ -152,9 +137,8 @@ export default function EditLinkModal({
           category: formData.category.trim(),
           description: formData.description.trim() || undefined,
           author: formData.author.trim() || undefined,
-          publicationMonth: formData.publicationMonth,
-          publicationYear: formData.publicationYear,
           boost: formData.boost,
+          ...(formData.publicationDate ? (() => { const d = new Date(formData.publicationDate); return { publicationDay: d.getUTCDate(), publicationMonth: d.getUTCMonth() + 1, publicationYear: d.getUTCFullYear() }; })() : {}),
         }),
       });
 
@@ -250,8 +234,8 @@ export default function EditLinkModal({
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+                <option key={cat.name} value={cat.name}>
+                  {cat.icon} {cat.name}
                 </option>
               ))}
             </select>
@@ -259,53 +243,17 @@ export default function EditLinkModal({
 
           {/* Publication Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="publicationDate" className="block text-sm font-medium text-gray-700 mb-1">
               Publication Date
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="publicationMonth"
-                  className="block text-xs text-gray-600 mb-1"
-                >
-                  Month
-                </label>
-                <select
-                  id="publicationMonth"
-                  name="publicationMonth"
-                  value={formData.publicationMonth}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                >
-                  {months.map((month) => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="publicationYear"
-                  className="block text-xs text-gray-600 mb-1"
-                >
-                  Year
-                </label>
-                <select
-                  id="publicationYear"
-                  name="publicationYear"
-                  value={formData.publicationYear}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                >
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <input
+              type="date"
+              id="publicationDate"
+              name="publicationDate"
+              value={formData.publicationDate}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            />
           </div>
 
           {/* Description */}
@@ -321,8 +269,8 @@ export default function EditLinkModal({
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-y"
             />
           </div>
 

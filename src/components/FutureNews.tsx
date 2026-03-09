@@ -16,6 +16,7 @@ interface Link {
   category: string;
   author: string | null;
   description: string | null;
+  publicationDay?: number | null;
   publicationMonth?: number | null;
   publicationYear?: number | null;
   timestamp: string;
@@ -459,7 +460,8 @@ export default function FutureNews() {
                         )}
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span>{link.author || "Unknown"}</span>
-                          <PublicationDate month={link.publicationMonth} year={link.publicationYear} className="flex items-center gap-1" />
+                          <PublicationDate day={link.publicationDay} month={link.publicationMonth} year={link.publicationYear} className="flex items-center gap-1" />
+                          <span title="Added to LinX">🔗 {new Date(link.timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                           {/* Show submitter for user-created links */}
                           {link.submittedBy && (
                             <span className="text-gray-400">by {link.submittedBy}</span>

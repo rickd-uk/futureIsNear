@@ -8,19 +8,23 @@ export function checkAuth(request: Request): boolean {
     return false;
   }
 
-  // Basic token validation
-  // In production, verify JWT or session token properly
+  const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+  if (!ADMIN_USERNAME) {
+    return false;
+  }
+
   try {
     const decoded = Buffer.from(
       token.replace("Bearer ", ""),
       "base64",
     ).toString();
     // Token format: "username:timestamp"
-    const [username, timestamp] = decoded.split(":");
+    const colonIndex = decoded.indexOf(":");
+    if (colonIndex === -1) return false;
+    const username = decoded.slice(0, colonIndex);
+    const timestamp = decoded.slice(colonIndex + 1);
 
-    // Check if token is from valid admin session
-    // For now, just check if it's properly formatted
-    return !!username && !!timestamp;
+    return username === ADMIN_USERNAME && !!timestamp;
   } catch {
     return false;
   }

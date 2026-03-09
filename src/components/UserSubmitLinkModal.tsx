@@ -18,11 +18,14 @@ export default function UserSubmitLinkModal({
   onClose,
   onSuccess,
 }: UserSubmitLinkModalProps) {
+  const today = new Date().toISOString().split("T")[0];
   const [formData, setFormData] = useState({
     title: "",
     url: "",
     category: "",
     description: "",
+    author: "",
+    publicationDate: today,
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +74,7 @@ export default function UserSubmitLinkModal({
         throw new Error("Please select a category");
       }
 
+      const pubDate = formData.publicationDate ? new Date(formData.publicationDate) : null;
       const response = await fetch("/api/links/create", {
         method: "POST",
         headers: {
@@ -78,7 +82,14 @@ export default function UserSubmitLinkModal({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...formData,
+          title: formData.title,
+          url: formData.url,
+          category: formData.category,
+          description: formData.description,
+          author: formData.author || undefined,
+          publicationDay: pubDate ? pubDate.getUTCDate() : null,
+          publicationMonth: pubDate ? pubDate.getUTCMonth() + 1 : null,
+          publicationYear: pubDate ? pubDate.getUTCFullYear() : null,
           makePublic,
         }),
       });
@@ -89,7 +100,7 @@ export default function UserSubmitLinkModal({
       }
 
       // Reset form
-      setFormData({ title: "", url: "", category: "", description: "" });
+      setFormData({ title: "", url: "", category: "", description: "", author: "", publicationDate: today });
       onSuccess();
       onClose();
     } catch (error) {
@@ -160,15 +171,34 @@ export default function UserSubmitLinkModal({
             ))}
           </select>
 
+          <input
+            type="text"
+            id="author"
+            name="author"
+            value={formData.author}
+            onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Author (optional)"
+          />
+
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows={8}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            placeholder="Description (optional)"
+          />
+
           <div>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
+            <label className="block text-xs text-gray-500 mb-1">Publication date</label>
+            <input
+              type="date"
+              name="publicationDate"
+              value={formData.publicationDate}
               onChange={handleInputChange}
-              rows={5}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:resize-y"
-              placeholder="Description (optional)"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 

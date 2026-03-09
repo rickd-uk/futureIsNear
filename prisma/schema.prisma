@@ -27,6 +27,7 @@ model Link {
   category    String
   author      String?  @default("Unknown Author")
   timestamp   DateTime @default(now())
+  publicationDay   Int?    // Day (1-31)
   publicationMonth Int?    // Month (1-12)
   publicationYear  Int?    // Year (ex. 2025)
   boost       Float    @default(1.0)  // Admin multiplier for hot score

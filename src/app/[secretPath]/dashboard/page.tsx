@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
   const [links, setStories] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{ name: string; icon: string }[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
   const [selectedLinks, setSelectedStories] = useState<Set<string>>(
     new Set(),
@@ -110,7 +110,10 @@ export default function AdminDashboard() {
 
   const fetchCategoriesAndAuthors = async () => {
     try {
-      const catResponse = await fetch("/api/categories");
+      const adminToken = localStorage.getItem("admin_token");
+      const catResponse = await fetch("/api/categories?withIcons=true&includePrivate=true", {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
       const categories = await catResponse.json();
       setCategories(categories);
 
