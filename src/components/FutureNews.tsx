@@ -55,20 +55,26 @@ interface LinkRowProps {
   isAuthenticated: boolean;
   remainingBudget: number;
   userId: string | undefined;
+  showPublicFeed: boolean;
   onVote: (linkId: string, count: number) => Promise<boolean>;
   onRemoveVote: (linkId: string) => Promise<boolean>;
   onToggleVisibility: (linkId: string, makePublic: boolean) => void;
 }
 
 const LinkRow = memo(function LinkRow({
-  link, userVoteCount, isAuthenticated, remainingBudget, userId, onVote, onRemoveVote, onToggleVisibility,
+  link, userVoteCount, isAuthenticated, remainingBudget, userId, showPublicFeed, onVote, onRemoveVote, onToggleVisibility,
 }: LinkRowProps) {
   const isOwn = link.createdById === userId;
+  const isPrivate = !link.isPublic && isOwn;
   const pubDate = formatPubDate(link);
   const addedDate = fmtDate(new Date(link.timestamp));
 
   return (
-    <article className="px-3 py-2.5 hover:bg-gray-50 transition-colors">
+    <article className={`px-3 py-2.5 transition-colors border-l-2 ${
+      isPrivate && showPublicFeed
+        ? "border-amber-300 bg-amber-50 hover:bg-amber-100"
+        : "border-transparent hover:bg-gray-50"
+    }`}>
       <div className="flex items-start gap-2.5">
         <VoteButton
           linkId={link.id}
@@ -93,31 +99,24 @@ const LinkRow = memo(function LinkRow({
             {pubDate && <span className="shrink-0">{pubDate}</span>}
             <span className="shrink-0 text-gray-400" title="Added to LinX">🔗 {addedDate}</span>
             {link.submittedBy && <span className="shrink-0 text-gray-400">via {link.submittedBy}</span>}
-            {!link.isPublic && isOwn && (
-              <span className="shrink-0 inline-flex items-center gap-0.5 px-1 py-0.5 bg-gray-100 text-gray-500 rounded">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                Private
-              </span>
-            )}
           </div>
         </div>
-        <div className="flex flex-col items-center gap-1.5 shrink-0">
-          {isOwn && (
-            <button
-              onClick={() => onToggleVisibility(link.id, !link.isPublic)}
-              title={link.isPublic ? "Make private" : "Make public"}
-              className={`p-1 rounded transition-colors ${link.isPublic ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-green-600 hover:text-green-700 hover:bg-green-50"}`}
-            >
-              {link.isPublic
-                ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-              }
-            </button>
-          )}
-          <a href={link.url} target="_blank" rel="noopener noreferrer" className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-          </a>
-        </div>
+        {isOwn && (
+          <button
+            onClick={() => onToggleVisibility(link.id, !link.isPublic)}
+            title={link.isPublic ? "Make private" : "Make public"}
+            className={`p-2 rounded-lg transition-colors shrink-0 ${
+              link.isPublic
+                ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                : "text-amber-500 hover:text-amber-600 hover:bg-amber-100"
+            }`}
+          >
+            {link.isPublic
+              ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+            }
+          </button>
+        )}
       </div>
     </article>
   );
@@ -154,6 +153,20 @@ export default function FutureNews() {
   const [searchInAuthor, setSearchInAuthor] = useState(true);
 
   const [sortMode, setSortMode] = useState<"hot" | "newest">("hot");
+
+  // Logged-in users default to personal feed; persisted across sessions
+  const [showPublicFeed, setShowPublicFeed] = useState(false);
+  useEffect(() => {
+    setShowPublicFeed(localStorage.getItem("show_public_feed") === "true");
+  }, []);
+
+  const togglePublicFeed = useCallback(() => {
+    setShowPublicFeed((prev) => {
+      const next = !prev;
+      localStorage.setItem("show_public_feed", String(next));
+      return next;
+    });
+  }, []);
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -247,6 +260,11 @@ export default function FutureNews() {
         return false;
       });
     }
+    // Logged-in users: restrict to own links unless public feed is enabled
+    if (isAuthenticated && !showPublicFeed && user?.id) {
+      result = result.filter((link) => link.createdById === user.id);
+    }
+
     // Client-side sort — instant, no server round-trip
     if (sortMode === "newest") {
       result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -257,7 +275,7 @@ export default function FutureNews() {
     setPage(1);
     setDisplayedLinks(result.slice(0, LINKS_PER_PAGE));
     setHasMore(result.length > LINKS_PER_PAGE);
-  }, [allLinks, selectedCategory, debouncedQuery, sortMode, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
+  }, [allLinks, selectedCategory, debouncedQuery, sortMode, showPublicFeed, isAuthenticated, user, searchInTitle, searchInDescription, searchInAuthor, searchInCategory]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
@@ -323,7 +341,11 @@ export default function FutureNews() {
             <span className="text-2xl">🔗</span>
             <span>LinX</span>
           </h1>
-          <UserMenu remainingBudget={remainingBudget} />
+          <UserMenu
+            remainingBudget={remainingBudget}
+            showPublicFeed={isAuthenticated ? showPublicFeed : undefined}
+            onTogglePublicFeed={isAuthenticated ? togglePublicFeed : undefined}
+          />
         </div>
       </header>
 
@@ -533,6 +555,7 @@ export default function FutureNews() {
                   isAuthenticated={isAuthenticated}
                   remainingBudget={remainingBudget}
                   userId={user?.id}
+                  showPublicFeed={showPublicFeed}
                   onVote={vote}
                   onRemoveVote={removeVote}
                   onToggleVisibility={toggleVisibility}

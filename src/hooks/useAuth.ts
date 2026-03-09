@@ -25,18 +25,8 @@ function parseJwt(token: string): { userId: string; username: string; exp: numbe
 }
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>(() => {
-    // Synchronously decode token on first render — no network call needed
-    if (typeof window === "undefined") return { user: null, loading: false, error: null };
-    const token = localStorage.getItem("user_token");
-    if (!token) return { user: null, loading: false, error: null };
-    const payload = parseJwt(token);
-    if (!payload || payload.exp * 1000 < Date.now()) {
-      localStorage.removeItem("user_token");
-      return { user: null, loading: false, error: null };
-    }
-    return { user: { id: payload.userId, username: payload.username, email: null }, loading: false, error: null };
-  });
+  // Start null to match SSR — useEffect reads localStorage after hydration
+  const [state, setState] = useState<AuthState>({ user: null, loading: false, error: null });
 
   const checkAuth = useCallback(() => {
     const token = localStorage.getItem("user_token");
