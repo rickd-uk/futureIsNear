@@ -469,14 +469,18 @@ export default function FutureNews() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Toggle visibility button for user's own private links */}
-                        {link.createdById === user?.id && !link.isPublic && (
+                        {/* Toggle visibility for user's own links */}
+                        {link.createdById === user?.id && (
                           <button
-                            onClick={() => toggleVisibility(link.id, true)}
-                            className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-                            title="Make this link public"
+                            onClick={() => toggleVisibility(link.id, !link.isPublic)}
+                            className={`text-xs px-2 py-1 rounded transition-colors ${
+                              link.isPublic
+                                ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                : "bg-green-100 text-green-700 hover:bg-green-200"
+                            }`}
+                            title={link.isPublic ? "Make private" : "Make public"}
                           >
-                            Make Public
+                            {link.isPublic ? "Make Private" : "Make Public"}
                           </button>
                         )}
                         <a
