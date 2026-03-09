@@ -179,6 +179,7 @@ export default function UserSubmitLinkModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          {/* Row 1: Title + paste/clear */}
           <div className="space-y-1">
             <div className="flex gap-2">
               <input
@@ -226,6 +227,7 @@ export default function UserSubmitLinkModal({
             )}
           </div>
 
+          {/* Row 2: URL + paste/clear */}
           <div className="space-y-1">
             <div className="flex gap-2">
               <input
@@ -272,73 +274,70 @@ export default function UserSubmitLinkModal({
             )}
           </div>
 
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Category *</option>
-            {categories.map((cat) => (
-              <option key={cat.name} value={cat.name}>
-                {cat.icon} {cat.name}
-              </option>
-            ))}
-          </select>
-
-          <div className="space-y-1">
-            <input
-              type="text"
-              id="author"
-              name="author"
-              value={formData.author}
+          {/* Row 3: Category + Author side by side */}
+          <div className="flex gap-2">
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Author (optional)"
-            />
-            {suggestedAuthor && !formData.author && (
-              <button
-                type="button"
-                onClick={() => { setFormData((prev) => ({ ...prev, author: suggestedAuthor })); setSuggestedAuthor(""); }}
-                className="text-xs text-blue-600 hover:text-blue-800 text-left px-1"
-              >
-                ↑ Use: {suggestedAuthor}
-              </button>
-            )}
+              required
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Category *</option>
+              {categories.map((cat) => (
+                <option key={cat.name} value={cat.name}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex-1 space-y-1">
+              <input
+                type="text"
+                id="author"
+                name="author"
+                value={formData.author}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Author (optional)"
+              />
+              {suggestedAuthor && !formData.author && (
+                <button
+                  type="button"
+                  onClick={() => { setFormData((prev) => ({ ...prev, author: suggestedAuthor })); setSuggestedAuthor(""); }}
+                  className="text-xs text-blue-600 hover:text-blue-800 text-left px-1"
+                >
+                  ↑ Use: {suggestedAuthor}
+                </button>
+              )}
+            </div>
           </div>
 
+          {/* Row 4: Description (compact) */}
           <textarea
             id="description"
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            rows={8}
+            rows={4}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             placeholder="Description (optional)"
           />
 
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Publication date</label>
-            <input
-              type="date"
-              name="publicationDate"
-              value={formData.publicationDate}
-              onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Visibility toggle */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Make Public</p>
-                <p className="text-xs text-gray-500">
-                  {makePublic ? "Link will be visible to everyone" : "Only you can see this link"}
-                </p>
-              </div>
+          {/* Row 5: Publication date + Make public toggle — wraps on narrow screens */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <label className="text-xs text-gray-500 whitespace-nowrap">Pub date</label>
+              <input
+                type="date"
+                name="publicationDate"
+                value={formData.publicationDate}
+                onChange={handleInputChange}
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm text-gray-700">Make public</span>
               <button
                 type="button"
                 onClick={() => handleDefaultPreferenceChange(!makePublic)}
@@ -353,17 +352,16 @@ export default function UserSubmitLinkModal({
                 />
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              This preference is saved for future submissions
-            </p>
           </div>
 
+          {/* Row 6: Error */}
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
+          {/* Row 7: Cancel + Add */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"

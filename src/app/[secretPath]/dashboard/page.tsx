@@ -14,9 +14,16 @@ interface Link {
   category: string;
   author: string | null;
   description: string | null;
+  publicationDay?: number | null;
   publicationMonth?: number | null;
   publicationYear?: number | null;
   timestamp: string;
+  totalVotes?: number;
+  hotScore?: number;
+  boost?: number;
+  isPublic?: boolean;
+  createdById?: string | null;
+  submittedBy?: string | null;
 }
 
 export default function AdminDashboard() {
@@ -34,6 +41,7 @@ export default function AdminDashboard() {
   const [showAuthorManagement, setShowAuthorManagement] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [userFilter, setUserFilter] = useState("");
   const [signupsEnabled, setSignupsEnabled] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const router = useRouter();
@@ -254,6 +262,17 @@ export default function AdminDashboard() {
     router.push("/qwertyuiop123/login");
   };
 
+  const fmtPubDate = (link: Link): string => {
+    if (!link.publicationYear) return "—";
+    if (link.publicationDay && link.publicationMonth)
+      return new Date(link.publicationYear, link.publicationMonth - 1, link.publicationDay)
+        .toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    if (link.publicationMonth)
+      return new Date(link.publicationYear, link.publicationMonth - 1)
+        .toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+    return String(link.publicationYear);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - Compact */}
@@ -265,7 +284,7 @@ export default function AdminDashboard() {
               onClick={() => setIsAddModalOpen(true)}
               className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
             >
-              + Add Link
+              + Add
             </button>
             <button
               onClick={handleLogout}
@@ -413,12 +432,32 @@ export default function AdminDashboard() {
 
         {/* Stories Table - Compact */}
         <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+          <div className="px-4 py-3 border-b border-gray-200 flex flex-wrap gap-3 items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-gray-900">Links</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Total: {links.length} links
+                {userFilter
+                  ? `${links.filter(l => (l.submittedBy ?? "").toLowerCase().includes(userFilter.toLowerCase())).length} of ${links.length}`
+                  : links.length} links
+                {userFilter && ` by "${userFilter}"`}
               </p>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Filter by user..."
+                value={userFilter}
+                onChange={(e) => setUserFilter(e.target.value)}
+                className="border border-gray-300 rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+              />
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {userFilter && (
+                <button onClick={() => setUserFilter("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
             </div>
           </div>
           {loading ? (
@@ -451,11 +490,23 @@ export default function AdminDashboard() {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="hidden sm:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Author
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
+                    <th className="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Pub date
+                    </th>
+                    <th className="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Added
+                    </th>
+                    <th className="hidden sm:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Visibility
+                    </th>
+                    <th className="hidden lg:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Votes
+                    </th>
+                    <th className="hidden lg:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      By
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -463,7 +514,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {links.slice(0, 20).map((link) => (
+                  {links.filter(l => !userFilter || (l.submittedBy ?? "").toLowerCase().includes(userFilter.toLowerCase())).map((link) => (
                     <tr key={link.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2">
                         <input
@@ -495,11 +546,31 @@ export default function AdminDashboard() {
                           {link.category}
                         </span>
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        {link.author || "Unknown"}
+                      <td className="hidden sm:table-cell px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                        {link.author || "—"}
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                      <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                        {fmtPubDate(link)}
+                      </td>
+                      <td className="hidden md:table-cell px-4 py-2 whitespace-nowrap text-xs text-gray-500">
                         {new Date(link.timestamp).toLocaleDateString()}
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-2 whitespace-nowrap">
+                        {link.isPublic ? (
+                          <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded">
+                            Public
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                            Private
+                          </span>
+                        )}
+                      </td>
+                      <td className="hidden lg:table-cell px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                        {link.totalVotes ?? 0}
+                      </td>
+                      <td className="hidden lg:table-cell px-4 py-2 whitespace-nowrap text-xs text-gray-500">
+                        {link.submittedBy ?? "—"}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-sm">
                         <div className="flex gap-2">

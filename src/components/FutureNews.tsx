@@ -504,8 +504,8 @@ export default function FutureNews() {
       {showAdvanced && (
         <div className="bg-blue-50 border-b border-blue-200">
           <div className="max-w-7xl mx-auto px-4 py-2">
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-800">
-              <span className="text-gray-600 font-medium">Search in:</span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-800">
+              <span className="text-gray-600 font-medium shrink-0">Search in:</span>
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input type="checkbox" checked={searchInTitle} onChange={(e) => setSearchInTitle(e.target.checked)} className="rounded text-blue-600" />
                 <span className="text-gray-700">Title</span>
