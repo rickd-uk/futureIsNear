@@ -31,7 +31,48 @@ export default function AddLinkModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showAuthorSuggestions, setShowAuthorSuggestions] = useState(false);
+  const [fetchingTitle, setFetchingTitle] = useState(false);
+  const [suggestedTitle, setSuggestedTitle] = useState("");
+  const [suggestedAuthor, setSuggestedAuthor] = useState("");
+  const [pasteHint, setPasteHint] = useState<"url" | "title" | null>(null);
   const authorInputRef = useRef<HTMLInputElement>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  const readClipboard = async (field: "url" | "title", fallbackRef?: React.RefObject<HTMLInputElement | null>): Promise<string> => {
+    try {
+      const text = await (navigator.clipboard?.readText() ?? Promise.reject());
+      return text ?? "";
+    } catch {
+      fallbackRef?.current?.focus();
+      setPasteHint(field);
+      setTimeout(() => setPasteHint(null), 3000);
+      return "";
+    }
+  };
+
+  const fetchTitle = async (url: string) => {
+    setSuggestedTitle("");
+    setFetchingTitle(true);
+    try {
+      const domain = new URL(url).hostname.replace(/^www\./, "");
+      setSuggestedAuthor((prev) => prev || domain);
+    } catch { /* ignore */ }
+    try {
+      const res = await fetch(`/api/fetch-title?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.title) {
+          const looksLikeDomain = !data.title.includes(" ") && data.title.includes(".");
+          if (!looksLikeDomain) {
+            setFormData((prev) => prev.title ? prev : { ...prev, title: data.title });
+            setSuggestedTitle((prev) => prev || data.title);
+          }
+        }
+      }
+    } catch { /* silently fail */ }
+    finally { setFetchingTitle(false); }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -137,21 +178,37 @@ export default function AddLinkModal({
 
           {/* Title */}
           <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-            />
+            <div className="flex gap-2">
+              <input
+                ref={titleInputRef}
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                placeholder={fetchingTitle ? "Fetching title..." : ""}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              />
+              <button type="button" onClick={async () => {
+                if (formData.title) { setFormData((p) => ({ ...p, title: "" })); setSuggestedTitle(""); }
+                else { const t = await readClipboard("title", titleInputRef); if (t) setFormData((p) => ({ ...p, title: t })); }
+              }} className="px-3 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 flex-shrink-0">
+                {formData.title ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
+              </button>
+            </div>
+            {pasteHint === "title" && (
+              <p className="text-xs text-amber-600 px-1 mt-1">Clipboard unavailable — press Ctrl+V to paste</p>
+            )}
+            {suggestedTitle && (
+              <button type="button" onClick={() => { setFormData((p) => ({ ...p, title: suggestedTitle })); setSuggestedTitle(""); }}
+                className="text-xs text-blue-600 hover:text-blue-800 text-left truncate w-full px-1 mt-1">
+                ↑ Use: {suggestedTitle}
+              </button>
+            )}
           </div>
 
           {/* URL */}
@@ -164,11 +221,16 @@ export default function AddLinkModal({
             </label>
             <div className="flex gap-2">
               <input
+                ref={urlInputRef}
                 type="url"
                 id="url"
                 name="url"
                 value={formData.url}
                 onChange={handleInputChange}
+                onPaste={(e) => {
+                  const text = e.clipboardData?.getData("text") ?? "";
+                  if (text.startsWith("http")) setTimeout(() => fetchTitle(text), 0);
+                }}
                 required
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               />
@@ -177,9 +239,13 @@ export default function AddLinkModal({
                 onClick={async () => {
                   if (formData.url) {
                     setFormData((prev) => ({ ...prev, url: "" }));
+                    setSuggestedTitle(""); setSuggestedAuthor("");
                   } else {
-                    const text = await navigator.clipboard.readText();
-                    setFormData((prev) => ({ ...prev, url: text }));
+                    const text = await readClipboard("url", urlInputRef);
+                    if (text) {
+                      setFormData((prev) => ({ ...prev, url: text }));
+                      if (text.startsWith("http")) fetchTitle(text);
+                    }
                   }
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-600 hover:bg-gray-50 flex-shrink-0"
@@ -191,6 +257,9 @@ export default function AddLinkModal({
                 )}
               </button>
             </div>
+            {pasteHint === "url" && (
+              <p className="text-xs text-amber-600 mt-1">Clipboard unavailable — press Ctrl+V to paste</p>
+            )}
           </div>
 
           {/* Category */}
@@ -275,6 +344,12 @@ export default function AddLinkModal({
               placeholder="Type to search authors..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
+            {suggestedAuthor && !formData.author && (
+              <button type="button" onClick={() => { setFormData((p) => ({ ...p, author: suggestedAuthor })); setSuggestedAuthor(""); }}
+                className="text-xs text-blue-600 hover:text-blue-800 text-left px-1 mt-1 block">
+                ↑ Use: {suggestedAuthor}
+              </button>
+            )}
             {showAuthorSuggestions && filteredAuthors.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
                 {filteredAuthors.slice(0, 10).map((author, index) => {

@@ -32,8 +32,25 @@ const LINKS_PER_PAGE = 20;
 
 export default function FutureNews() {
   const { isAuthenticated, user } = useAuth();
-  const { remainingBudget, vote, removeVote, getVoteCount } =
+  const { remainingBudget, vote: castVote, removeVote, getVoteCount, initFromServer } =
     useVoting(isAuthenticated);
+
+  const vote = async (linkId: string, count: number): Promise<boolean> => {
+    const prev = getVoteCount(linkId);
+    const delta = count - prev;
+    if (delta > 0) {
+      setAllLinks((links) =>
+        links.map((l) => l.id === linkId ? { ...l, totalVotes: l.totalVotes + delta } : l)
+      );
+    }
+    const ok = await castVote(linkId, count);
+    if (!ok && delta > 0) {
+      setAllLinks((links) =>
+        links.map((l) => l.id === linkId ? { ...l, totalVotes: l.totalVotes - delta } : l)
+      );
+    }
+    return ok;
+  };
 
   const [allLinks, setAllLinks] = useState<Link[]>([]);
   const [filteredLinks, setFilteredLinks] = useState<Link[]>([]);
@@ -65,45 +82,46 @@ export default function FutureNews() {
     try {
       setLoading(true);
       const token = localStorage.getItem("user_token");
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const res = await fetch(`/api/links?sort=${sortMode}`, { headers });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const linkData: Link[] = data.links ?? [];
+      setAllLinks(linkData);
+
+      // Initialize votes from server data (no separate /api/votes call needed)
+      if (data.userVotes && data.remainingBudget !== null) {
+        initFromServer(data.userVotes, data.remainingBudget);
       }
 
-      // Fetch links and categories with icons in parallel
-      const [linksRes, categoriesRes] = await Promise.all([
-        fetch(`/api/links?sort=${sortMode}`, { headers }),
-        fetch("/api/categories?withIcons=true"),
+      // Categories from server data (no separate /api/categories call needed)
+      const catIcons: Record<string, string> = { All: "🌐", ...data.categoryIcons };
+      setCategoryIcons(catIcons);
+
+      const now = Date.now();
+      const WEEK = 7 * 24 * 60 * 60 * 1000;
+      const scores = new Map<string, number>();
+      linkData.forEach((link) => {
+        const weight = user && link.createdById === user.id ? 3 : 1;
+        const age = now - new Date(link.timestamp).getTime();
+        const recency = Math.exp(-age / WEEK);
+        scores.set(link.category, (scores.get(link.category) || 0) + weight + recency * 5);
+      });
+
+      setCategories([
+        "All",
+        ...Object.keys(data.categoryIcons)
+          .filter((name) => scores.has(name))
+          .sort((a, b) => (scores.get(b) || 0) - (scores.get(a) || 0)),
       ]);
-
-      let linkData: Link[] = [];
-      if (linksRes.ok) {
-        linkData = await linksRes.json();
-        setAllLinks(linkData);
-      }
-
-      if (categoriesRes.ok) {
-        const catData = await categoriesRes.json();
-        const icons: Record<string, string> = { All: "🌐" };
-        catData.forEach((c: { name: string; icon: string }) => {
-          icons[c.name] = c.icon;
-        });
-        setCategoryIcons(icons);
-        const categoriesWithLinks = new Set(linkData.map((s) => s.category));
-        setCategories([
-          "All",
-          ...catData
-            .map((c: { name: string }) => c.name)
-            .filter((name: string) => categoriesWithLinks.has(name))
-            .sort(),
-        ]);
-      }
     } catch (error) {
       console.error("Failed to fetch links:", error);
     } finally {
       setLoading(false);
     }
-  }, [sortMode]);
+  }, [sortMode, user, initFromServer]);
 
   useEffect(() => {
     fetchLinks();

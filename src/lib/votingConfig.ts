@@ -1,5 +1,5 @@
-export const MAX_VOTES_PER_LINK = 3;
-export const DAILY_VOTE_BUDGET = 10;
+export const MAX_VOTES_PER_LINK = 5;
+export const DAILY_VOTE_BUDGET = 30;
 export const TIME_DECAY_FACTOR = 1.5;
 
 export function calculateHotScore(

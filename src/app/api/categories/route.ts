@@ -27,41 +27,13 @@ export async function GET(request: Request) {
     const categoriesFromModel = await prisma.category.findMany({
       where: categoryWhere,
       select: { name: true, icon: true },
+      orderBy: { name: "asc" },
     });
 
-    // Also get categories from public links (for backward compatibility)
-    const linksWithCategories = await prisma.link.findMany({
-      where: {
-        isPublic: true,
-        NOT: {
-          author: "__SYSTEM__",
-        },
-      },
-      select: {
-        category: true,
-      },
-      distinct: ["category"],
-    });
-
-    // Build category map with icons
-    const categoryMap = new Map<string, string>();
-    categoriesFromModel.forEach((c) => categoryMap.set(c.name, c.icon));
-    linksWithCategories.forEach((s) => {
-      if (s.category && !categoryMap.has(s.category)) {
-        categoryMap.set(s.category, "📁"); // Default icon for legacy categories
-      }
-    });
-
-    // Return based on format requested
     if (withIcons) {
-      const categoriesWithIcons = Array.from(categoryMap.entries())
-        .map(([name, icon]) => ({ name, icon }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-      return NextResponse.json(categoriesWithIcons);
+      return NextResponse.json(categoriesFromModel);
     } else {
-      // Legacy format: just names
-      const categories = Array.from(categoryMap.keys()).sort();
-      return NextResponse.json(categories);
+      return NextResponse.json(categoriesFromModel.map((c) => c.name));
     }
   } catch (error) {
     console.error("Failed to fetch categories:", error);

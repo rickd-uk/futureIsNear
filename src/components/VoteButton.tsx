@@ -20,56 +20,34 @@ export default function VoteButton({
   isAuthenticated,
   remainingBudget,
   onVote,
-  onRemoveVote,
 }: VoteButtonProps) {
-  const handleClick = async () => {
-    if (!isAuthenticated) return;
+  const atMax = userVoteCount >= MAX_VOTES_PER_LINK;
+  const canVote = isAuthenticated && !atMax && remainingBudget > 0;
 
-    if (userVoteCount >= MAX_VOTES_PER_LINK) {
-      // Already at max, remove vote
-      await onRemoveVote(linkId);
-    } else {
-      // Increment vote
-      const newCount = userVoteCount + 1;
-      await onVote(linkId, newCount);
-    }
+  const handleClick = async () => {
+    if (!canVote) return;
+    await onVote(linkId, userVoteCount + 1);
   };
 
-  const canIncrement =
-    isAuthenticated &&
-    userVoteCount < MAX_VOTES_PER_LINK &&
-    remainingBudget > 0;
-
   const getButtonStyle = () => {
-    if (!isAuthenticated) {
-      return "text-gray-400 cursor-not-allowed";
-    }
-    if (userVoteCount > 0) {
-      return "text-orange-500 hover:text-orange-600";
-    }
-    if (remainingBudget === 0) {
-      return "text-gray-400 cursor-not-allowed";
-    }
+    if (!isAuthenticated) return "text-gray-400 cursor-not-allowed";
+    if (atMax) return "text-orange-500 cursor-default";
+    if (userVoteCount > 0) return "text-orange-500 hover:text-orange-600";
+    if (remainingBudget === 0) return "text-gray-400 cursor-not-allowed";
     return "text-gray-400 hover:text-orange-500";
   };
 
   const getTitle = () => {
-    if (!isAuthenticated) {
-      return "Login to vote";
-    }
-    if (userVoteCount >= MAX_VOTES_PER_LINK) {
-      return "Click to remove your votes";
-    }
-    if (remainingBudget === 0) {
-      return "No daily votes remaining";
-    }
-    return `Click to vote (${userVoteCount}/${MAX_VOTES_PER_LINK})`;
+    if (!isAuthenticated) return "Login to vote";
+    if (atMax) return `Max votes given (${MAX_VOTES_PER_LINK}/${MAX_VOTES_PER_LINK})`;
+    if (remainingBudget === 0) return "No votes remaining today";
+    return `Vote (${userVoteCount}/${MAX_VOTES_PER_LINK}) — ${remainingBudget} left today`;
   };
 
   return (
     <button
       onClick={handleClick}
-      disabled={!isAuthenticated || (!canIncrement && userVoteCount === 0)}
+      disabled={!canVote}
       className={`flex flex-col items-center gap-0.5 transition-colors ${getButtonStyle()}`}
       title={getTitle()}
     >
@@ -89,13 +67,11 @@ export default function VoteButton({
 
       {/* User's vote indicator */}
       {isAuthenticated && userVoteCount > 0 && (
-        <div className="flex gap-1">
-          {Array.from({ length: userVoteCount }).map((_, i) => (
-            <div
-              key={i}
-              className="w-2 h-2 rounded-full bg-orange-500"
-            />
-          ))}
+        <div className="w-6 h-1 rounded-full bg-gray-200 overflow-hidden">
+          <div
+            className="h-full bg-orange-500 rounded-full transition-all"
+            style={{ width: `${(userVoteCount / MAX_VOTES_PER_LINK) * 100}%` }}
+          />
         </div>
       )}
     </button>

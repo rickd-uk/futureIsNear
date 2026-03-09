@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calculateHotScore } from "@/lib/votingConfig";
+import { calculateHotScore, DAILY_VOTE_BUDGET } from "@/lib/votingConfig";
 import { getUserFromRequest } from "@/lib/userAuth";
 import { checkAuth } from "@/lib/auth";
 
@@ -11,7 +11,6 @@ export async function GET(request: Request) {
     const mine = searchParams.get("mine") === "true";
     const includePrivate = searchParams.get("includePrivate") === "true";
 
-    // Check if user is authenticated
     const user = getUserFromRequest(request);
 
     // Build where clause
@@ -23,112 +22,95 @@ export async function GET(request: Request) {
       ],
     };
 
-    // If requesting only user's own links
     if (mine) {
-      if (!user) {
-        return NextResponse.json(
-          { error: "Authentication required" },
-          { status: 401 }
-        );
-      }
+      if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
       whereClause.createdById = user.userId;
     } else if (includePrivate) {
-      // Admin can see all links
-      if (!checkAuth(request)) {
-        return NextResponse.json(
-          { error: "Admin access required" },
-          { status: 403 }
-        );
-      }
-      // No filter - show all
+      if (!checkAuth(request)) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     } else {
-      // Default: show public links + user's own private links
       if (user) {
-        // Authenticated: public OR own links
         whereClause = {
           AND: [
-            {
-              NOT: [
-                { author: "__SYSTEM__" },
-                { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
-                { title: { startsWith: "__PLACEHOLDER__" } },
-              ],
-            },
-            {
-              OR: [
-                { isPublic: true },
-                { createdById: user.userId },
-              ],
-            },
+            { NOT: [{ author: "__SYSTEM__" }, { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } }, { title: { startsWith: "__PLACEHOLDER__" } }] },
+            { OR: [{ isPublic: true }, { createdById: user.userId }] },
           ],
         };
       } else {
-        // Not authenticated: only public links
         whereClause.isPublic = true;
       }
     }
 
-    const links = await prisma.link.findMany({
-      where: whereClause,
-      include: {
-        votes: {
-          select: {
-            count: true,
-          },
-        },
-        createdBy: {
-          select: {
-            username: true,
-          },
-        },
-      },
-    });
+    // Run all DB queries in parallel
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Calculate totalVotes and hotScore for each link
-    const linksWithScores = links.map((link) => {
-      const totalVotes = link.votes.reduce((sum, v) => sum + v.count, 0);
-      const hotScore = calculateHotScore(
-        totalVotes,
-        link.boost,
-        new Date(link.timestamp)
-      );
+    const [links, voteTotals, userVoteData, categoryData] = await Promise.all([
+      prisma.link.findMany({
+        where: whereClause,
+        select: {
+          id: true, title: true, url: true, description: true, category: true,
+          author: true, timestamp: true, publicationDay: true,
+          publicationMonth: true, publicationYear: true,
+          boost: true, isPublic: true, createdById: true,
+          createdBy: { select: { username: true } },
+        },
+      }),
+      prisma.vote.groupBy({ by: ["linkId"], _sum: { count: true } }),
+      user
+        ? prisma.vote.findMany({
+            where: { userId: user.userId },
+            select: { linkId: true, count: true, createdAt: true },
+          })
+        : Promise.resolve([]),
+      prisma.category.findMany({
+        where: { isPublic: true },
+        select: { name: true, icon: true },
+      }),
+    ]);
 
+    // Build lookup maps
+    const voteTotalMap = new Map(voteTotals.map((v) => [v.linkId, v._sum.count ?? 0]));
+    const userVoteMap = new Map(userVoteData.map((v) => [v.linkId, v.count]));
+
+    // Remaining budget
+    const todayUsed = userVoteData
+      .filter((v) => new Date(v.createdAt) >= today)
+      .reduce((sum, v) => sum + v.count, 0);
+    const remainingBudget = Math.max(0, DAILY_VOTE_BUDGET - todayUsed);
+
+    // Category icons
+    const categoryIcons = Object.fromEntries(categoryData.map((c) => [c.name, c.icon]));
+
+    // Build response
+    const linksWithData = links.map((link) => {
+      const totalVotes = voteTotalMap.get(link.id) ?? 0;
       return {
-        id: link.id,
-        title: link.title,
-        url: link.url,
-        description: link.description,
-        category: link.category,
-        author: link.author,
-        timestamp: link.timestamp,
-        publicationMonth: link.publicationMonth,
-        publicationYear: link.publicationYear,
-        boost: link.boost,
-        isPublic: link.isPublic,
-        createdById: link.createdById,
-        submittedBy: link.createdBy?.username || null,
+        id: link.id, title: link.title, url: link.url, description: link.description,
+        category: link.category, author: link.author, timestamp: link.timestamp,
+        publicationDay: link.publicationDay, publicationMonth: link.publicationMonth,
+        publicationYear: link.publicationYear, boost: link.boost,
+        isPublic: link.isPublic, createdById: link.createdById,
+        submittedBy: link.createdBy?.username ?? null,
         totalVotes,
-        hotScore,
+        userVoteCount: userVoteMap.get(link.id) ?? 0,
+        hotScore: calculateHotScore(totalVotes, link.boost, new Date(link.timestamp)),
       };
     });
 
-    // Sort based on query param
     if (sort === "newest") {
-      linksWithScores.sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
+      linksWithData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     } else {
-      // Default: sort by hot score
-      linksWithScores.sort((a, b) => b.hotScore - a.hotScore);
+      linksWithData.sort((a, b) => b.hotScore - a.hotScore);
     }
 
-    return NextResponse.json(linksWithScores);
+    return NextResponse.json({
+      links: linksWithData,
+      categoryIcons,
+      remainingBudget: user ? remainingBudget : null,
+      userVotes: user ? Object.fromEntries(userVoteMap) : null,
+    });
   } catch (error) {
     console.error("Failed to fetch links:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch links" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch links" }, { status: 500 });
   }
 }

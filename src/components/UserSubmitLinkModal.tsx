@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface Category {
   name: string;
@@ -31,6 +31,12 @@ export default function UserSubmitLinkModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [makePublic, setMakePublic] = useState(false);
+  const [fetchingTitle, setFetchingTitle] = useState(false);
+  const [suggestedTitle, setSuggestedTitle] = useState("");
+  const [suggestedAuthor, setSuggestedAuthor] = useState("");
+  const [pasteHint, setPasteHint] = useState<"url" | "title" | null>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -53,6 +59,45 @@ export default function UserSubmitLinkModal({
   const loadUserPreference = () => {
     const pref = localStorage.getItem("user_links_public_default");
     setMakePublic(pref === "true");
+  };
+
+  const fetchTitle = async (url: string) => {
+    setSuggestedTitle("");
+    setFetchingTitle(true);
+    // Suggest domain as author
+    try {
+      const domain = new URL(url).hostname.replace(/^www\./, "");
+      setSuggestedAuthor((prev) => prev || domain);
+    } catch { /* ignore */ }
+    try {
+      const res = await fetch(`/api/fetch-title?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.title) {
+          const looksLikeDomain = !data.title.includes(" ") && data.title.includes(".");
+          if (!looksLikeDomain) {
+            setFormData((prev) => prev.title ? prev : { ...prev, title: data.title });
+            setSuggestedTitle((prev) => prev || data.title);
+          }
+        }
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setFetchingTitle(false);
+    }
+  };
+
+  const readClipboard = async (field: "url" | "title", fallbackRef?: React.RefObject<HTMLInputElement | null>): Promise<string> => {
+    try {
+      const text = await (navigator.clipboard?.readText() ?? Promise.reject());
+      return text ?? "";
+    } catch {
+      fallbackRef?.current?.focus();
+      setPasteHint(field);
+      setTimeout(() => setPasteHint(null), 3000);
+      return "";
+    }
   };
 
   const handleInputChange = (
@@ -101,6 +146,7 @@ export default function UserSubmitLinkModal({
 
       // Reset form
       setFormData({ title: "", url: "", category: "", description: "", author: "", publicationDate: today });
+      setSuggestedTitle(""); setSuggestedAuthor("");
       onSuccess();
       onClose();
     } catch (error) {
@@ -133,46 +179,97 @@ export default function UserSubmitLinkModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Title *"
-          />
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <input
+                ref={titleInputRef}
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={fetchingTitle ? "Fetching title..." : "Title *"}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (formData.title) {
+                    setFormData((prev) => ({ ...prev, title: "" }));
+                    setSuggestedTitle("");
+                  } else {
+                    const text = await readClipboard("title", titleInputRef);
+                    if (text) setFormData((prev) => ({ ...prev, title: text }));
+                  }
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex-shrink-0"
+              >
+                {formData.title ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                )}
+              </button>
+            </div>
+            {pasteHint === "title" && (
+              <p className="text-xs text-amber-600 px-1">Clipboard unavailable — press Ctrl+V to paste</p>
+            )}
+            {suggestedTitle && (
+              <button
+                type="button"
+                onClick={() => { setFormData((prev) => ({ ...prev, title: suggestedTitle })); setSuggestedTitle(""); }}
+                className="text-xs text-blue-600 hover:text-blue-800 text-left truncate w-full px-1"
+              >
+                ↑ Use: {suggestedTitle}
+              </button>
+            )}
+          </div>
 
-          <div className="flex gap-2">
-            <input
-              type="url"
-              id="url"
-              name="url"
-              value={formData.url}
-              onChange={handleInputChange}
-              required
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="URL *  https://..."
-            />
-            <button
-              type="button"
-              onClick={async () => {
-                if (formData.url) {
-                  setFormData((prev) => ({ ...prev, url: "" }));
-                } else {
-                  const text = await navigator.clipboard.readText();
-                  setFormData((prev) => ({ ...prev, url: text }));
-                }
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex-shrink-0"
-            >
-              {formData.url ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-              )}
-            </button>
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <input
+                ref={urlInputRef}
+                type="url"
+                id="url"
+                name="url"
+                value={formData.url}
+                onChange={handleInputChange}
+                onPaste={(e) => {
+                  const text = e.clipboardData?.getData("text") ?? "";
+                  if (text.startsWith("http")) setTimeout(() => fetchTitle(text), 0);
+                }}
+                required
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="URL *  https://..."
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (formData.url) {
+                    setFormData((prev) => ({ ...prev, url: "" }));
+                    setSuggestedTitle("");
+                    setSuggestedAuthor("");
+                  } else {
+                    const text = await readClipboard("url", urlInputRef);
+                    if (text) {
+                      setFormData((prev) => ({ ...prev, url: text }));
+                      if (text.startsWith("http")) fetchTitle(text);
+                    }
+                  }
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex-shrink-0"
+              >
+                {formData.url ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                )}
+              </button>
+            </div>
+            {pasteHint === "url" && (
+              <p className="text-xs text-amber-600 px-1">Clipboard unavailable — press Ctrl+V to paste</p>
+            )}
           </div>
 
           <select
@@ -191,15 +288,26 @@ export default function UserSubmitLinkModal({
             ))}
           </select>
 
-          <input
-            type="text"
-            id="author"
-            name="author"
-            value={formData.author}
-            onChange={handleInputChange}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Author (optional)"
-          />
+          <div className="space-y-1">
+            <input
+              type="text"
+              id="author"
+              name="author"
+              value={formData.author}
+              onChange={handleInputChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Author (optional)"
+            />
+            {suggestedAuthor && !formData.author && (
+              <button
+                type="button"
+                onClick={() => { setFormData((prev) => ({ ...prev, author: suggestedAuthor })); setSuggestedAuthor(""); }}
+                className="text-xs text-blue-600 hover:text-blue-800 text-left px-1"
+              >
+                ↑ Use: {suggestedAuthor}
+              </button>
+            )}
+          </div>
 
           <textarea
             id="description"
