@@ -62,10 +62,11 @@ interface LinkRowProps {
   onToggleVisibility: (linkId: string, makePublic: boolean) => void;
   onEdit: (link: Link) => void;
   onDelete: (linkId: string) => void;
+  asCard?: boolean;
 }
 
 const LinkRow = memo(function LinkRow({
-  link, userVoteCount, isAuthenticated, remainingBudget, userId, feedMode, onVote, onRemoveVote, onToggleVisibility, onEdit, onDelete,
+  link, userVoteCount, isAuthenticated, remainingBudget, userId, feedMode, onVote, onRemoveVote, onToggleVisibility, onEdit, onDelete, asCard = false,
 }: LinkRowProps) {
   const isOwn = link.createdById === userId;
   // Amber tint only in "both" mode where private own links mix with public ones
@@ -75,12 +76,16 @@ const LinkRow = memo(function LinkRow({
   const pubDate = formatPubDate(link);
   const addedDate = fmtDate(new Date(link.timestamp));
 
+  const articleClass = asCard
+    ? `px-3 py-2.5 transition-colors rounded-lg border-l-4 border border-gray-200 ${
+        isPrivate ? "border-l-amber-400 bg-amber-50 hover:bg-amber-100" : "border-l-transparent bg-white hover:bg-gray-50"
+      }`
+    : `px-3 py-2.5 transition-colors border-l-2 ${
+        isPrivate ? "border-amber-300 bg-amber-50 hover:bg-amber-100" : "border-transparent hover:bg-gray-50"
+      }`;
+
   return (
-    <article className={`px-3 py-2.5 transition-colors border-l-2 ${
-      isPrivate
-        ? "border-amber-300 bg-amber-50 hover:bg-amber-100"
-        : "border-transparent hover:bg-gray-50"
-    }`}>
+    <article className={articleClass}>
       <div className="flex items-start gap-2.5">
         <VoteButton
           linkId={link.id}
@@ -93,7 +98,7 @@ const LinkRow = memo(function LinkRow({
           onRemoveVote={onRemoveVote}
         />
         <div className="flex-1 min-w-0 select-text">
-          <h2 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug mb-1">
+          <h2 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-snug mb-0.5">
             <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
               {link.title}
             </a>
@@ -106,45 +111,36 @@ const LinkRow = memo(function LinkRow({
             {link.author && link.author !== "Unknown Author" && (
               <span className="truncate max-w-[120px]">{link.author}</span>
             )}
-            {pubDate && <span className="shrink-0">{pubDate}</span>}
-            <span className="shrink-0 text-gray-400" title="Added to LinX">🔗 {addedDate}</span>
-            {link.submittedBy && <span className="shrink-0 text-gray-400">via {link.submittedBy}</span>}
+            <span className="shrink-0 text-gray-400">{pubDate ?? addedDate}</span>
           </div>
+          {(isOwn || link.submittedBy) && (
+            <div className="flex items-center justify-between mt-0.5">
+              {link.submittedBy && (
+                <span className="text-[10px] text-gray-400">by {link.submittedBy}</span>
+              )}
+              {isOwn && (
+                <div className="flex gap-3 ml-auto">
+                  <button onClick={() => onEdit(link)} title="Edit"
+                    className="p-2 rounded-lg text-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <button onClick={() => !isUncategorized && onToggleVisibility(link.id, !link.isPublic)}
+                    title={isUncategorized ? "Assign a category to make public" : link.isPublic ? "Make private" : "Make public"}
+                    className={`p-2 rounded-lg transition-colors ${isUncategorized ? "text-gray-300 cursor-not-allowed" : link.isPublic ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-amber-400 hover:text-amber-600 hover:bg-amber-100"}`}>
+                    {link.isPublic
+                      ? <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                    }
+                  </button>
+                  <button onClick={() => onDelete(link.id)} title="Delete"
+                    className="p-2 rounded-lg text-red-300 hover:text-red-600 hover:bg-red-50 transition-colors">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {isOwn && (
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => onEdit(link)}
-              title="Edit"
-              className="p-2.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-            </button>
-            <button
-              onClick={() => !isUncategorized && onToggleVisibility(link.id, !link.isPublic)}
-              title={isUncategorized ? "Assign a category to make public" : link.isPublic ? "Make private" : "Make public"}
-              className={`p-2.5 rounded-lg transition-colors ${
-                isUncategorized
-                  ? "text-gray-300 cursor-not-allowed"
-                  : link.isPublic
-                    ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                    : "text-amber-500 hover:text-amber-600 hover:bg-amber-100"
-              }`}
-            >
-              {link.isPublic
-                ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-              }
-            </button>
-            <button
-              onClick={() => onDelete(link.id)}
-              title="Delete"
-              className="p-2.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
-          </div>
-        )}
       </div>
     </article>
   );
@@ -692,8 +688,8 @@ export default function FutureNews() {
             No links found.
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="divide-y divide-gray-200">
+          <>
+            <div className="grid grid-cols-1 gap-2 sm:max-w-2xl sm:mx-auto sm:w-full min-[820px]:max-w-none min-[820px]:grid-cols-2 2xl:grid-cols-3 min-[2300px]:grid-cols-4">
               {displayedLinks.map((link) => (
                 <LinkRow
                   key={link.id}
@@ -708,6 +704,7 @@ export default function FutureNews() {
                   onToggleVisibility={toggleVisibility}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  asCard
                 />
               ))}
             </div>
@@ -716,7 +713,7 @@ export default function FutureNews() {
                 {loadingMore ? "Loading more..." : "Scroll for more"}
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
 
