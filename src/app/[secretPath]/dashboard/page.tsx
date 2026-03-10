@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   const [userFilter, setUserFilter] = useState("");
   const [signupsEnabled, setSignupsEnabled] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [stats, setStats] = useState<{ realUsers: number; activeToday: number; totalLinks: number; publicLinks: number; totalVotes: number } | null>(null);
+  const [stats, setStats] = useState<{ realUsers: number; activeToday: number; totalLinks: number; publicLinks: number; totalVotes: number; totalUsers: number } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -312,7 +312,7 @@ export default function AdminDashboard() {
         {/* ── Stats Bar ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Registered users", value: stats?.realUsers, color: "text-blue-600" },
+            { label: "Registered users", value: stats?.realUsers, color: "text-blue-600", sub: stats && stats.totalUsers > stats.realUsers ? `${stats.totalUsers} total incl. test` : undefined },
             { label: "Active today", value: stats?.activeToday, color: "text-green-600" },
             { label: "Total links", value: stats?.totalLinks, color: "text-indigo-600", sub: stats ? `${stats.publicLinks} public` : undefined },
             { label: "Total votes", value: stats?.totalVotes, color: "text-purple-600" },

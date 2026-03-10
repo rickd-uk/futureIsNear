@@ -28,7 +28,7 @@ export function useAuth() {
   // Start null to match SSR — useEffect reads localStorage after hydration
   const [state, setState] = useState<AuthState>({ user: null, loading: false, error: null });
 
-  const checkAuth = useCallback(() => {
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("user_token");
     if (!token) {
       setState({ user: null, loading: false, error: null });
@@ -40,7 +40,19 @@ export function useAuth() {
       setState({ user: null, loading: false, error: null });
       return;
     }
+    // Set state immediately from JWT for fast render
     setState({ user: { id: payload.userId, username: payload.username, email: null }, loading: false, error: null });
+    // Then ping the server to update lastSeenAt (fire and forget)
+    try {
+      const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        // Token rejected by server — clear it
+        localStorage.removeItem("user_token");
+        setState({ user: null, loading: false, error: null });
+      }
+    } catch {
+      // Network error — keep state, don't log out
+    }
   }, []);
 
   useEffect(() => {

@@ -9,13 +9,14 @@ export async function GET(request: Request) {
 
   const since = new Date(Date.now() - ACTIVE_WINDOW_MS);
 
-  const [realUsers, activeToday, totalLinks, publicLinks, totalVotes] = await Promise.all([
+  const [realUsers, activeToday, totalLinks, publicLinks, totalVotes, totalUsers] = await Promise.all([
     prisma.user.count({ where: { isTestUser: false } }),
     prisma.user.count({ where: { isTestUser: false, lastSeenAt: { gte: since } } }),
     prisma.link.count({ where: { deletedAt: null } }),
     prisma.link.count({ where: { deletedAt: null, isPublic: true } }),
     prisma.vote.count(),
+    prisma.user.count(),
   ]);
 
-  return NextResponse.json({ realUsers, activeToday, totalLinks, publicLinks, totalVotes });
+  return NextResponse.json({ realUsers, activeToday, totalLinks, publicLinks, totalVotes, totalUsers });
 }
