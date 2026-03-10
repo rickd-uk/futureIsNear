@@ -485,7 +485,7 @@ export default function AdminDashboard() {
                                   className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200 transition-colors">
                                   Logout
                                 </button>
-                                <button onClick={() => { if (confirm(`Delete user "${u.username}"?`)) userAction(u.id, "delete"); }} type="button"
+                                <button onClick={() => userAction(u.id, "delete")} type="button"
                                   className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors">
                                   Delete
                                 </button>
