@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         };
       } else {
         whereClause.isPublic = true;
+        whereClause.category = { not: null };
       }
     }
 

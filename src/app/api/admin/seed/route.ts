@@ -216,7 +216,7 @@ export async function GET(request: Request) {
       username: true,
       email: true,
       createdAt: true,
-      _count: { select: { links: true } },
+      _count: { select: { links: { where: { deletedAt: null } } } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -283,7 +283,7 @@ export async function POST(request: Request) {
           publicationYear: tpl.publicationYear ?? null,
           publicationMonth: tpl.publicationMonth ?? null,
           publicationDay: tpl.publicationDay ?? null,
-          isPublic: Math.random() < publicRatio,
+          isPublic: !!(tpl.category ?? null) && Math.random() < publicRatio,
           createdById: user.id,
           timestamp: ts,
         },
