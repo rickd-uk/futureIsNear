@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, memo } from "react";
 import UserMenu from "./UserMenu";
 import VoteButton from "./VoteButton";
 import UserSubmitLinkModal from "./UserSubmitLinkModal";
+import RecycleBinModal from "./RecycleBinModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoting } from "@/hooks/useVoting";
 
@@ -60,10 +61,11 @@ interface LinkRowProps {
   onRemoveVote: (linkId: string) => Promise<boolean>;
   onToggleVisibility: (linkId: string, makePublic: boolean) => void;
   onEdit: (link: Link) => void;
+  onDelete: (linkId: string) => void;
 }
 
 const LinkRow = memo(function LinkRow({
-  link, userVoteCount, isAuthenticated, remainingBudget, userId, feedMode, onVote, onRemoveVote, onToggleVisibility, onEdit,
+  link, userVoteCount, isAuthenticated, remainingBudget, userId, feedMode, onVote, onRemoveVote, onToggleVisibility, onEdit, onDelete,
 }: LinkRowProps) {
   const isOwn = link.createdById === userId;
   // Amber tint only in "both" mode where private own links mix with public ones
@@ -134,6 +136,13 @@ const LinkRow = memo(function LinkRow({
                 : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
               }
             </button>
+            <button
+              onClick={() => onDelete(link.id)}
+              title="Delete"
+              className="p-2.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
           </div>
         )}
       </div>
@@ -188,9 +197,23 @@ export default function FutureNews() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [editingLink, setEditingLink] = useState<Link | null>(null);
+  const [showTrash, setShowTrash] = useState(false);
+  const [trashCount, setTrashCount] = useState(0);
 
   const handleEdit = useCallback((link: Link) => {
     setEditingLink(link);
+  }, []);
+
+  const handleDelete = useCallback(async (linkId: string) => {
+    const token = localStorage.getItem("user_token");
+    const res = await fetch(`/api/links/${linkId}`, {
+      method: "DELETE",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.ok) {
+      setAllLinks((prev) => prev.filter((l) => l.id !== linkId));
+      setTrashCount((c) => c + 1);
+    }
   }, []);
 
   const [triageLinks, setTriageLinks] = useState<Link[]>([]);
@@ -270,6 +293,18 @@ export default function FutureNews() {
     fetchCalledRef.current = true;
     fetchLinks();
   }, [fetchLinks]);
+
+  // Fetch initial trash count for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem("user_token");
+    fetch("/api/links/trash?countOnly=true", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.count !== undefined) setTrashCount(d.count); })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Triage: own uncategorized links, only shown in "mine" mode
@@ -387,7 +422,25 @@ export default function FutureNews() {
             <span className="text-2xl">🔗</span>
             <span>LinX</span>
           </h1>
-          <UserMenu remainingBudget={remainingBudget} />
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <button
+                onClick={() => setShowTrash(true)}
+                title="Recycle bin"
+                className="relative p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {trashCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                    {trashCount > 99 ? "99+" : trashCount}
+                  </span>
+                )}
+              </button>
+            )}
+            <UserMenu remainingBudget={remainingBudget} />
+          </div>
         </div>
       </header>
 
@@ -619,6 +672,7 @@ export default function FutureNews() {
                     onRemoveVote={removeVote}
                     onToggleVisibility={toggleVisibility}
                     onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -653,6 +707,7 @@ export default function FutureNews() {
                   onRemoveVote={removeVote}
                   onToggleVisibility={toggleVisibility}
                   onEdit={handleEdit}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
@@ -691,6 +746,14 @@ export default function FutureNews() {
         onClose={() => setEditingLink(null)}
         onSuccess={() => { setEditingLink(null); fetchLinks(); }}
         link={editingLink ?? undefined}
+      />
+
+      {/* Recycle Bin Modal */}
+      <RecycleBinModal
+        isOpen={showTrash}
+        onClose={() => setShowTrash(false)}
+        onRestored={fetchLinks}
+        onCountChange={setTrashCount}
       />
     </div>
   );

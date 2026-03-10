@@ -15,6 +15,7 @@ export async function GET(request: Request) {
 
     // Build where clause
     let whereClause: Record<string, unknown> = {
+      deletedAt: null,
       NOT: [
         { author: "__SYSTEM__" },
         { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } },
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
     } else {
       if (user) {
         whereClause = {
+          deletedAt: null,
           AND: [
             { NOT: [{ author: "__SYSTEM__" }, { title: { startsWith: "__AUTHOR_PLACEHOLDER__" } }, { title: { startsWith: "__PLACEHOLDER__" } }] },
             { OR: [{ isPublic: true }, { createdById: user.userId }] },

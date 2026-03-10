@@ -34,11 +34,13 @@ model Link {
   isPublic    Boolean  @default(false)  // Admin links are public, user links are private
   createdById String?  // null = admin created
   createdBy   User?    @relation("UserLinks", fields: [createdById], references: [id], onDelete: SetNull)
+  deletedAt   DateTime? // null = active, set = soft-deleted (in recycle bin)
   votes       Vote[]
 
   @@index([category])
   @@index([createdById])
   @@index([isPublic])
+  @@index([deletedAt])
 }
 
 model Vote {
