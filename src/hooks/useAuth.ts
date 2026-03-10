@@ -25,8 +25,8 @@ function parseJwt(token: string): { userId: string; username: string; exp: numbe
 }
 
 export function useAuth() {
-  // Start null to match SSR — useEffect reads localStorage after hydration
-  const [state, setState] = useState<AuthState>({ user: null, loading: false, error: null });
+  // Start loading:true so consumers wait for localStorage check before acting
+  const [state, setState] = useState<AuthState>({ user: null, loading: true, error: null });
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("user_token");
