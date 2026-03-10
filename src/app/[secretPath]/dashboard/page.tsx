@@ -549,7 +549,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Test Data */}
-            <TestDataManager />
+            <TestDataManager onGeneratedAction={fetchStories} />
           </div>
         </div>
 
