@@ -43,7 +43,7 @@ function buildDateString(year?: number | null, month?: number | null, day?: numb
   return `${year}-${m}-${d}`;
 }
 
-const DEFAULT_PREFS: FieldPrefs = { showAuthor: true, showPubDate: true, showDescription: true };
+const DEFAULT_PREFS: FieldPrefs = { showAuthor: false, showPubDate: false, showDescription: false };
 
 export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, initialUrl, initialTitle }: UserSubmitLinkModalProps) {
   const isEditMode = !!link;
@@ -116,7 +116,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
   const fetchCategories = async () => {
     try {
       const res = await fetch("/api/categories?withIcons=true");
-      setCategories(await res.json());
+      if (res.ok) setCategories(await res.json());
     } catch { /* ignore */ }
   };
 

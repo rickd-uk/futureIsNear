@@ -26,13 +26,15 @@ function ShareHandler() {
   }, [loading, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <UserSubmitLinkModal
-      isOpen={open}
-      initialUrl={url}
-      initialTitle={title}
-      onClose={() => router.replace("/")}
-      onSuccess={() => router.replace("/")}
-    />
+    <div className="min-h-screen bg-gray-50">
+      <UserSubmitLinkModal
+        isOpen={open}
+        initialUrl={url}
+        initialTitle={title}
+        onClose={() => router.replace("/")}
+        onSuccess={() => router.replace("/")}
+      />
+    </div>
   );
 }
 
