@@ -11,7 +11,7 @@ interface TestUser {
   _count: { links: number };
 }
 
-export default function TestDataManager() {
+export default function TestDataManager({ onGeneratedAction }: { onGeneratedAction?: () => void }) {
   const [adminToken, setAdminToken] = useState("");
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<TestUser[]>([]);
@@ -58,6 +58,7 @@ export default function TestDataManager() {
       if (res.ok) {
         setStatus(`Created ${data.created.length} users.`);
         await fetchUsers();
+        onGeneratedAction?.();
       } else {
         setStatus(data.error ?? "Error generating data.");
       }
@@ -80,7 +81,6 @@ export default function TestDataManager() {
   };
 
   const deleteAll = async () => {
-    if (!confirm(`Delete all ${users.length} test users and their links? This cannot be undone.`)) return;
     setWorking(true);
     setStatus("Deleting all test users…");
     try {
@@ -89,6 +89,7 @@ export default function TestDataManager() {
       if (res.ok) {
         setUsers([]);
         setStatus(`Deleted ${data.deleted} test users.`);
+        onGeneratedAction?.();
       }
     } finally {
       setWorking(false);
