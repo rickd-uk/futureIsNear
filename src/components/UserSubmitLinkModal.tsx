@@ -32,6 +32,8 @@ interface UserSubmitLinkModalProps {
   onClose: () => void;
   onSuccess: () => void;
   link?: LinkData;
+  initialUrl?: string;
+  initialTitle?: string;
 }
 
 function buildDateString(year?: number | null, month?: number | null, day?: number | null): string {
@@ -43,7 +45,7 @@ function buildDateString(year?: number | null, month?: number | null, day?: numb
 
 const DEFAULT_PREFS: FieldPrefs = { showAuthor: true, showPubDate: true, showDescription: true };
 
-export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }: UserSubmitLinkModalProps) {
+export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, initialUrl, initialTitle }: UserSubmitLinkModalProps) {
   const isEditMode = !!link;
   const today = new Date().toISOString().split("T")[0];
 
@@ -73,7 +75,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link }
       });
       setMakePublic(link.isPublic);
     } else {
-      setFormData({ title: "", url: "", category: "", description: "", author: "", publicationDate: today });
+      setFormData({ title: initialTitle ?? "", url: initialUrl ?? "", category: "", description: "", author: "", publicationDate: today });
       setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory("");
       const pref = localStorage.getItem("user_links_public_default");
       setMakePublic(pref === "true");

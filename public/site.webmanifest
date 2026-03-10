@@ -9,5 +9,14 @@
   "theme_color": "#2563eb",
   "background_color": "#ffffff",
   "display": "standalone",
-  "start_url": "/"
+  "start_url": "/",
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "url": "url",
+      "title": "title",
+      "text": "text"
+    }
+  }
 }
