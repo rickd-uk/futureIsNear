@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, memo } from "react";
-import { Pacifico } from "next/font/google";
+import { Raleway } from "next/font/google";
 
-const pacifico = Pacifico({ subsets: ["latin"], weight: "400", display: "swap" });
+const raleway = Raleway({ subsets: ["latin"], weight: "700", style: "italic", display: "swap" });
 import UserMenu from "./UserMenu";
 import VoteButton from "./VoteButton";
 import UserSubmitLinkModal from "./UserSubmitLinkModal";
@@ -456,7 +456,7 @@ export default function LinkX() {
         <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <img src="/android-chrome-192x192.png" alt="LinkX" className="w-7 h-7 rounded-md" />
-            <span className={`${pacifico.className} text-2xl tracking-wide`}>LinkX</span>
+            <span className={`${raleway.className} text-2xl tracking-wide`}>LinkX</span>
           </h1>
           <div className="flex items-center gap-2">
             {isAuthenticated && (
