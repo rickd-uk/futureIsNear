@@ -77,7 +77,7 @@ const LinkRow = memo(function LinkRow({
   const addedDate = fmtDate(new Date(link.timestamp));
 
   const articleClass = asCard
-    ? `px-3 py-2.5 transition-colors rounded-lg border-l-4 border border-gray-200 ${
+    ? `px-3 py-3 transition-colors rounded-lg border-l-4 border border-gray-200 flex flex-col h-full ${
         isPrivate ? "border-l-amber-400 bg-amber-50 hover:bg-amber-100" : "border-l-transparent bg-white hover:bg-gray-50"
       }`
     : `px-3 py-2.5 transition-colors border-l-2 ${
@@ -86,7 +86,7 @@ const LinkRow = memo(function LinkRow({
 
   return (
     <article className={articleClass}>
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2.5 flex-1">
         <VoteButton
           linkId={link.id}
           totalVotes={link.totalVotes}
@@ -97,7 +97,7 @@ const LinkRow = memo(function LinkRow({
           onVote={onVote}
           onRemoveVote={onRemoveVote}
         />
-        <div className="flex-1 min-w-0 select-text">
+        <div className="flex-1 min-w-0 select-text flex flex-col">
           <h2 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-snug mb-0.5">
             <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
               {link.title}
@@ -113,8 +113,11 @@ const LinkRow = memo(function LinkRow({
             )}
             <span className="shrink-0 text-gray-400">{pubDate ?? addedDate}</span>
           </div>
+          {asCard && link.description && (
+            <p className="text-xs text-gray-500 mt-1 line-clamp-3 leading-relaxed">{link.description}</p>
+          )}
           {(isOwn || link.submittedBy) && (
-            <div className="flex items-center justify-between mt-0.5">
+            <div className="flex items-center justify-between mt-auto pt-1.5">
               {link.submittedBy && (
                 <span className="text-[10px] text-gray-400">by {link.submittedBy}</span>
               )}
@@ -413,7 +416,7 @@ export default function FutureNews() {
     <div className="min-h-screen bg-gray-50 select-none">
       {/* Header - Logo and User only */}
       <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-3 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+        <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <span className="text-2xl">🔗</span>
             <span>LinX</span>
@@ -442,7 +445,7 @@ export default function FutureNews() {
 
       {/* Categories Row - Sort toggle | separator | categories | burger */}
       <div className="bg-white border-b border-gray-200 sticky top-[52px] z-40">
-        <div className="max-w-7xl mx-auto px-4 py-2">
+        <div className="px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center gap-2">
             {/* Sort Toggle — icon only */}
             <div className="flex rounded-lg overflow-hidden border border-gray-300 flex-shrink-0">
@@ -567,7 +570,7 @@ export default function FutureNews() {
 
       {/* Search Row */}
       <div className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-2">
+        <div className="px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex items-center gap-2 max-w-xl">
             <div className="relative flex-1">
               <input
@@ -606,7 +609,7 @@ export default function FutureNews() {
       {/* Advanced Search Panel */}
       {showAdvanced && (
         <div className="bg-blue-50 border-b border-blue-200">
-          <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-800">
               <span className="text-gray-600 font-medium shrink-0">Search in:</span>
               <label className="flex items-center gap-1.5 cursor-pointer">
@@ -631,7 +634,7 @@ export default function FutureNews() {
       )}
 
       {/* Results count */}
-      <div className="max-w-7xl mx-auto px-4 py-2 text-sm text-gray-500">
+      <div className="px-4 sm:px-6 lg:px-8 py-2 text-sm text-gray-500">
         {filteredLinks.length} links
         {selectedCategory !== "All" && ` in ${selectedCategory}`}
         {searchQuery && ` matching "${searchQuery}"`}
@@ -639,7 +642,7 @@ export default function FutureNews() {
 
       {/* Triage Queue */}
       {triageLinks.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 pb-3">
+        <div className="px-4 sm:px-6 lg:px-8 pb-3">
           <div className="rounded-lg border border-amber-300 overflow-hidden">
             <button
               onClick={() => setTriageOpen((o) => !o)}
@@ -678,7 +681,7 @@ export default function FutureNews() {
       )}
 
       {/* Links */}
-      <main className="max-w-7xl mx-auto px-4 pb-8">
+      <main className="px-4 sm:px-6 lg:px-8 pb-8">
         {loading ? (
           <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
             Loading links...
@@ -689,7 +692,7 @@ export default function FutureNews() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-2 sm:max-w-2xl sm:mx-auto sm:w-full min-[820px]:max-w-none min-[820px]:grid-cols-2 2xl:grid-cols-3 min-[2300px]:grid-cols-4">
+            <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(420px, 100%), 1fr))" }}>
               {displayedLinks.map((link) => (
                 <LinkRow
                   key={link.id}
