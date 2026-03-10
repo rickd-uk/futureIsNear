@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, memo } from "react";
+import Image from "next/image";
 import { Raleway } from "next/font/google";
 
 const raleway = Raleway({ subsets: ["latin"], weight: "700", style: "italic", display: "swap" });
@@ -455,7 +456,7 @@ export default function LinkX() {
       <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-3 sticky top-0 z-50 shadow-lg">
         <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <img src="/android-chrome-192x192.png" alt="LinkX" className="w-7 h-7 rounded-md" />
+            <Image src="/android-chrome-192x192.png" alt="LinkX" width={28} height={28} className="rounded-md" />
             <span className={`${raleway.className} text-2xl tracking-wide`}>LinkX</span>
           </h1>
           <div className="flex items-center gap-2">
