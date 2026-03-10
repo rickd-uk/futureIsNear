@@ -74,7 +74,7 @@ export default function HelpPage() {
             The extension reads the page title and description automatically — just pick a category and submit.
           </p>
           <p className="text-sm text-gray-500">
-            Available on the Chrome Web Store — search <em>"LinkX"</em>.
+            Available on the Chrome Web Store — search <em>&ldquo;LinkX&rdquo;</em>.
           </p>
         </section>
 
