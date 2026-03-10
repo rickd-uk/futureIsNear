@@ -6,6 +6,7 @@ import EditLinkModal from "@/components/EditLinkModal";
 import CSVUpload from "@/components/CSVUpload";
 import CategoryManagement from "@/components/CategoryManagement";
 import AuthorManagement from "@/components/AuthorManagement";
+import TestDataManager from "@/components/TestDataManager";
 
 interface Link {
   id: string;
@@ -298,6 +299,9 @@ export default function AdminDashboard() {
 
       {/* Main Content - Compact */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+        {/* Test Data Manager */}
+        <TestDataManager adminToken={localStorage.getItem("admin_token") ?? ""} />
+
         {/* CSV Upload Section - Collapsible */}
         <div className="bg-white rounded-lg shadow">
           <button

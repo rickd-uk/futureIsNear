@@ -521,9 +521,9 @@ export default function FutureNews() {
             {/* Separator */}
             <div className="w-px h-8 bg-gray-300 flex-shrink-0" />
 
-            {/* Categories - scrollable on mobile, wrapping on larger screens */}
-            <div className="flex-1 overflow-x-auto sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <div className="flex items-center gap-1 w-max sm:w-auto sm:flex-wrap">
+            {/* Categories - always single scrollable row */}
+            <div className="flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-center gap-1 w-max">
                 {categories.map((cat) => {
                   const icon = categoryIcons[cat] || "📁";
                   const isActive = selectedCategory === cat;
