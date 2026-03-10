@@ -7,28 +7,31 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // CHECK AUTHENTICATION FIRST!
-  if (!checkAuth(request)) {
+  const isAdmin = checkAuth(request);
+  const user = !isAdmin ? getUserFromRequest(request) : null;
+
+  if (!isAdmin && !user) {
     return unauthorizedResponse();
   }
 
   try {
     const { id } = await params;
 
-    await prisma.link.delete({
-      where: { id },
-    });
+    if (isAdmin) {
+      // Admin: hard delete
+      await prisma.link.delete({ where: { id } });
+    } else {
+      // User: soft delete (recycle bin) — must own the link
+      const link = await prisma.link.findUnique({ where: { id } });
+      if (!link) return NextResponse.json({ error: "Link not found" }, { status: 404 });
+      if (link.createdById !== user!.userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      await prisma.link.update({ where: { id }, data: { deletedAt: new Date() } });
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: "Link deleted successfully",
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting link:", error);
-    return NextResponse.json(
-      { error: "Failed to delete link" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete link" }, { status: 500 });
   }
 }
 
