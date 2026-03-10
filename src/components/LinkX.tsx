@@ -2,6 +2,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, memo } from "react";
+import { Pacifico } from "next/font/google";
+
+const pacifico = Pacifico({ subsets: ["latin"], weight: "400", display: "swap" });
 import UserMenu from "./UserMenu";
 import VoteButton from "./VoteButton";
 import UserSubmitLinkModal from "./UserSubmitLinkModal";
@@ -452,8 +455,8 @@ export default function LinkX() {
       <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-3 sticky top-0 z-50 shadow-lg">
         <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="text-2xl">🔗</span>
-            <span>LinkX</span>
+            <img src="/android-chrome-192x192.png" alt="LinkX" className="w-7 h-7 rounded-md" />
+            <span className={`${pacifico.className} text-2xl tracking-wide`}>LinkX</span>
           </h1>
           <div className="flex items-center gap-2">
             {isAuthenticated && (

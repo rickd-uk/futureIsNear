@@ -12,7 +12,7 @@ export default function HelpPage() {
       <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 px-6 py-4 shadow-lg">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-white text-xl font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <span className="text-2xl">🔗</span>
+            <img src="/android-chrome-192x192.png" alt="LinkX" className="w-7 h-7 rounded-md" />
             <span>LinkX</span>
           </Link>
           <Link href="/" className="text-white/80 text-sm hover:text-white transition-colors">
