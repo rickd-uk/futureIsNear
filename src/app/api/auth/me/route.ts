@@ -13,15 +13,18 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get fresh user data and update lastSeenAt
+    const now = new Date();
+
     const user = await prisma.user.update({
       where: { id: payload.userId },
-      data: { lastSeenAt: new Date() },
+      data: { lastSeenAt: now },
       select: {
         id: true,
         username: true,
         email: true,
         createdAt: true,
+        bannedUntil: true,
+        forceLogoutAt: true,
       },
     });
 
@@ -29,7 +32,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    // Token issued before force-logout timestamp → kick out
+    if (user.forceLogoutAt && payload.iat * 1000 < user.forceLogoutAt.getTime()) {
+      return NextResponse.json({ error: "Session invalidated" }, { status: 401 });
+    }
+
+    // Banned → kick out with reason
+    if (user.bannedUntil && user.bannedUntil > now) {
+      return NextResponse.json(
+        { error: "Account banned", bannedUntil: user.bannedUntil },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({ user: { id: user.id, username: user.username, email: user.email, createdAt: user.createdAt } });
   } catch (error) {
     console.error("Auth me error:", error);
     return NextResponse.json(

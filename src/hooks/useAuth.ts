@@ -42,13 +42,19 @@ export function useAuth() {
     }
     // Set state immediately from JWT for fast render
     setState({ user: { id: payload.userId, username: payload.username, email: null }, loading: false, error: null });
-    // Then ping the server to update lastSeenAt (fire and forget)
+    // Then ping the server to update lastSeenAt and check ban/force-logout
     try {
       const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) {
-        // Token rejected by server — clear it
+      if (res.status === 401) {
+        // Token invalidated / force-logged out
         localStorage.removeItem("user_token");
         setState({ user: null, loading: false, error: null });
+      } else if (res.status === 403) {
+        // Banned
+        const data = await res.json();
+        const until = data.bannedUntil ? new Date(data.bannedUntil).toLocaleDateString() : "further notice";
+        localStorage.removeItem("user_token");
+        setState({ user: null, loading: false, error: `Your account has been banned until ${until}.` });
       }
     } catch {
       // Network error — keep state, don't log out

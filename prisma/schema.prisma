@@ -66,6 +66,8 @@ model User {
   preferences   String     @default("{}") // JSON: user UI preferences
   isTestUser    Boolean    @default(false) // true = generated test/dummy user
   lastSeenAt    DateTime?  // updated on each auth/me check
+  bannedUntil   DateTime?  // null = not banned; future date = banned until then
+  forceLogoutAt DateTime?  // tokens issued before this time are invalid
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   votes         Vote[]

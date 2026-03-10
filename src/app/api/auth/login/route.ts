@@ -38,6 +38,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if banned
+    if (user.bannedUntil && user.bannedUntil > new Date()) {
+      return NextResponse.json(
+        { error: "Account banned", bannedUntil: user.bannedUntil },
+        { status: 403 }
+      );
+    }
+
     // Generate JWT
     const token = createUserToken(user.id, user.username);
 

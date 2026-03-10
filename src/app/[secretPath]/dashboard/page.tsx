@@ -42,6 +42,11 @@ export default function AdminDashboard() {
   const [showAuthorManagement, setShowAuthorManagement] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [managedUsers, setManagedUsers] = useState<{ id: string; username: string; email: string | null; createdAt: string; lastSeenAt: string | null; bannedUntil: string | null }[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [banDurations, setBanDurations] = useState<Record<string, string>>({});
   const [userFilter, setUserFilter] = useState("");
   const [signupsEnabled, setSignupsEnabled] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -69,6 +74,53 @@ export default function AdminDashboard() {
     fetchSettings();
     fetchStats();
   }, []);
+
+  const fetchManagedUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setManagedUsers(data.users);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setUsersError(`Error ${res.status}: ${data.error || "Failed to load users"}`);
+      }
+    } catch (e) {
+      setUsersError(String(e));
+    } finally { setUsersLoading(false); }
+  };
+
+  const userAction = async (userId: string, action: string, bannedUntil?: string) => {
+    const token = localStorage.getItem("admin_token");
+    const res = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId, action, bannedUntil }),
+    });
+    if (res.ok) {
+      fetchManagedUsers();
+      fetchStats();
+    } else {
+      alert("Action failed");
+    }
+  };
+
+  const deleteAllRealUsers = async () => {
+    if (!confirm("Delete ALL registered (non-test) users? This cannot be undone.")) return;
+    const token = localStorage.getItem("admin_token");
+    const res = await fetch("/api/admin/users", { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) {
+      const data = await res.json();
+      alert(`Deleted ${data.deleted} users.`);
+      fetchManagedUsers();
+      fetchStats();
+    } else {
+      alert("Failed to delete users");
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -358,6 +410,92 @@ export default function AdminDashboard() {
               {showAuthorManagement && (
                 <div className="px-4 pb-3 border-t border-gray-100">
                   <AuthorManagement authors={authors} onAuthorUpdated={handleLinkAdded} />
+                </div>
+              )}
+            </div>
+
+            {/* User Management */}
+            <div className="bg-white rounded-lg shadow">
+              <button onClick={() => { setShowUserManagement(!showUserManagement); if (!showUserManagement) fetchManagedUsers(); }}
+                className="w-full px-4 py-2.5 flex justify-between items-center hover:bg-gray-50 transition-colors" type="button">
+                <h2 className="text-sm font-semibold text-gray-900">User Management</h2>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform ${showUserManagement ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {showUserManagement && (
+                <div className="border-t border-gray-100">
+                  {/* Delete all real users */}
+                  <div className="px-4 py-2 flex justify-end border-b border-gray-50">
+                    <button onClick={deleteAllRealUsers} type="button"
+                      className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors">
+                      Delete all registered users
+                    </button>
+                  </div>
+
+                  {usersLoading ? (
+                    <p className="text-xs text-gray-400 px-4 py-3">Loading…</p>
+                  ) : usersError ? (
+                    <p className="text-xs text-red-500 px-4 py-3">{usersError}</p>
+                  ) : managedUsers.length === 0 ? (
+                    <p className="text-xs text-gray-400 px-4 py-3">No registered users.</p>
+                  ) : (
+                    <ul className="divide-y divide-gray-50">
+                      {managedUsers.map(u => {
+                        const isBanned = u.bannedUntil && new Date(u.bannedUntil) > new Date();
+                        return (
+                          <li key={u.id} className="px-4 py-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {u.username}
+                                  {isBanned && <span className="ml-1.5 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">banned</span>}
+                                </p>
+                                <p className="text-xs text-gray-400 truncate">{u.email || "no email"} · joined {new Date(u.createdAt).toLocaleDateString()}</p>
+                                {isBanned && <p className="text-xs text-red-500">until {new Date(u.bannedUntil!).toLocaleString()}</p>}
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isBanned ? (
+                                  <button onClick={() => userAction(u.id, "unban")} type="button"
+                                    className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors">
+                                    Unban
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={banDurations[u.id] || "1d"}
+                                      onChange={e => setBanDurations(prev => ({ ...prev, [u.id]: e.target.value }))}
+                                      className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600">
+                                      <option value="1h">1h</option>
+                                      <option value="1d">1d</option>
+                                      <option value="7d">7d</option>
+                                      <option value="30d">30d</option>
+                                      <option value="perm">Perm</option>
+                                    </select>
+                                    <button onClick={() => {
+                                      const dur = banDurations[u.id] || "1d";
+                                      const ms: Record<string, number> = { "1h": 3600000, "1d": 86400000, "7d": 604800000, "30d": 2592000000 };
+                                      const until = dur === "perm" ? new Date("2099-01-01").toISOString() : new Date(Date.now() + ms[dur]).toISOString();
+                                      userAction(u.id, "ban", until);
+                                    }} type="button"
+                                      className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors">
+                                      Ban
+                                    </button>
+                                  </div>
+                                )}
+                                <button onClick={() => userAction(u.id, "logout")} type="button"
+                                  className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200 transition-colors">
+                                  Logout
+                                </button>
+                                <button onClick={() => { if (confirm(`Delete user "${u.username}"?`)) userAction(u.id, "delete"); }} type="button"
+                                  className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors">
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
               )}
             </div>
