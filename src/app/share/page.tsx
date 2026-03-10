@@ -17,7 +17,8 @@ function ShareHandler() {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.replace(`/login?next=/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`);
+        const next = `/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+        router.replace(`/login?next=${encodeURIComponent(next)}`);
       } else {
         setOpen(true);
       }

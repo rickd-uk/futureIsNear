@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function LoginPage() {
+function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [signupsEnabled, setSignupsEnabled] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
+  const next = searchParams.get("next") ?? "/";
 
   useEffect(() => {
     const checkSignupsEnabled = async () => {
@@ -37,7 +39,7 @@ export default function LoginPage() {
     const result = await login(username, password);
 
     if (result.success) {
-      router.push("/");
+      router.push(next);
     } else {
       setError(result.error || "Login failed");
     }
@@ -122,5 +124,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
