@@ -1,4 +1,4 @@
-// src/components/FutureNews.tsx
+// src/components/LinkX.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, memo } from "react";
@@ -179,7 +179,7 @@ const LinkRow = memo(function LinkRow({
   );
 });
 
-export default function FutureNews() {
+export default function LinkX() {
   const { isAuthenticated, user } = useAuth();
   const { remainingBudget, vote: castVote, removeVote, getVoteCount, initFromServer } =
     useVoting(isAuthenticated);
@@ -453,7 +453,7 @@ export default function FutureNews() {
         <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <span className="text-2xl">🔗</span>
-            <span>LinX</span>
+            <span>LinkX</span>
           </h1>
           <div className="flex items-center gap-2">
             {isAuthenticated && (
@@ -803,6 +803,7 @@ export default function FutureNews() {
         onRestored={fetchLinks}
         onCountChange={setTrashCount}
       />
+
     </div>
   );
 }

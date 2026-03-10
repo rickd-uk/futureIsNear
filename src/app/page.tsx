@@ -1,11 +1,9 @@
-import FutureNews from '@/components/FutureNews';
-// import BulkUpload from '@/components/BulkUpload';
+import LinkX from '@/components/LinkX';
 
 export default function Home() {
   return (
     <main>
-      <FutureNews />
-      {/* <BulkUpload /> */}
+      <LinkX />
     </main>
   );
 }

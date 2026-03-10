@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { User, LogOut, ChevronDown } from "lucide-react";
+import { User, LogOut, ChevronDown, HelpCircle } from "lucide-react";
 
 interface UserMenuProps {
   remainingBudget?: number;
@@ -101,6 +101,14 @@ export default function UserMenu({ remainingBudget }: UserMenuProps) {
               </p>
             )}
           </div>
+          <Link
+            href="/help"
+            onClick={() => setIsOpen(false)}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Help &amp; About
+          </Link>
           <button
             onClick={() => {
               logout();

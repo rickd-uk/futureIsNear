@@ -9,8 +9,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Future News',
-  description: 'News from the future of technology',
+  title: 'LinkX',
+  description: 'Discover, share, and vote on links that matter.',
 }
 
 export default function RootLayout({

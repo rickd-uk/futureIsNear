@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkX Submit</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ── Setup screen ── -->
+  <div id="screen-setup" class="screen hidden">
+    <div class="header">
+      <span class="logo">LinkX</span>
+    </div>
+    <div class="body">
+      <p class="hint">Enter your LinkX server URL to get started.</p>
+      <label class="field-label" for="setup-url">Server URL</label>
+      <input id="setup-url" type="url" placeholder="https://yourdomain.com" autocomplete="off" />
+      <div id="setup-error" class="error hidden"></div>
+      <button id="setup-save" class="btn-primary">Save &amp; Continue</button>
+    </div>
+  </div>
+
+  <!-- ── Login screen ── -->
+  <div id="screen-login" class="screen hidden">
+    <div class="header">
+      <span class="logo">LinkX</span>
+      <button id="login-settings" class="btn-icon" title="Settings">⚙</button>
+    </div>
+    <div class="body">
+      <label class="field-label" for="login-username">Username</label>
+      <input id="login-username" type="text" placeholder="username" autocomplete="username" />
+      <label class="field-label" for="login-password">Password</label>
+      <input id="login-password" type="password" placeholder="password" autocomplete="current-password" />
+      <div id="login-error" class="error hidden"></div>
+      <button id="login-submit" class="btn-primary">Log In</button>
+    </div>
+  </div>
+
+  <!-- ── Submit screen ── -->
+  <div id="screen-submit" class="screen hidden">
+    <div class="header">
+      <span class="logo">LinkX</span>
+      <div class="header-right">
+        <span id="submit-username" class="username-badge"></span>
+        <button id="submit-logout" class="btn-icon" title="Log out">↩</button>
+        <button id="submit-settings" class="btn-icon" title="Settings">⚙</button>
+      </div>
+    </div>
+    <div class="body">
+      <label class="field-label" for="field-url">URL</label>
+      <input id="field-url" type="url" placeholder="https://..." />
+
+      <label class="field-label" for="field-title">Title</label>
+      <input id="field-title" type="text" placeholder="Article title" />
+
+      <label class="field-label" for="field-desc">Description <span class="optional">(optional)</span></label>
+      <textarea id="field-desc" rows="3" placeholder="Brief description…"></textarea>
+
+      <label class="field-label" for="field-category">Category</label>
+      <select id="field-category">
+        <option value="">— Select category —</option>
+      </select>
+
+      <label class="toggle-row">
+        <span class="field-label" style="margin:0">Make public</span>
+        <input id="field-public" type="checkbox" />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </label>
+
+      <div id="submit-error" class="error hidden"></div>
+      <div id="submit-success" class="success hidden">Submitted!</div>
+      <button id="submit-btn" class="btn-primary">Submit Link</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
