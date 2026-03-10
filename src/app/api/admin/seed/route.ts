@@ -194,7 +194,7 @@ function randomInt(min: number, max: number): number {
 }
 
 function uniqueUsername(base: string, taken: Set<string>): string {
-  let name = base.slice(0, 28);
+  const name = base.slice(0, 28);
   if (!taken.has(name)) { taken.add(name); return name; }
   for (let i = 2; i < 999; i++) {
     const candidate = `${name.slice(0, 25)}_${i}`;
