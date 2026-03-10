@@ -65,6 +65,7 @@ model User {
   passwordHash  String
   preferences   String     @default("{}") // JSON: user UI preferences
   isTestUser    Boolean    @default(false) // true = generated test/dummy user
+  lastSeenAt    DateTime?  // updated on each auth/me check
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   votes         Vote[]

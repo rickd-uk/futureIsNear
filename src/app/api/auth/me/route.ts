@@ -13,9 +13,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get fresh user data
-    const user = await prisma.user.findUnique({
+    // Get fresh user data and update lastSeenAt
+    const user = await prisma.user.update({
       where: { id: payload.userId },
+      data: { lastSeenAt: new Date() },
       select: {
         id: true,
         username: true,

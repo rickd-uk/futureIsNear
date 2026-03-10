@@ -11,11 +11,8 @@ interface TestUser {
   _count: { links: number };
 }
 
-interface TestDataManagerProps {
-  adminToken: string;
-}
-
-export default function TestDataManager({ adminToken }: TestDataManagerProps) {
+export default function TestDataManager() {
+  const [adminToken, setAdminToken] = useState("");
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<TestUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,6 +23,10 @@ export default function TestDataManager({ adminToken }: TestDataManagerProps) {
   const [userCount, setUserCount] = useState(5);
   const [linksPerUser, setLinksPerUser] = useState("4");
   const [password, setPassword] = useState("testpass123");
+
+  useEffect(() => {
+    setAdminToken(localStorage.getItem("admin_token") ?? "");
+  }, []);
 
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` };
 
