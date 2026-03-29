@@ -58,6 +58,10 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
   const [suggestedTitle, setSuggestedTitle] = useState("");
   const [suggestedAuthor, setSuggestedAuthor] = useState("");
   const [suggestedCategory, setSuggestedCategory] = useState("");
+  const [suggestedDescription, setSuggestedDescription] = useState("");
+  const [fetchedDescription, setFetchedDescription] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
   const [pasteHint, setPasteHint] = useState<"url" | "title" | null>(null);
   const [fieldPrefs, setFieldPrefs] = useState<FieldPrefs>(DEFAULT_PREFS);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +80,7 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
       setMakePublic(link.isPublic);
     } else {
       setFormData({ title: initialTitle ?? "", url: initialUrl ?? "", category: "", description: "", author: "", publicationDate: today });
-      setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory("");
+      setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory(""); setSuggestedDescription(""); setFetchedDescription(""); setAiError("");
       const pref = localStorage.getItem("user_links_public_default");
       setMakePublic(pref === "true");
     }
@@ -138,11 +142,45 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
         // Use fetched author if available, otherwise fall back to domain
         const authorHint = data.author || domain;
         if (authorHint) setSuggestedAuthor((prev) => prev || authorHint);
+        if (data.description) setFetchedDescription(data.description);
       } else if (domain) {
         setSuggestedAuthor((prev) => prev || domain);
       }
     } catch { if (domain) setSuggestedAuthor((prev) => prev || domain); }
     finally { setFetchingTitle(false); }
+  };
+
+  const runAiLookup = async () => {
+    if (!formData.url) return;
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const token = localStorage.getItem("user_token");
+      const res = await fetch("/api/ai-lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          url: formData.url,
+          title: suggestedTitle || formData.title || undefined,
+          description: fetchedDescription || undefined,
+          author: suggestedAuthor || formData.author || undefined,
+          categories: categories.map((c) => c.name),
+        }),
+      });
+      if (!res.ok) throw new Error("AI lookup failed");
+      const data = await res.json();
+      if (data.title) setSuggestedTitle((prev) => prev || data.title);
+      if (data.author) setSuggestedAuthor((prev) => prev || data.author);
+      if (data.category) setSuggestedCategory(data.category);
+      if (data.description) setSuggestedDescription(data.description);
+    } catch {
+      setAiError("AI lookup failed. Try again.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const readClipboard = async (field: "url" | "title", fallbackRef?: React.RefObject<HTMLInputElement | null>): Promise<string> => {
@@ -226,15 +264,16 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
               </button>
             );
           })}
-          {(suggestedTitle || suggestedAuthor || suggestedCategory) && (
+          {(suggestedTitle || suggestedAuthor || suggestedCategory || suggestedDescription) && (
             <button type="button" onClick={() => {
               setFormData((p) => ({
                 ...p,
                 ...(suggestedTitle && !p.title ? { title: suggestedTitle } : {}),
                 ...(suggestedAuthor && !p.author ? { author: suggestedAuthor } : {}),
                 ...(suggestedCategory && !p.category ? { category: suggestedCategory } : {}),
+                ...(suggestedDescription && !p.description ? { description: suggestedDescription } : {}),
               }));
-              setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory("");
+              setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedCategory(""); setSuggestedDescription("");
             }} className="ml-auto text-xs px-2.5 py-1 rounded-full border border-green-300 bg-green-50 text-green-700 hover:bg-green-100 transition-colors">
               ✓ Accept all
             </button>
@@ -272,8 +311,24 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
                 onPaste={(e) => { const t = e.clipboardData?.getData("text") ?? ""; if (t.startsWith("http")) setTimeout(() => fetchTitle(t), 0); }}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="URL *  https://..." />
+              <button
+                type="button"
+                onClick={runAiLookup}
+                disabled={!formData.url || aiLoading}
+                title="AI fill"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-purple-600 hover:bg-purple-50 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {aiLoading ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : (
+                  <span>✨</span>
+                )}
+              </button>
               <button type="button" onClick={async () => {
-                if (formData.url) { setFormData((p) => ({ ...p, url: "" })); setSuggestedTitle(""); setSuggestedAuthor(""); }
+                if (formData.url) { setFormData((p) => ({ ...p, url: "" })); setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedDescription(""); setFetchedDescription(""); setAiError(""); }
                 else { const t = await readClipboard("url", urlInputRef); if (t) { setFormData((p) => ({ ...p, url: t })); if (t.startsWith("http")) fetchTitle(t); } }
               }} className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 shrink-0">
                 {formData.url ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -281,6 +336,9 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
               </button>
             </div>
             {pasteHint === "url" && <p className="text-xs text-amber-600 px-1">Clipboard unavailable — press Ctrl+V to paste</p>}
+            {aiError && (
+              <p className="text-xs text-red-600 px-1">{aiError}</p>
+            )}
           </div>
 
           {/* Category + Author */}
@@ -332,10 +390,19 @@ export default function UserSubmitLinkModal({ isOpen, onClose, onSuccess, link, 
 
           {/* Description */}
           {fieldPrefs.showDescription && (
-            <textarea name="description" value={formData.description} onChange={handleInputChange}
-              rows={7}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-              placeholder="Description (optional)" />
+            <div className="space-y-1">
+              <textarea name="description" value={formData.description} onChange={handleInputChange}
+                rows={7}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                placeholder="Description (optional)" />
+              {suggestedDescription && !formData.description && (
+                <button type="button"
+                  onClick={() => { setFormData((p) => ({ ...p, description: suggestedDescription })); setSuggestedDescription(""); }}
+                  className="text-xs text-blue-600 hover:text-blue-800 text-left w-full px-1 line-clamp-2">
+                  ↑ Use: {suggestedDescription}
+                </button>
+              )}
+            </div>
           )}
 
           {/* Pub date + Visibility */}

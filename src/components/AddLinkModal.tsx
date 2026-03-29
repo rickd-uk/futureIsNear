@@ -36,6 +36,10 @@ export default function AddLinkModal({
   const [suggestedTitle, setSuggestedTitle] = useState("");
   const [suggestedAuthor, setSuggestedAuthor] = useState("");
   const [suggestedCategory, setSuggestedCategory] = useState("");
+  const [suggestedDescription, setSuggestedDescription] = useState("");
+  const [fetchedDescription, setFetchedDescription] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
   const [pasteHint, setPasteHint] = useState<"url" | "title" | null>(null);
   const authorInputRef = useRef<HTMLInputElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -71,11 +75,45 @@ export default function AddLinkModal({
         }
         const authorHint = data.author || domain;
         if (authorHint) setSuggestedAuthor((prev) => prev || authorHint);
+        if (data.description) setFetchedDescription(data.description);
       } else if (domain) {
         setSuggestedAuthor((prev) => prev || domain);
       }
     } catch { if (domain) setSuggestedAuthor((prev) => prev || domain); }
     finally { setFetchingTitle(false); }
+  };
+
+  const runAiLookup = async () => {
+    if (!formData.url) return;
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/ai-lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          url: formData.url,
+          title: suggestedTitle || formData.title || undefined,
+          description: fetchedDescription || undefined,
+          author: suggestedAuthor || formData.author || undefined,
+          categories: categories.map((c) => c.name),
+        }),
+      });
+      if (!res.ok) throw new Error("AI lookup failed");
+      const data = await res.json();
+      if (data.title) setSuggestedTitle((prev) => prev || data.title);
+      if (data.author) setSuggestedAuthor((prev) => prev || data.author);
+      if (data.category) setSuggestedCategory(data.category);
+      if (data.description) setSuggestedDescription(data.description);
+    } catch {
+      setAiError("AI lookup failed. Try again.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -247,10 +285,26 @@ export default function AddLinkModal({
               />
               <button
                 type="button"
+                onClick={runAiLookup}
+                disabled={!formData.url || aiLoading}
+                title="AI fill"
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm text-purple-600 hover:bg-purple-50 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {aiLoading ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : (
+                  <span>✨</span>
+                )}
+              </button>
+              <button
+                type="button"
                 onClick={async () => {
                   if (formData.url) {
                     setFormData((prev) => ({ ...prev, url: "" }));
-                    setSuggestedTitle(""); setSuggestedAuthor("");
+                    setSuggestedTitle(""); setSuggestedAuthor(""); setSuggestedDescription(""); setFetchedDescription(""); setAiError("");
                   } else {
                     const text = await readClipboard("url", urlInputRef);
                     if (text) {
@@ -270,6 +324,9 @@ export default function AddLinkModal({
             </div>
             {pasteHint === "url" && (
               <p className="text-xs text-amber-600 mt-1">Clipboard unavailable — press Ctrl+V to paste</p>
+            )}
+            {aiError && (
+              <p className="text-xs text-red-600 mt-1">{aiError}</p>
             )}
           </div>
 
@@ -329,6 +386,13 @@ export default function AddLinkModal({
               placeholder="Optional description"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-y"
             />
+            {suggestedDescription && (
+              <button type="button"
+                onClick={() => { setFormData((p) => ({ ...p, description: suggestedDescription })); setSuggestedDescription(""); }}
+                className="text-xs text-blue-600 hover:text-blue-800 text-left w-full px-1 mt-1 line-clamp-2">
+                ↑ Use: {suggestedDescription}
+              </button>
+            )}
           </div>
 
           {/* Author with partial search */}
